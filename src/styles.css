@@ -1128,10 +1128,13 @@ a:hover > .action .arrow {
 }
 
 .cv-points li::before {
-  content: '—';
+  content: '';
   position: absolute;
   left: 0;
-  color: var(--muted);
+  top: 1.25rem;
+  width: 0.75rem;
+  height: var(--line);
+  background: var(--muted);
 }
 
 .cv-achievements {
