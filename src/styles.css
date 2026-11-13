@@ -578,8 +578,8 @@ a:hover > .action .arrow {
   margin-top: clamp(2rem, 4vw, 3rem);
 }
 
-.state-section:target .section-heading {
-  color: var(--accent);
+.state-section:target .state-num {
+  color: var(--ink);
 }
 
 @media (max-width: 61.99rem) {
