@@ -1,6 +1,5 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
   achievements,
@@ -12,7 +11,8 @@ import {
   type Certificate,
 } from '../../src/content';
 
-const root = fileURLToPath(new URL('../..', import.meta.url));
+/* vitest runs from the repository root, where public/ lives. */
+const root = process.cwd();
 
 function webpSize(file: string): { width: number; height: number } {
   const buf = readFileSync(file);
@@ -48,7 +48,7 @@ describe('no phone number in the site source', () => {
   const phoneDigits = ['REDACTED', 'REDACTED', 'REDACTED', 'REDACTED'];
 
   it('keeps the number out of src/ and public/ (the CV PDF aside)', () => {
-    const files = [...walk(join(root, 'src')), ...walk(join(root, 'public')), join(root, 'index.html')].filter(
+    const files = [...walk(join(root, 'src')), ...walk(join(root, 'public'))].filter(
       (file) => statSync(file).isFile() && !/\.(pdf|png|webp|woff2?|ico)$/i.test(file),
     );
 
@@ -58,6 +58,15 @@ describe('no phone number in the site source', () => {
       for (const digits of phoneDigits) {
         expect(text.includes(digits), `${file} contains the phone number`).toBe(false);
       }
+    }
+  });
+
+  it('keeps the number out of index.html when it is present', () => {
+    const file = join(root, 'index.html');
+    if (!existsSync(file)) return;
+    const text = readFileSync(file, 'utf8');
+    for (const digits of phoneDigits) {
+      expect(text.includes(digits), 'index.html contains the phone number').toBe(false);
     }
   });
 });
