@@ -5,7 +5,7 @@ export function Education() {
     <section id="education" className="cv-section" aria-labelledby="education-title">
       <div className="cv-section-head">
         <h2 id="education-title" className="cv-title display">
-          Education
+          <span className="section-num">04</span> Education
         </h2>
       </div>
       <ol className="cv-degrees">

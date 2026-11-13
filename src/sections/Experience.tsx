@@ -5,7 +5,7 @@ export function Experience() {
     <section id="experience" className="cv-section" aria-labelledby="experience-title">
       <div className="cv-section-head">
         <h2 id="experience-title" className="cv-title display">
-          Experience
+          <span className="section-num">03</span> Experience
         </h2>
         {owner.cv && (
           <a className="action cv-download" href={owner.cv} download>

@@ -30,7 +30,7 @@ export function Certificates() {
     <section id="certificates" className="cv-section" aria-labelledby="certificates-title">
       <div className="cv-section-head">
         <h2 id="certificates-title" className="cv-title display">
-          Certificates
+          <span className="section-num">06</span> Certificates
         </h2>
       </div>
       <ul className="cv-certificates">
