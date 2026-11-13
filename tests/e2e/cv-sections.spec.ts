@@ -14,7 +14,8 @@ test('the CV downloads as a PDF', async ({ page, request }) => {
 
   const link = page.locator('#experience').getByRole('link', { name: /download cv/i });
   await expect(link).toHaveAttribute('href', owner.cv);
-  await expect(link).toHaveAttribute('download', '');
+  /* An empty download attribute keeps the file's own name; "true" would not. */
+  expect(await link.getAttribute('download')).toBe('');
 
   const response = await request.get(owner.cv);
   expect(response.status()).toBe(200);

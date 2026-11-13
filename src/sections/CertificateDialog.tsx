@@ -24,7 +24,7 @@ export function CertificateDialog({ certificate, onMount, onClose, onDismiss }: 
         src={certificate.preview}
         width={certificate.width}
         height={certificate.height}
-        alt={`${certificate.title}, ${certificate.issuer}`}
+        alt={certificate.alt}
         decoding="async"
       />
       <div className="cv-dialog-actions">

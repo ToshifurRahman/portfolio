@@ -8,7 +8,7 @@ export function Experience() {
           <span className="section-num">03</span> Experience
         </h2>
         {owner.cv && (
-          <a className="action cv-download" href={owner.cv} download>
+          <a className="action cv-download" href={owner.cv} download="">
             Download CV (PDF)
           </a>
         )}
