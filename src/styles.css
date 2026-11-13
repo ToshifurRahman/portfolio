@@ -1048,9 +1048,7 @@ a:hover > .action .arrow {
 /* cv-content ------------------------------------------------------------- */
 
 .cv-section {
-  max-width: 100rem;
-  margin-inline: auto;
-  padding: clamp(2.5rem, 6vw, 5rem) var(--pad);
+  padding-block: clamp(2.5rem, 6vw, 5rem);
   border-bottom: var(--line) solid var(--rule);
 }
 
@@ -1228,7 +1226,6 @@ a:hover > .action .arrow {
 
 .cv-dialog::backdrop {
   background: var(--bg);
-  opacity: 0.92;
 }
 
 .cv-dialog-title {
