@@ -45,15 +45,23 @@ test('a certificate dialog opens, traps focus, closes on Escape and returns focu
   await expect(dialog).toBeVisible();
   await expect(dialog).toHaveAttribute('aria-labelledby', 'cv-dialog-title');
   await expect(page.locator('#cv-dialog-title')).toHaveText(first.title);
-  await expect(dialog.getByRole('link', { name: /open original/i })).toHaveAttribute('href', first.file);
+  const original = dialog.getByRole('link', { name: /open original/i });
+  await expect(original).toHaveAttribute('href', first.file);
 
-  for (let i = 0; i < 6; i += 1) {
+  /* A modal dialog keeps focus inside: Tab cycles its controls, never the page
+     behind it. Chrome parks focus on body between the last and first control. */
+  await original.focus();
+  for (let i = 0; i < 4; i += 1) {
     await page.keyboard.press('Tab');
-    const inside = await page.evaluate(() => {
+    const where = await page.evaluate(() => {
       const open = document.querySelector('dialog[open]');
-      return Boolean(open && open.contains(document.activeElement));
+      const active = document.activeElement;
+      return {
+        inDialog: Boolean(open && active && open.contains(active)),
+        isBody: active === document.body,
+      };
     });
-    expect(inside, 'focus stays inside the dialog').toBe(true);
+    expect(where.inDialog || where.isBody, 'focus does not reach the page').toBe(true);
   }
 
   await page.keyboard.press('Escape');
