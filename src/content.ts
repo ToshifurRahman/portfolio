@@ -16,11 +16,11 @@ export const owner = {
   role: 'Software Engineer',
   statement: 'I build backend and full-stack systems, and I design for the moment they fail.',
   focus: 'Async backends and full-stack web apps',
-  location: '', // TODO: city and country
+  location: 'Chattogram, Bangladesh',
   availability: '', // TODO: e.g. "Open to full-time roles"
-  email: '', // TODO: public contact address
-  linkedin: '', // TODO: full LinkedIn URL
-  cv: '', // TODO: put the PDF in /public and write "/cv.pdf" here
+  email: 'tfrtasin11@gmail.com',
+  linkedin: 'https://www.linkedin.com/in/toshifur-rahman',
+  cv: '/cv/Toshifur-Rahman-CV.pdf',
   github: 'https://github.com/ToshifurRahman',
 };
 
@@ -42,21 +42,223 @@ export const builds = [
   },
 ];
 
-export const skills = [
-  { group: 'Languages', items: ['TypeScript', 'JavaScript', 'SQL', 'Python'] },
+export type SkillGroup = { group: string; items: string[] };
+
+export const skills: SkillGroup[] = [
+  {
+    group: 'AI / LLM',
+    items: [
+      'LLM APIs',
+      'Portkey',
+      'Function / Tool Calling',
+      'Structured Outputs (Zod)',
+      'Provider Failover',
+      'LLM Observability',
+    ],
+  },
+  { group: 'Languages', items: ['TypeScript', 'JavaScript', 'SQL', 'Python', 'C', 'C++'] },
   {
     group: 'Backend',
-    items: ['Bun', 'Node.js', 'Hono', 'PostgreSQL', 'Drizzle ORM', 'Redis', 'AWS SQS', 'Socket.io'],
+    items: [
+      'Bun',
+      'Node.js',
+      'Hono',
+      'Express.js',
+      'REST APIs',
+      'Socket.io',
+      'PostgreSQL',
+      'MySQL',
+      'MongoDB',
+      'Redis',
+      'Drizzle ORM',
+      'AWS SQS',
+    ],
   },
   {
     group: 'Frontend',
-    items: ['React', 'TanStack Router', 'TanStack Query', 'Vite', 'Tailwind CSS'],
+    items: ['React', 'TanStack Query', 'TanStack Router', 'Vite', 'Tailwind CSS', 'shadcn/ui', 'Jotai'],
   },
+  { group: 'Auth & Security', items: ['Better Auth', 'JWT', 'Zod', 'Helmet'] },
   {
     group: 'Quality',
-    items: ['Vitest', 'Playwright', 'axe accessibility checks', 'Lighthouse CI', 'GitHub Actions'],
+    items: ['Vitest', 'Playwright', 'Selenium', 'JMeter', 'axe accessibility checks', 'Lighthouse CI', 'GitHub Actions'],
+  },
+  {
+    group: 'Tools',
+    items: ['Git', 'GitHub', 'Postman', 'ESLint', 'Prettier', 'Husky'],
   },
   { group: 'Platform', items: ['Docker', 'Cloudflare Workers', 'Render', 'Supabase', 'Neon'] },
+];
+
+/* Experience, education and achievements are word for word from the owner's CV. */
+
+export type ExperienceRole = {
+  title: string;
+  organization: string;
+  period: string;
+  bullets: string[];
+};
+
+export const experience: ExperienceRole[] = [
+  {
+    title: 'Web Developer',
+    organization: 'Taibah Academy',
+    period: 'Aug 2026 – Present',
+    bullets: [
+      'Performed Software Quality Assurance (SQA) testing on the live production website, identifying and reporting functional bugs and UI issues before they affected users.',
+      'Conducted security testing and hardening of the website, helping to protect student and payment data from common web vulnerabilities.',
+      'Coordinated with the third-party development vendor to track, prioritize, and verify fixes for reported issues.',
+    ],
+  },
+  {
+    title: 'Undergraduate Teaching Assistant',
+    organization: 'Department of CSE, IIUC',
+    period: 'Aug 2024 – Aug 2025',
+    bullets: [
+      'Assisted students in the Competitive Programming I Lab with problem solving, debugging, and core algorithms and data structures, providing targeted guidance to students who were falling behind.',
+    ],
+  },
+  {
+    title: 'Trainer & Mentor',
+    organization: 'IIUC Competitive Programming Society (IIUCCPS)',
+    period: 'Aug 2023 – Dec 2025',
+    bullets: [
+      'Taught algorithms, data structures, and problem-solving techniques in competitive programming bootcamps, tracking participants’ daily progress, and giving personalized feedback.',
+      'Also served as Bootcamp Coordinator and Finance Secretary of IIUCCPS.',
+    ],
+  },
+];
+
+export type EducationEntry = { degree: string; institution: string; period: string };
+
+export const education: EducationEntry[] = [
+  {
+    degree: 'M.Engg. in Computer Science and Engineering',
+    institution: 'Chittagong University of Engineering and Technology (CUET)',
+    period: 'Aug 2026 – Present',
+  },
+  {
+    degree: 'B.Sc. in Computer Science and Engineering',
+    institution: 'International Islamic University Chittagong (IIUC)',
+    period: 'Aug 2021 – Dec 2025',
+  },
+];
+
+export type Achievement = { text: string; links?: { label: string; href: string }[] };
+
+export const achievements: Achievement[] = [
+  {
+    text: 'Codeforces: ToshifurRahman (Pupil, max rating 1290); CodeChef: tasin_021 (max rating 1461). Solved 1,600+ problems and participated in 100+ online and onsite contests.',
+    links: [
+      { label: 'Codeforces profile', href: 'https://codeforces.com/profile/ToshifurRahman' },
+      { label: 'CodeChef profile', href: 'https://www.codechef.com/users/tasin_021' },
+    ],
+  },
+  { text: '1st Runner-up, IIUC Intra-University Programming Contest (Spring 2023).' },
+  { text: 'Best Mentor Award, IIUCCPS Competitive Programming Bootcamps (Autumn 2023 and Spring 2024).' },
+];
+
+export type Certificate = {
+  slug: string;
+  title: string;
+  issuer: string;
+  date?: string;
+  file: string;
+  preview: string;
+  width: number;
+  height: number;
+  alt: string;
+};
+
+export const certificates: Certificate[] = [
+  {
+    slug: 'beginners-typescript',
+    title: 'Beginner’s TypeScript Workshop',
+    issuer: 'Total TypeScript',
+    date: '2025-12-30',
+    file: '/certificates/files/beginners-typescript.png',
+    preview: '/certificates/previews/beginners-typescript.webp',
+    width: 800,
+    height: 566,
+    alt: 'Certificate of Completion for the Beginner’s TypeScript workshop, Total TypeScript, 30 December 2025.',
+  },
+  {
+    slug: 'botany-olympiad',
+    title: 'Bangladesh Botany Olympiad 2018',
+    issuer: 'Bangladesh Botanical Society',
+    date: '2018',
+    file: '/certificates/files/botany-olympiad.pdf',
+    preview: '/certificates/previews/botany-olympiad.webp',
+    width: 800,
+    height: 656,
+    alt: 'Certificate of participation in the Bangladesh Botany Olympiad 2018, Divisional Round, Bangladesh Botanical Society.',
+  },
+  {
+    slug: 'chemistry-olympiad',
+    title: '9th Bangladesh Chemistry Olympiad-2018',
+    issuer: 'Bangladesh Chemical Society',
+    date: '2019-01-25',
+    file: '/certificates/files/chemistry-olympiad.pdf',
+    preview: '/certificates/previews/chemistry-olympiad.webp',
+    width: 800,
+    height: 646,
+    alt: 'Certificate of participation in the preliminary round of the 9th Bangladesh Chemistry Olympiad 2018, CU Chattogram region.',
+  },
+  {
+    slug: 'cu-contest',
+    title: 'IT Fiesta 2024, Certificate of Appreciation',
+    issuer: 'Chittagong University Scientific Society',
+    date: '2024',
+    file: '/certificates/files/cu-contest.pdf',
+    preview: '/certificates/previews/cu-contest.webp',
+    width: 800,
+    height: 636,
+    alt: 'Certificate of appreciation from IT Fiesta 2024, Chittagong University Scientific Society.',
+  },
+  {
+    slug: 'frontend-masters-algorithms',
+    title: 'The Last Algorithms Course You’ll Need',
+    issuer: 'Frontend Masters',
+    date: '2025-12-21',
+    file: '/certificates/files/frontend-masters-algorithms.pdf',
+    preview: '/certificates/previews/frontend-masters-algorithms.webp',
+    width: 800,
+    height: 566,
+    alt: 'Certificate of completion for The Last Algorithms Course You’ll Need, Frontend Masters, completed 21 December 2025.',
+  },
+  {
+    slug: 'hult-prize',
+    title: 'Hult Prize at International Islamic University Chittagong',
+    issuer: 'Hult Prize',
+    date: '2023-02-12',
+    file: '/certificates/files/hult-prize.png',
+    preview: '/certificates/previews/hult-prize.webp',
+    width: 800,
+    height: 570,
+    alt: 'Certificate recognising participation as a competitor in the Hult Prize at International Islamic University Chittagong, 12 February 2023.',
+  },
+  {
+    slug: 'iiuccps-best-mentor',
+    title: 'Certificate of Appreciation, Competitive Programming Bootcamp Trainer',
+    issuer: 'IIUC Competitive Programming Society (IIUCCPS)',
+    date: '2025',
+    file: '/certificates/files/iiuccps-best-mentor.pdf',
+    preview: '/certificates/previews/iiuccps-best-mentor.webp',
+    width: 800,
+    height: 606,
+    alt: 'Certificate of appreciation for contributing as a trainer in the IIUCCPS Competitive Programming Bootcamp, Spring 2025 and Autumn 2025.',
+  },
+  {
+    slug: 'pu-contest',
+    title: 'PU-CSE IT Fest 2024, Programming Contest',
+    issuer: 'Department of Computer Science and Engineering, Premier University',
+    date: '2024-01-27',
+    file: '/certificates/files/pu-contest.pdf',
+    preview: '/certificates/previews/pu-contest.webp',
+    width: 800,
+    height: 674,
+    alt: 'Certificate of participation in the programming contest at PU-CSE IT Fest 2024, Premier University, 27 January 2024.',
+  },
 ];
 
 export const moreProjects = [
