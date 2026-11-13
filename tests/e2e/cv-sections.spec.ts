@@ -86,22 +86,18 @@ test('the close button closes the dialog and returns focus to the card', async (
 
 for (const theme of ['dark', 'light'] as const) {
   test(`no axe violations in the four CV sections (${theme})`, async ({ page }) => {
+    await page.addInitScript((value) => localStorage.setItem('theme', value), theme);
     await gotoHome(page);
-    await page.evaluate((value) => {
-      document.documentElement.dataset.theme = value;
-      localStorage.setItem('theme', value);
-    }, theme);
+    await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
 
-    for (const id of sectionIds) {
-      await page.locator(`#${id}`).scrollIntoViewIfNeeded();
-    }
+    for (const id of sectionIds) await page.locator(`#${id}`).scrollIntoViewIfNeeded();
 
     const results = await new AxeBuilder({ page })
       .include('#experience')
       .include('#education')
       .include('#achievements')
       .include('#certificates')
-      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22a', 'wcag22aa'])
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
       .analyze();
 
     expect(results.violations).toEqual([]);
