@@ -1050,6 +1050,8 @@ a:hover > .action .arrow {
 .cv-section {
   padding-block: clamp(2.5rem, 6vw, 5rem);
   border-bottom: var(--line) solid var(--rule);
+  /* Clears the sticky navbar once it exists; harmless before then. */
+  scroll-margin-top: calc(var(--header-h, 0rem) + 1rem);
 }
 
 .cv-section-head {
