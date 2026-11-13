@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { builds, caseStudies, moreProjects, owner, skills } from './content';
 import { Footer } from './Footer';
 import { Arrow } from './NotFound';
+import { CvSections } from './sections';
 import { useTitle } from './useTitle';
 
 const states = [
@@ -129,6 +130,7 @@ export function Home() {
         <p className="visually-hidden" aria-live="polite">
           Showing state {num(current)}: {states[current].label}
         </p>
+        <CvSections />
       </main>
       <Footer />
     </>
