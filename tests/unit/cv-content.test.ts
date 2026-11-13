@@ -173,9 +173,13 @@ describe('certificates', () => {
   });
 
   it('keeps a date only when the file states one', () => {
+    const stated = /^(?:\d{1,2} )?[A-Z][a-z]+ \d{4}$|^\d{4}$/;
     for (const cert of certificates) {
-      if (cert.date !== undefined) expect(cert.date).toMatch(/^\d{4}(-\d{2}(-\d{2})?)?$/);
+      if (cert.date !== undefined) expect(cert.date, cert.slug).toMatch(stated);
     }
+    /* Only the files that print a day give one. */
+    expect(certificates.find((c) => c.slug === 'cu-contest')?.date).toBe('2024');
+    expect(certificates.find((c) => c.slug === 'botany-olympiad')?.date).toBe('2018');
   });
 
   it('keeps the CV download byte-identical on disk', () => {
