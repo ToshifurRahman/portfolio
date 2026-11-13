@@ -1,0 +1,7 @@
+node_modules
+dist
+.impeccable/review
+.impeccable/mocks
+.impeccable/decision-payload*.json
+.impeccable/hook.cache.json
+.impeccable/questions
