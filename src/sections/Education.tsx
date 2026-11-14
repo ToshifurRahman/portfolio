@@ -1,13 +1,9 @@
 import { education } from '../content';
+import { CvSection } from './CvSection';
 
 export function Education() {
   return (
-    <section id="education" className="cv-section" aria-labelledby="education-title">
-      <div className="cv-section-head">
-        <h2 id="education-title" className="cv-title display">
-          <span className="section-num">04</span> Education
-        </h2>
-      </div>
+    <CvSection id="education" title="Education">
       <ol className="cv-degrees">
         {education.map((entry) => (
           <li key={entry.degree} className="cv-degree">
@@ -19,6 +15,6 @@ export function Education() {
           </li>
         ))}
       </ol>
-    </section>
+    </CvSection>
   );
 }

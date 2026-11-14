@@ -22,18 +22,20 @@ describe('state numbering', () => {
     }));
     expect(boxes.map((box) => box.num)).toEqual(['01', '02', '03', '05', '06', '07', '08']);
 
-    for (const id of ['about', 'work', 'skills', 'contact']) {
+    for (const id of ['about', 'work', 'experience', 'achievements', 'certificates', 'skills', 'contact']) {
       const heading = document.querySelector(`#${id}-title .state-num`)?.textContent;
       const box = boxes.find((b) => b.id?.endsWith(id));
       expect(box?.num, `#${id}`).toBe(heading);
     }
   });
 
+  /* The four CV sections joined the page's own layout, so all eight headings
+     are states now and the whole page reads 01 to 08 with nothing skipped. */
   it('keeps the section headings in R1 order, 01 to 08', () => {
     renderHome();
     const numbers = [...document.querySelectorAll('.state-section .section-heading .state-num')].map(
       (n) => n.textContent,
     );
-    expect(numbers).toEqual(['01', '02', '07', '08']);
+    expect(numbers).toEqual(['01', '02', '03', '04', '05', '06', '07', '08']);
   });
 });

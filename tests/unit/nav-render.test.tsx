@@ -50,8 +50,10 @@ describe('navbar', () => {
       </MemoryRouter>,
     );
     /* cv-content fills owner.cv in; the expectation follows the content rather
-       than assuming the field is still empty. */
-    const link = screen.queryByRole('link', { name: /CV/i });
+       than assuming the field is still empty. Scoped to the bar: the CV
+       section below it carries a download link of its own. */
+    const nav = screen.getByRole('navigation', { name: 'Primary' });
+    const link = within(nav).queryByRole('link', { name: /CV/i });
     if (owner.cv) {
       expect(link).toHaveAttribute('href', owner.cv);
       expect(link).toHaveAttribute('download');

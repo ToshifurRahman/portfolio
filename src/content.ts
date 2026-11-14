@@ -19,6 +19,7 @@ export const owner = {
     'Toshifur Rahman is a software engineer in Chattogram, Bangladesh, who builds backend and full-stack web systems and is completing a master’s in computer science at CUET.',
   statement: 'I build backend and full-stack systems, and I design for the moment they fail.',
   focus: 'Async backends and full-stack web apps',
+  mainStack: 'TypeScript, Bun, PostgreSQL, React',
   location: 'Chattogram, Bangladesh',
   availability: '', // TODO: e.g. "Open to full-time roles"
   email: 'tfrtasin11@gmail.com',

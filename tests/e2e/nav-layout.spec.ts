@@ -58,14 +58,17 @@ test.describe('design review 1 regressions', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');
     const fit = await page.evaluate(() => {
-      /* owner.cv is empty until cv-content lands, so the link the navbar will
-         render is measured here instead of waiting for that branch. */
+      /* The bar renders the CV link once owner.cv is set; add one only while
+         it is not, so the measurement is the same either way. */
       const tools = document.querySelector('.nav-tools')!;
-      const cv = document.createElement('a');
-      cv.className = 'cv-link';
-      cv.href = '/cv.pdf';
-      cv.textContent = 'CV';
-      tools.prepend(cv);
+      let cv = tools.querySelector<HTMLAnchorElement>('.cv-link');
+      if (!cv) {
+        cv = document.createElement('a');
+        cv.className = 'cv-link';
+        cv.href = '/cv.pdf';
+        cv.textContent = 'CV';
+        tools.prepend(cv);
+      }
       const bar = document.querySelector('.navbar') as HTMLElement;
       const brand = document.querySelector('.brand') as HTMLElement;
       const menu = document.querySelector('.menu-button') as HTMLElement;

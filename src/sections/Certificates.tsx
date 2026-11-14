@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { certificates, type Certificate } from '../content';
 import { CertificateDialog } from './CertificateDialog';
+import { CvSection } from './CvSection';
 
 export function Certificates() {
   const [open, setOpen] = useState<Certificate | null>(null);
@@ -27,12 +28,7 @@ export function Certificates() {
   };
 
   return (
-    <section id="certificates" className="cv-section" aria-labelledby="certificates-title">
-      <div className="cv-section-head">
-        <h2 id="certificates-title" className="cv-title display">
-          <span className="section-num">06</span> Certificates
-        </h2>
-      </div>
+    <CvSection id="certificates" title="Certificates">
       <ul className="cv-certificates">
         {certificates.map((certificate) => (
           <li key={certificate.slug}>
@@ -68,6 +64,6 @@ export function Certificates() {
           onDismiss={close}
         />
       )}
-    </section>
+    </CvSection>
   );
 }

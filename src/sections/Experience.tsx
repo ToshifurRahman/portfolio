@@ -1,18 +1,14 @@
 import { experience, owner } from '../content';
+import { CvSection } from './CvSection';
 
 export function Experience() {
   return (
-    <section id="experience" className="cv-section" aria-labelledby="experience-title">
-      <div className="cv-section-head">
-        <h2 id="experience-title" className="cv-title display">
-          <span className="section-num">03</span> Experience
-        </h2>
-        {owner.cv && (
-          <a className="action cv-download" href={owner.cv} download="">
-            Download CV (PDF)
-          </a>
-        )}
-      </div>
+    <CvSection id="experience" title="Experience">
+      {owner.cv && (
+        <a className="action cv-download" href={owner.cv} download="">
+          Download CV (PDF)
+        </a>
+      )}
       <ol className="cv-roles">
         {experience.map((role) => (
           <li key={`${role.title}-${role.organization}`} className="cv-role">
@@ -29,6 +25,6 @@ export function Experience() {
           </li>
         ))}
       </ol>
-    </section>
+    </CvSection>
   );
 }

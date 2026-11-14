@@ -2,23 +2,33 @@
  * The home page's sections, their numbers in the chain, and the order the
  * navbar lists them in.
  *
- * R1: about, work, experience, education, achievements, certificates,
- * skills, contact. Education has no navbar entry and no box of its own: it
- * sits under Experience (03), so the boxes run 01, 02, 03, 05, 06, 07, 08 and
- * the headings keep the skipped 04. A state carries the same number in the
- * diagram and in its heading.
+ * R1: about, work, experience, education, achievements, certificates, skills,
+ * contact. This is one sequence: every number on the page (the diagram, the
+ * navbar and each heading) comes from `pageSections` here, so a section can
+ * never be numbered twice. Education has no navbar entry and no box of its
+ * own: it sits under Experience (03), so the boxes run 01, 02, 03, 05, 06, 07,
+ * 08 and the headings keep the skipped 04.
  */
-export const sections = [
-  { id: 'about', label: 'About', num: '01' },
-  { id: 'work', label: 'Work', num: '02' },
-  { id: 'experience', label: 'Experience', num: '03' },
-  { id: 'achievements', label: 'Achievements', num: '05' },
-  { id: 'certificates', label: 'Certificates', num: '06' },
-  { id: 'skills', label: 'Skills', num: '07' },
-  { id: 'contact', label: 'Contact', num: '08' },
+export const pageSections = [
+  { id: 'about', label: 'About', num: '01', inNav: true },
+  { id: 'work', label: 'Work', num: '02', inNav: true },
+  { id: 'experience', label: 'Experience', num: '03', inNav: true },
+  { id: 'education', label: 'Education', num: '04', inNav: false },
+  { id: 'achievements', label: 'Achievements', num: '05', inNav: true },
+  { id: 'certificates', label: 'Certificates', num: '06', inNav: true },
+  { id: 'skills', label: 'Skills', num: '07', inNav: true },
+  { id: 'contact', label: 'Contact', num: '08', inNav: true },
 ] as const;
 
-export type SectionId = (typeof sections)[number]['id'];
+export type SectionId = (typeof pageSections)[number]['id'];
+
+/* The sections the navbar lists and the chain diagram draws. */
+export const sections = pageSections.filter((section) => section.inNav);
+
+/* The number a section's heading carries. */
+export const sectionNumbers = Object.fromEntries(
+  pageSections.map((section) => [section.id, section.num]),
+) as Record<SectionId, string>;
 
 /* Which section a reader is in: the last one whose top has passed the reading
    line, and the final section once the page bottom is reached. The contact

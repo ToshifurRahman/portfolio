@@ -1,13 +1,9 @@
 import { achievements } from '../content';
+import { CvSection } from './CvSection';
 
 export function Achievements() {
   return (
-    <section id="achievements" className="cv-section" aria-labelledby="achievements-title">
-      <div className="cv-section-head">
-        <h2 id="achievements-title" className="cv-title display">
-          <span className="section-num">05</span> Achievements
-        </h2>
-      </div>
+    <CvSection id="achievements" title="Achievements">
       <ul className="cv-achievements">
         {achievements.map((entry) => (
           <li key={entry.text}>
@@ -24,6 +20,6 @@ export function Achievements() {
           </li>
         ))}
       </ul>
-    </section>
+    </CvSection>
   );
 }

@@ -1240,27 +1240,12 @@ a:hover > .action .arrow {
 
 /* cv-content ------------------------------------------------------------- */
 
-.cv-section {
-  padding-block: clamp(2.5rem, 6vw, 5rem);
-  border-bottom: var(--line) solid var(--rule);
-  /* Clears the sticky navbar once it exists; harmless before then. */
-  scroll-margin-top: calc(var(--header-h, 0rem) + 1rem);
-}
-
-.cv-section-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1rem 2rem;
-}
-
-.cv-title {
-  font-size: clamp(2.5rem, 4.8vw, 4.75rem);
-}
-
+/* The four CV sections are states on the page's own chain: they take
+   .state-section and .section-heading from the layout above, so only their
+   inner content is styled here. */
 .cv-download {
-  flex: none;
+  display: inline-block;
+  margin-bottom: clamp(1.5rem, 3vw, 2.5rem);
 }
 
 .cv-roles,
@@ -1460,11 +1445,6 @@ a:hover > .action .arrow {
 }
 
 @media (max-width: 40rem) {
-  .cv-section-head {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
   .cv-dialog {
     max-width: calc(100vw - 1rem);
     max-height: calc(100vh - 1rem);

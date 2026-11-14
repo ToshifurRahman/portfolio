@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { builds, caseStudies, moreProjects, owner, skills } from './content';
 import { Footer } from './Footer';
 import { Arrow } from './NotFound';
-import { sections } from './nav';
+import { sectionNumbers, sections, type SectionId } from './nav';
 import { CvSections } from './sections';
 import { useTitle } from './useTitle';
 
@@ -20,14 +20,14 @@ function Section({
   title,
   children,
 }: {
-  id: string;
+  id: SectionId;
   title: string;
   children: ReactNode;
 }) {
   return (
     <section id={id} className="state-section" aria-labelledby={`${id}-title`}>
       <h2 id={`${id}-title`} className="display section-heading">
-        <span className="state-num">{sections.find((s) => s.id === id)?.num}</span>
+        <span className="state-num">{sectionNumbers[id]}</span>
         <span>{title}</span>
       </h2>
       <div className="state-body">{children}</div>
@@ -98,7 +98,7 @@ export function Home() {
             </div>
             <div>
               <dt>Main stack</dt>
-              <dd>TypeScript, Bun, PostgreSQL, React</dd>
+              <dd>{owner.mainStack}</dd>
             </div>
             <div>
               <dt>Proof</dt>
