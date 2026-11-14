@@ -70,6 +70,10 @@ async function main() {
           Object.entries(THRESHOLDS).map(([key]) => [key, Math.round((lhr.categories[key]?.score ?? 0) * 100)]),
         );
         const lcp = lhr.audits['largest-contentful-paint'].numericValue;
+        /* The simulated LCP is what the score uses; the observed one is what
+           the page actually did. Both print, so a run that swings is visible
+           as the simulation reacting rather than the page getting slower. */
+        const observedLcp = lhr.audits.metrics?.details?.items?.[0]?.observedLargestContentfulPaint ?? 0;
         const cls = lhr.audits['cumulative-layout-shift'].numericValue;
         const tbt = lhr.audits['total-blocking-time'].numericValue;
         const line = [
@@ -78,7 +82,7 @@ async function main() {
           `a11y ${scores.accessibility}`,
           `bp ${scores['best-practices']}`,
           `seo ${scores.seo}`,
-          `LCP ${(lcp / 1000).toFixed(2)}s`,
+          `LCP ${(lcp / 1000).toFixed(2)}s (observed ${Math.round(observedLcp)}ms)`,
           `CLS ${cls.toFixed(3)}`,
           `TBT ${Math.round(tbt)}ms`,
         ].join(' | ');
