@@ -16,9 +16,10 @@ const built = (path: string) => resolve(root, 'dist', path);
 const read = (path: string) => readFileSync(built(path), 'utf8');
 
 const routes = [
-  { file: 'index.html', heading: 'name display' },
-  { file: 'work/ticket-pipeline/index.html', heading: 'display study-title' },
-  { file: 'work/rannaghor/index.html', heading: 'display study-title' },
+  { file: 'index.html', route: '/', heading: 'name display' },
+  { file: 'work/ticket-pipeline/index.html', route: '/work/ticket-pipeline', heading: 'display study-title' },
+  { file: 'work/rannaghor/index.html', route: '/work/rannaghor', heading: 'display study-title' },
+  { file: '404.html', route: '/404', heading: 'No such state' },
 ];
 
 describe('pre-rendered routes', () => {
@@ -31,7 +32,7 @@ describe('pre-rendered routes', () => {
   it('puts the page markup inside #root, not an empty shell', () => {
     for (const route of routes) {
       const html = read(route.file);
-      const start = html.indexOf('<div id="root">');
+      const start = html.indexOf(`<div id="root" data-route="${route.route}">`);
       expect(start, `${route.file} has no #root`).toBeGreaterThan(0);
       /* Everything from #root to the end of the body is the pre-rendered page. */
       const markup = html.slice(start, html.indexOf('</body>'));
@@ -60,9 +61,17 @@ describe('pre-rendered routes', () => {
       const layout = html.match(/<script>([^<]*getBoundingClientRect[^<]*)<\/script>/)?.[1];
       expect(layout, `${route.file} has no early layout script`).toBeTruthy();
       /* A classic inline script, not a module: modules are deferred. */
-      expect(html.indexOf('getBoundingClientRect')).toBeGreaterThan(html.indexOf('<div id="root">'));
+      expect(html.indexOf('getBoundingClientRect')).toBeGreaterThan(html.indexOf('<div id="root"'));
       const tag = html.slice(html.lastIndexOf('<script', html.indexOf('getBoundingClientRect')), html.indexOf('getBoundingClientRect'));
       expect(tag).not.toContain('type="module"');
+    }
+  });
+
+  it('stamps #root with the route it was rendered for', () => {
+    /* The client hydrates only on a match, so a document served for an address
+       it was not rendered for is rendered over instead of hydrated. */
+    for (const route of routes) {
+      expect(read(route.file)).toContain(`data-route="${route.route}"`);
     }
   });
 
@@ -70,5 +79,6 @@ describe('pre-rendered routes', () => {
     const main = readFileSync(resolve(root, 'src/main.tsx'), 'utf8');
     expect(main).toMatch(/hydrateRoot/);
     expect(main).toMatch(/firstElementChild/);
+    expect(main).toMatch(/dataset\.route/);
   });
 });
