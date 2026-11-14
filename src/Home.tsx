@@ -4,6 +4,7 @@ import { builds, caseStudies, moreProjects, owner, skills } from './content';
 import { Footer } from './Footer';
 import { Arrow } from './NotFound';
 import { sections } from './nav';
+import { CvSections } from './sections';
 import { useTitle } from './useTitle';
 
 /* Shown only while developing, so a missing fact is never forgotten. */
@@ -167,7 +168,7 @@ export function Home() {
           </ul>
         </Section>
 
-        {/* CvSections slot */}
+        <CvSections />
 
         <Section id="skills" title="Skills">
           <h3 className="display panel-title">TypeScript, end to end</h3>

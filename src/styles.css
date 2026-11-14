@@ -1237,3 +1237,236 @@ a:hover > .action .arrow {
     scroll-behavior: auto !important;
   }
 }
+
+/* cv-content ------------------------------------------------------------- */
+
+.cv-section {
+  padding-block: clamp(2.5rem, 6vw, 5rem);
+  border-bottom: var(--line) solid var(--rule);
+  /* Clears the sticky navbar once it exists; harmless before then. */
+  scroll-margin-top: calc(var(--header-h, 0rem) + 1rem);
+}
+
+.cv-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem 2rem;
+}
+
+.cv-title {
+  font-size: clamp(2.5rem, 4.8vw, 4.75rem);
+}
+
+.cv-download {
+  flex: none;
+}
+
+.cv-roles,
+.cv-degrees,
+.cv-achievements,
+.cv-certificates {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.cv-roles,
+.cv-degrees {
+  display: grid;
+  gap: 0;
+  margin-top: clamp(1.5rem, 3vw, 2.5rem);
+}
+
+.cv-role,
+.cv-degree {
+  padding: 1.25rem 0 1.5rem;
+  border-top: var(--line) solid var(--ink);
+}
+
+.cv-role + .cv-role,
+.cv-degree + .cv-degree {
+  border-top-color: var(--rule);
+}
+
+.cv-role-title,
+.cv-degree-title {
+  font-size: clamp(1.75rem, 2.6vw, 2.375rem);
+}
+
+.cv-org {
+  margin-top: 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.cv-period {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--muted);
+  font-size: 0.9375rem;
+  font-weight: 400;
+}
+
+.cv-points {
+  list-style: none;
+  max-width: 44em;
+  margin: 1rem 0 0;
+  padding: 0;
+}
+
+.cv-points li {
+  padding: 0.625rem 0 0.625rem 1.75rem;
+  border-top: var(--line) solid var(--rule);
+  position: relative;
+}
+
+.cv-points li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 1.25rem;
+  width: 0.75rem;
+  height: var(--line);
+  background: var(--muted);
+}
+
+.cv-achievements {
+  max-width: 44em;
+  margin-top: clamp(1.5rem, 3vw, 2.5rem);
+}
+
+.cv-achievements > li {
+  padding: 1rem 0;
+  border-top: var(--line) solid var(--rule);
+}
+
+.cv-achievements > li:first-child {
+  border-top-color: var(--ink);
+}
+
+.cv-achievement-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 2rem;
+  margin-top: 0.5rem;
+}
+
+.cv-certificates {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+  gap: var(--gap) 1.5rem;
+  margin-top: clamp(1.5rem, 3vw, 2.5rem);
+}
+
+.cv-card {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-top: var(--line) solid var(--rule);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cv-card:hover {
+  border-top-color: var(--ink);
+}
+
+.cv-card-image {
+  display: block;
+  margin-top: 0.875rem;
+}
+
+.cv-card img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: var(--line) solid var(--rule);
+}
+
+.cv-card:hover img {
+  border-color: var(--ink);
+}
+
+.cv-card-title {
+  display: block;
+  margin-top: 0.75rem;
+  font-size: 1.375rem;
+}
+
+.cv-card-meta {
+  display: block;
+  margin-top: 0.375rem;
+  padding-bottom: 0.875rem;
+  color: var(--muted);
+  font-size: 0.9375rem;
+}
+
+.cv-card-meta .cv-period {
+  font-size: inherit;
+}
+
+.cv-dialog {
+  max-width: min(52rem, calc(100vw - 2rem));
+  max-height: calc(100vh - 2rem);
+  margin: auto;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border: var(--line) solid var(--accent);
+  background: var(--bg);
+  color: var(--ink);
+  overflow: auto;
+}
+
+.cv-dialog::backdrop {
+  background: var(--bg);
+}
+
+.cv-dialog-title {
+  font-size: clamp(1.5rem, 3vw, 2.375rem);
+}
+
+.cv-dialog-meta {
+  margin-top: 0.5rem;
+  color: var(--muted);
+  font-size: 0.9375rem;
+}
+
+.cv-dialog-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 1rem;
+  border: var(--line) solid var(--rule);
+}
+
+.cv-dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: var(--line) solid var(--rule);
+}
+
+.cv-dialog-close {
+  min-height: 2.75rem;
+}
+
+@media (max-width: 40rem) {
+  .cv-section-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .cv-dialog {
+    max-width: calc(100vw - 1rem);
+    max-height: calc(100vh - 1rem);
+  }
+}
