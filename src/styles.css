@@ -109,11 +109,13 @@ button {
   white-space: nowrap;
 }
 
+/* Above the sticky header (z-index 30), or the focused link is painted under
+   it and cannot be seen or clicked. */
 .skip {
   position: absolute;
   left: var(--pad);
   top: 0;
-  z-index: 20;
+  z-index: 40;
   padding: 0.75rem 1rem;
   background: var(--ink);
   color: var(--bg);
@@ -273,6 +275,9 @@ a:hover > .action .arrow {
 }
 
 .brand {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
   font-size: 1.25rem;
   letter-spacing: 0.02em;
   text-decoration: none;
@@ -416,6 +421,74 @@ a:hover > .action .arrow {
 }
 
 @media (max-width: 45rem) {
+  .navbar {
+    gap: 0.25rem 0.5rem;
+    padding-block: 0.375rem;
+  }
+
+  .brand {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 1rem;
+  }
+
+  .nav-tools {
+    order: 2;
+    gap: 0.375rem;
+    margin-left: 0;
+  }
+
+  .theme-option {
+    padding: 0 0.4375rem;
+    font-size: 0.75rem;
+  }
+
+  .cv-link {
+    padding: 0 0.125rem;
+    font-size: 0.75rem;
+  }
+}
+
+/* Between the menu breakpoint and a wide screen the seven labels, the brand
+   and the tools do not fit at full size: the bar wrapped to two or three rows
+   from 992 to 1180 px. Tighter type and gaps keep it one row there. */
+@media (min-width: 62rem) and (max-width: 80rem) {
+  .navbar {
+    gap: 0.25rem 1rem;
+  }
+
+  .brand {
+    font-size: 1.0625rem;
+  }
+
+  .nav-links {
+    gap: 0 0.625rem;
+  }
+
+  .nav-links a {
+    font-size: 0.75rem;
+    letter-spacing: 0.02em;
+  }
+
+  .nav-tools {
+    gap: 0.5rem;
+  }
+
+  .theme-option {
+    padding: 0 0.4375rem;
+    font-size: 0.75rem;
+  }
+
+  .cv-link {
+    padding: 0 0.125rem;
+    font-size: 0.75rem;
+  }
+}
+
+/* The menu collapses at the same 62rem the rest of the page switches at: the
+   seven R1 labels need the full width inline, and between 45rem and 62rem they
+   wrapped the bar into two or three rows. */
+@media (max-width: 61.99rem) {
   .menu-button {
     display: inline-flex;
     align-items: center;
@@ -440,28 +513,6 @@ a:hover > .action .arrow {
   .nav-links a {
     min-height: 2.75rem;
     color: var(--ink);
-  }
-
-  .navbar {
-    gap: 0.25rem 0.5rem;
-    padding-block: 0.375rem;
-  }
-
-  .brand {
-    flex: 1 1 auto;
-    min-width: 0;
-    font-size: 1rem;
-  }
-
-  .nav-tools {
-    order: 2;
-    gap: 0.375rem;
-    margin-left: 0;
-  }
-
-  .theme-option {
-    padding: 0 0.4375rem;
-    font-size: 0.75rem;
   }
 }
 
@@ -517,7 +568,9 @@ a:hover > .action .arrow {
 .chain-states {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: minmax(0, 1fr);
+  /* Boxes are as wide as their longest label, then share the rest: a label
+     never spills over its border, and a row that cannot fit scrolls. */
+  grid-auto-columns: minmax(min-content, 1fr);
   gap: 0 1.75rem;
   /* Below 62rem the row stops fitting seven boxes: it scrolls as one chain,
      the same affordance the case-study step bar uses. */
@@ -931,6 +984,9 @@ a:hover > .action .arrow {
   align-items: start;
   padding-block: clamp(2.5rem, 6vw, 5rem);
   border-bottom: var(--line) solid var(--rule);
+  /* A step link has to clear the sticky bar and the sticky progress chain
+     under it, not only the bar. */
+  scroll-margin-top: calc(var(--header-h) + 4.5rem);
 }
 
 .section-title {
@@ -1146,6 +1202,27 @@ a:hover > .action .arrow {
 
   .progress li::before {
     flex: 0 0 1rem;
+  }
+}
+
+/* Every ruled row on the home page is a two- or three-column grid on a wide
+   screen. Below 62rem each collapses to one column: the fixed tracks (12rem,
+   16rem) and the 11rem action column otherwise push the row past the viewport
+   and squeeze the description to one word a line. */
+@media (max-width: 61.99rem) {
+  .rows li,
+  .skills > div,
+  .more li,
+  .contact li {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rows .action {
+    justify-self: start;
+  }
+
+  .cases {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
