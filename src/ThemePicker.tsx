@@ -2,7 +2,11 @@ import { useState } from 'react';
 
 export type Theme = 'dark' | 'light';
 
-const read = (): Theme => (document.documentElement.dataset.theme === 'light' ? 'light' : 'dark');
+/* Pre-rendering runs this without a document; there the choice is unknown and
+   the server markup says dark, which is also what the pre-paint script leaves
+   the page on when nothing is stored. */
+const read = (): Theme =>
+  typeof document === 'undefined' || document.documentElement.dataset.theme !== 'light' ? 'dark' : 'light';
 
 function apply(theme: Theme) {
   document.documentElement.dataset.theme = theme;

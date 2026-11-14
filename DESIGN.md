@@ -201,6 +201,7 @@ A two-tone ground and ink with one hot accent; neutrals are slightly cool on the
 
 **Display Font:** Archivo Variable at width 62% (with Archivo, system-ui, sans-serif)
 **Body Font:** Archivo Variable at normal width (same stack)
+**Fallback:** `'Archivo Fallback'` sits between the two and the system stack. It is not a second typeface: it maps `local()` Liberation Sans (size-adjust 111%) and Liberation Sans Narrow at width 62% (size-adjust 87%) onto Archivo's metrics, with Archivo's own ascent 88% / descent 21% overrides. The web face is `font-display: optional` so the first paint never waits for it; the fallback makes a cold visit that misses the face lay out identically instead of clipping the name. Nothing extra is downloaded for it.
 
 **Character:** One family pushed to two extremes. The condensed 900 uppercase is loud and mechanical, like stencilled labelling on equipment; the regular width is plain and quiet so long case-study text reads without effort.
 

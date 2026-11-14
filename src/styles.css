@@ -5,7 +5,7 @@
    on a cold one the fallback shows and CLS stays 0 because the layout does not
    reflow. @fontsource's own CSS is not imported for this reason. */
 @font-face {
-  font-family: 'Archivo Variable';
+  font-family: 'Archivo Variable'; /* ds-allow-hardcode: @font-face names a face, it cannot take a token */
   font-style: normal;
   font-display: optional;
   font-weight: 100 900;
@@ -13,6 +13,35 @@
   src: url('@fontsource-variable/archivo/files/archivo-latin-wdth-normal.woff2') format('woff2-variations');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
     U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* The fallback the page actually paints on a cold visit, matched to Archivo's
+   metrics so the layout is the same whether the face arrives or not. Two
+   faces, because one size-adjust cannot match both widths the site uses:
+   Archivo at 100% stretch is ~11% wider than Liberation Sans, and at the 62%
+   the display type asks for it is ~13% narrower than Liberation Sans Narrow.
+   The vertical overrides are Archivo's own (ascent 0.88, descent 0.21), so a
+   line box is the same height in either face. Measured, not guessed:
+   scratch/metrics.mjs in the integrator's worktree. */
+@font-face {
+  font-family: 'Archivo Fallback'; /* ds-allow-hardcode: @font-face names a face, it cannot take a token */
+  src: local('Liberation Sans'), local('Arial'), local('Helvetica');
+  size-adjust: 111%;
+  ascent-override: 88%;
+  descent-override: 21%;
+  line-gap-override: 0%;
+  font-weight: 100 900;
+}
+
+@font-face {
+  font-family: 'Archivo Fallback'; /* ds-allow-hardcode: @font-face names a face, it cannot take a token */
+  src: local('Liberation Sans Narrow'), local('Arial Narrow'), local('Nimbus Sans Narrow');
+  size-adjust: 87%;
+  ascent-override: 88%;
+  descent-override: 21%;
+  line-gap-override: 0%;
+  font-stretch: 62%;
+  font-weight: 100 900;
 }
 
 /* Tokens ---------------------------------------------------------------- */
@@ -34,7 +63,10 @@
   --nudge: 4px;
   --dur-fast: 0.2s;
   --dur: 0.24s;
-  --font: 'Archivo Variable', 'Archivo', system-ui, sans-serif;
+  /* 'Archivo Fallback' sits between the real face and the system stack: it is
+     the metric-matched local face above, so a cold visit that misses the
+     90 kB woff2 paints in a local face whose widths and line box match. */
+  --font: 'Archivo Variable', 'Archivo', 'Archivo Fallback', system-ui, sans-serif;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
 
   color-scheme: dark;
@@ -261,8 +293,11 @@ a:hover > .action .arrow {
 .name {
   font-size: 12.8vw;
   word-spacing: 0.08em;
-  white-space: nowrap;
+  /* No nowrap: the fallback face is metric-matched, but a wider local face on
+     a machine without Liberation must still wrap instead of clipping the name.
+     At the shipped widths it never needs to - the line fits in both faces. */
   margin-left: -0.03em;
+  text-wrap: balance;
 }
 
 @media (min-width: 100rem) {
