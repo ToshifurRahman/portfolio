@@ -3,18 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
-
-const matchMedia = (matches: boolean) =>
-  vi.fn().mockImplementation((query: string) => ({
-    matches,
-    media: query,
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    addListener: vi.fn(),
-    removeListener: vi.fn(),
-    onchange: null,
-    dispatchEvent: vi.fn(),
-  }));
+import { sections } from '../../src/nav';
 
 beforeEach(() => {
   localStorage.clear();
@@ -27,7 +16,6 @@ afterEach(() => {
 
 describe('phone menu', () => {
   it('opens the list, closes it on Escape and returns focus to the button', async () => {
-    vi.stubGlobal('matchMedia', matchMedia(true));
     const user = userEvent.setup();
     render(
       <MemoryRouter initialEntries={['/']}>
@@ -36,17 +24,21 @@ describe('phone menu', () => {
     );
     const nav = screen.getByRole('navigation', { name: 'Primary' });
     const button = within(nav).getByRole('button', { name: /menu/i });
+    const list = document.getElementById('primary-menu')!;
     expect(button).toHaveAttribute('aria-expanded', 'false');
+    expect(list).toHaveAttribute('data-open', 'false');
     await user.click(button);
     expect(button).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByRole('link', { name: 'Skills' })).toBeVisible();
+    /* jsdom applies no stylesheet, so the open state is the attribute the CSS
+       keys off, not visibility. */
+    expect(list).toHaveAttribute('data-open', 'true');
     await user.keyboard('{Escape}');
     expect(button).toHaveAttribute('aria-expanded', 'false');
+    expect(list).toHaveAttribute('data-open', 'false');
     expect(button).toHaveFocus();
   });
 
   it('closes the list when a link is chosen', async () => {
-    vi.stubGlobal('matchMedia', matchMedia(true));
     const user = userEvent.setup();
     render(
       <MemoryRouter initialEntries={['/']}>
@@ -62,52 +54,51 @@ describe('phone menu', () => {
 });
 
 describe('current section', () => {
-  function stubIntersection() {
-    const callbacks: IntersectionObserverCallback[] = [];
-    class FakeObserver {
-      constructor(cb: IntersectionObserverCallback) {
-        callbacks.push(cb);
-      }
-      observe = vi.fn();
-      unobserve = vi.fn();
-      disconnect = vi.fn();
-      takeRecords = () => [];
-      root = null;
-      rootMargin = '';
-      thresholds = [];
+  /* The bar reads scroll position, so the test moves sections by giving each
+     one a top offset and letting the scroll listener run. Sections not named
+     sit below the fold; the CV sections do not exist on this branch yet. */
+  function scrollTo(tops: { id: string; top: number }[]) {
+    for (const { id } of sections) {
+      const element = document.getElementById(id);
+      if (!element) continue;
+      const top = tops.find((t) => t.id === id)?.top ?? 2000;
+      element.getBoundingClientRect = () => ({ top }) as DOMRect;
     }
-    vi.stubGlobal('IntersectionObserver', FakeObserver);
-    return (entries: { id: string; top: number }[]) =>
-      act(() =>
-        callbacks.forEach((cb) =>
-          cb(
-            entries.map((entry) => ({
-              isIntersecting: true,
-              target: Object.assign(document.getElementById(entry.id)!, {
-                getBoundingClientRect: () => ({ top: entry.top }),
-              }),
-            })) as unknown as IntersectionObserverEntry[],
-            {} as IntersectionObserver,
-          ),
-        ),
-      );
+    act(() => {
+      window.dispatchEvent(new Event('scroll'));
+    });
   }
 
   it('marks the section in view with aria-current', () => {
-    const fire = stubIntersection();
     render(
       <MemoryRouter initialEntries={['/']}>
         <App />
       </MemoryRouter>,
     );
     const nav = screen.getByRole('navigation', { name: 'Primary' });
-    fire([{ id: 'skills', top: 40 }]);
+    scrollTo([{ id: 'skills', top: 10 }]);
     expect(within(nav).getByRole('link', { name: 'Skills' })).toHaveAttribute('aria-current', 'true');
     expect(within(nav).getByRole('link', { name: 'Skills' })).toHaveClass('is-current');
   });
 
+  it('marks Contact current at the bottom of the page', () => {
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <App />
+      </MemoryRouter>,
+    );
+    const nav = screen.getByRole('navigation', { name: 'Primary' });
+    const scrolled = document.documentElement.scrollHeight;
+    Object.defineProperty(document.documentElement, 'scrollHeight', { value: 1000, configurable: true });
+    Object.defineProperty(window, 'innerHeight', { value: 1000, configurable: true });
+    act(() => {
+      window.dispatchEvent(new Event('scroll'));
+    });
+    expect(within(nav).getByRole('link', { name: 'Contact' })).toHaveAttribute('aria-current', 'true');
+    Object.defineProperty(document.documentElement, 'scrollHeight', { value: scrolled, configurable: true });
+  });
+
   it('keeps no home link current on another page', () => {
-    stubIntersection();
     render(
       <MemoryRouter initialEntries={['/work/ticket-pipeline']}>
         <App />

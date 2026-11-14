@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { App } from '../../src/App';
+import { owner } from '../../src/content';
 
 beforeEach(() => {
   localStorage.clear();
@@ -42,13 +43,21 @@ describe('navbar', () => {
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('No such state');
   });
 
-  it('hides the CV link while the owner has no CV file', () => {
+  it('shows the CV link exactly when the owner has a CV file', () => {
     render(
       <MemoryRouter initialEntries={['/']}>
         <App />
       </MemoryRouter>,
     );
-    expect(screen.queryByRole('link', { name: /CV/i })).not.toBeInTheDocument();
+    /* cv-content fills owner.cv in; the expectation follows the content rather
+       than assuming the field is still empty. */
+    const link = screen.queryByRole('link', { name: /CV/i });
+    if (owner.cv) {
+      expect(link).toHaveAttribute('href', owner.cv);
+      expect(link).toHaveAttribute('download');
+    } else {
+      expect(link).not.toBeInTheDocument();
+    }
   });
 });
 

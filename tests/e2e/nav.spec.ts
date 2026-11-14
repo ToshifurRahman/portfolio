@@ -24,8 +24,44 @@ test.describe('navbar', () => {
   test('marks the section in view as current', async ({ page }) => {
     await page.goto('/');
     const nav = page.getByRole('navigation', { name: 'Primary' });
-    await page.locator('#skills').scrollIntoViewIfNeeded();
+    /* Scroll the section to just under the bar, the way a reader arrives at it. */
+    await page.evaluate(() => {
+      const header = document.querySelector('.site-header')!.getBoundingClientRect().height;
+      scrollTo(0, document.getElementById('skills')!.offsetTop - header - 8);
+    });
     await expect(nav.getByRole('link', { name: 'Skills' })).toHaveAttribute('aria-current', 'true');
+  });
+
+  test('marks Contact current at the bottom of the page', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto('/');
+    const nav = page.getByRole('navigation', { name: 'Primary' });
+    await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
+    await expect(nav.getByRole('link', { name: 'Contact' })).toHaveAttribute('aria-current', 'true');
+  });
+
+  test('marks Contact current when its link is followed', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto('/');
+    const nav = page.getByRole('navigation', { name: 'Primary' });
+    await nav.getByRole('link', { name: 'Contact' }).click();
+    await expect(nav.getByRole('link', { name: 'Contact' })).toHaveAttribute('aria-current', 'true');
+    await expect(nav.getByRole('link', { name: 'Skills' })).not.toHaveAttribute('aria-current', 'true');
+  });
+
+  test('a second click on the same section link scrolls back to it', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/');
+    const nav = page.getByRole('navigation', { name: 'Primary' });
+    await nav.getByRole('button', { name: /menu/i }).click();
+    await nav.getByRole('link', { name: 'Contact' }).click();
+    await expect(page).toHaveURL(/#contact$/);
+    await page.evaluate(() => scrollTo(0, 0));
+    await nav.getByRole('button', { name: /menu/i }).click();
+    await nav.getByRole('link', { name: 'Contact' }).click();
+    await expect
+      .poll(() => page.evaluate(() => Math.round(scrollY)))
+      .toBeGreaterThan(0);
   });
 
   test('a hash link never hides the heading under the bar', async ({ page }) => {

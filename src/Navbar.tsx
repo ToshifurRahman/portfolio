@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { owner } from './content';
-import { sections } from './nav';
+import { currentSectionAt, sections } from './nav';
 import { ThemePicker } from './ThemePicker';
 
 export function Navbar() {
-  const { pathname } = useLocation();
+  const { pathname, hash } = useLocation();
   const home = pathname === '/';
   const [current, setCurrent] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
@@ -28,33 +28,53 @@ export function Navbar() {
     return () => observer.disconnect();
   }, []);
 
-  /* A route change closes the phone menu. */
-  useEffect(() => setOpen(false), [pathname]);
+  /* A route change or a new hash closes the phone menu. */
+  useEffect(() => setOpen(false), [pathname, hash]);
 
-  /* Mark the home section in view; other pages keep no section current. */
+  /* Mark the home section in view; other pages keep no section current. Read
+     from scroll position rather than the observer's slice: Contact is taller
+     than the viewport, so it never crossed a middle band and never went
+     current, and the page bottom is the honest signal for the last one. */
   useEffect(() => {
-    if (!home || typeof IntersectionObserver === 'undefined') {
+    if (!home) {
       setCurrent(null);
       return;
     }
-    const visible = new Set<string>();
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          const id = (entry.target as HTMLElement).id;
-          if (entry.isIntersecting) visible.add(id);
-          else visible.delete(id);
-        }
-        setCurrent(sections.find((s) => visible.has(s.id))?.id ?? null);
-      },
-      { rootMargin: '-20% 0px -70% 0px' },
-    );
-    for (const section of sections) {
-      const element = document.getElementById(section.id);
-      if (element) observer.observe(element);
-    }
-    return () => observer.disconnect();
+    const elements = sections.flatMap((s) => {
+      const element = document.getElementById(s.id);
+      return element ? [{ id: s.id as string, element }] : [];
+    });
+    const update = () => {
+      /* A section is current once its top has passed a reading line a quarter
+         of the way down the screen, and never before the bar has cleared. */
+      const line = Math.max(88, (header.current?.getBoundingClientRect().height ?? 0) + 24, innerHeight * 0.25);
+      const scrollable = document.documentElement.scrollHeight - innerHeight;
+      const atBottom = scrollable > 0 && innerHeight + scrollY >= document.documentElement.scrollHeight - 4;
+      setCurrent(
+        currentSectionAt(
+          elements.map((s) => ({ id: s.id, top: s.element.getBoundingClientRect().top })),
+          line,
+          atBottom,
+        ),
+      );
+    };
+    update();
+    addEventListener('scroll', update, { passive: true });
+    addEventListener('resize', update);
+    return () => {
+      removeEventListener('scroll', update);
+      removeEventListener('resize', update);
+    };
   }, [home, pathname]);
+
+  /* A second click on the section already in the address bar asks for the same
+     jump again, which the browser will not repeat on its own. */
+  const onSectionClick = (id: string) => {
+    setOpen(false);
+    if (!home || hash !== `#${id}`) return;
+    document.getElementById(id)?.scrollIntoView();
+    setCurrent(id);
+  };
 
   const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     if (event.key !== 'Escape' || !open) return;
@@ -85,7 +105,7 @@ export function Navbar() {
                 to={`/#${section.id}`}
                 aria-current={home && current === section.id ? 'true' : undefined}
                 className={home && current === section.id ? 'is-current' : undefined}
-                onClick={() => setOpen(false)}
+                onClick={() => onSectionClick(section.id)}
               >
                 {section.label}
               </Link>

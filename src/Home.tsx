@@ -6,8 +6,6 @@ import { Arrow } from './NotFound';
 import { sections } from './nav';
 import { useTitle } from './useTitle';
 
-const num = (i: number) => String(i + 1).padStart(2, '0');
-
 /* Shown only while developing, so a missing fact is never forgotten. */
 function Missing({ what }: { what: string }) {
   if (!import.meta.env.DEV) return null;
@@ -18,19 +16,17 @@ function Missing({ what }: { what: string }) {
    the case-study pages draw, numbered 01 to 08. Nothing is hidden. */
 function Section({
   id,
-  index,
   title,
   children,
 }: {
   id: string;
-  index: number;
   title: string;
   children: ReactNode;
 }) {
   return (
     <section id={id} className="state-section" aria-labelledby={`${id}-title`}>
       <h2 id={`${id}-title`} className="display section-heading">
-        <span className="state-num">{num(index)}</span>
+        <span className="state-num">{sections.find((s) => s.id === id)?.num}</span>
         <span>{title}</span>
       </h2>
       <div className="state-body">{children}</div>
@@ -76,23 +72,24 @@ export function Home() {
           {/* Narrow widths scroll this strip, so it takes a tab stop of its own
               and a name: a scrollable region must be reachable by keyboard. */}
           <ol className="chain-states" tabIndex={0} aria-label="The seven sections, in page order">
-            {sections.map((s, i) => (
+            {sections.map((s) => (
               <li key={s.id} className="chain-state">
-                <span className="state-num">{num(i)}</span>
+                {/* The same number the section heading below carries: Education
+                    is 04 but has no box, so the strip runs 03 to 05. */}
+                <span className="state-num">{s.num}</span>
                 <span className="display">{s.label}</span>
               </li>
             ))}
           </ol>
           <figcaption>
-            The page as one chain: seven states, top to bottom. Experience holds Education under it.
+            The page as one chain: seven states, top to bottom. Experience holds Education (04) under it.
           </figcaption>
         </figure>
 
-        <Section id="about" index={0} title="About">
+        <Section id="about" title="About">
           <h3 className="display panel-title">{owner.role}</h3>
           {headline && <p className="headline">{headline}</p>}
           {summary && <p className="summary">{summary}</p>}
-          <p className="lede">{owner.statement}</p>
           <dl className="facts-row">
             <div>
               <dt>Focus</dt>
@@ -125,7 +122,7 @@ export function Home() {
           {!owner.availability && <Missing what="availability" />}
         </Section>
 
-        <Section id="work" index={1} title="Work">
+        <Section id="work" title="Work">
           <h3 className="display panel-title">Systems that recover</h3>
           <ul className="rows">
             {builds.map((b) => (
@@ -172,7 +169,7 @@ export function Home() {
 
         {/* CvSections slot */}
 
-        <Section id="skills" index={6} title="Skills">
+        <Section id="skills" title="Skills">
           <h3 className="display panel-title">TypeScript, end to end</h3>
           <dl className="skills">
             {skills.map((g) => (
@@ -190,7 +187,7 @@ export function Home() {
           </dl>
         </Section>
 
-        <Section id="contact" index={7} title="Contact">
+        <Section id="contact" title="Contact">
           <Contact />
         </Section>
       </main>
@@ -204,8 +201,9 @@ function Contact() {
     owner.email && { label: 'Email', value: owner.email, href: `mailto:${owner.email}` },
     { label: 'GitHub', value: owner.github.replace('https://', ''), href: owner.github },
     owner.linkedin && { label: 'LinkedIn', value: owner.linkedin.replace('https://', ''), href: owner.linkedin },
-    owner.cv && { label: 'CV', value: 'Download PDF', href: owner.cv },
-  ].filter(Boolean) as { label: string; value: string; href: string }[];
+    /* The CV is a file, not a page: it downloads instead of opening in the tab. */
+    owner.cv && { label: 'CV', value: 'Download PDF', href: owner.cv, download: true },
+  ].filter(Boolean) as { label: string; value: string; href: string; download?: boolean }[];
   return (
     <>
       <h3 className="display panel-title">{owner.email ? 'Get in touch' : 'Read the code'}</h3>
@@ -214,7 +212,7 @@ function Contact() {
         {links.map((l) => (
           <li key={l.label}>
             <span className="contact-label">{l.label}</span>
-            <a className="display contact-link" href={l.href}>
+            <a className="display contact-link" href={l.href} download={l.download || undefined}>
               {l.value}
             </a>
           </li>
