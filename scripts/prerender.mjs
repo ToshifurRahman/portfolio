@@ -17,19 +17,11 @@
  * address it was not rendered for (a 404, say) is rendered over instead, so
  * React never hydrates markup it did not produce.
  */
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { build } from 'vite';
-
 /* The 404 document is written for no particular address; its `data-route` is
    the sentinel the client and the preview server both know. */
 const NOT_FOUND = '/404';
-
-const ROUTES = [
-  { path: '/', file: 'dist/index.html' },
-  { path: '/work/ticket-pipeline', file: 'dist/work/ticket-pipeline/index.html' },
-  { path: '/work/rannaghor', file: 'dist/work/rannaghor/index.html' },
-  { path: NOT_FOUND, file: 'dist/404.html' },
-];
 
 await build({
   logLevel: 'error',
@@ -42,6 +34,49 @@ await build({
 });
 
 const { render } = await import('../dist-server/entry-server.js');
+/* The route metadata comes from the same source the page renders from. */
+const { caseStudies, owner } = await import('../dist-server/entry-server.js');
+
+/* Every document keeps the template's head unless it is given its own, which
+   would ship the home page's title and description on both case studies. The
+   title matches what useTitle sets once the page is live, so the tab does not
+   change text when the app hydrates. */
+const head = (title, description) => ({
+  title: title ? `${title} · ${owner.name}` : `${owner.name}, ${owner.role}`,
+  description,
+});
+
+const ROUTES = [
+  { path: '/', file: 'dist/index.html', head: null },
+  ...caseStudies.map((study) => ({
+    path: `/work/${study.slug}`,
+    file: `dist/work/${study.slug}/index.html`,
+    head: head(`${study.title} case study`, study.summary),
+  })),
+  { path: NOT_FOUND, file: 'dist/404.html', head: head('Page not found', 'This address does not match any page on the site.') },
+];
+
+/* Replace the template's title and description; everything else in the head
+   (the preload, the theme script, the share card) stays as it is. */
+const escape = (text) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+function applyHead(html, own) {
+  if (!own) return html;
+  return html
+    .replace(/<title>[\s\S]*?<\/title>/, `<title>${escape(own.title)}</title>`)
+    .replace(
+      /<meta\s+name="description"[\s\S]*?\/>/,
+      `<meta name="description" content="${escape(own.description)}" />`,
+    )
+    .replace(
+      /<meta\s+property="og:description"[\s\S]*?\/>/,
+      `<meta property="og:description" content="${escape(own.description)}" />`,
+    )
+    .replace(
+      /<meta\s+name="twitter:description"[\s\S]*?\/>/,
+      `<meta name="twitter:description" content="${escape(own.description)}" />`,
+    );
+}
+
 const template = await readFile('dist/index.html', 'utf8');
 
 if (!template.includes('<div id="root"></div>')) {
@@ -51,11 +86,14 @@ if (!template.includes('<div id="root"></div>')) {
 for (const route of ROUTES) {
   const markup = render(route.path);
   if (!markup) throw new Error(`route ${route.path} rendered nothing`);
-  const html = template.replace(
-    '<div id="root"></div>',
-    `<div id="root" data-route="${route.path}">${markup}</div>`,
+  const html = applyHead(
+    template.replace('<div id="root"></div>', `<div id="root" data-route="${route.path}">${markup}</div>`),
+    route.head,
   );
   await mkdir(route.file.slice(0, route.file.lastIndexOf('/')), { recursive: true });
   await writeFile(route.file, html);
   console.log(`prerendered ${route.path} -> ${route.file} (${markup.length} bytes of markup)`);
 }
+
+/* dist-server is a build intermediate, not an artifact to ship. */
+await rm('dist-server', { recursive: true, force: true });

@@ -15,6 +15,14 @@ const root = process.cwd();
 const built = (path: string) => resolve(root, 'dist', path);
 const read = (path: string) => readFileSync(built(path), 'utf8');
 
+/* These read the built output, so they only mean something after a build.
+   `bun run test` on its own must still pass, so the whole file skips with a
+   named reason instead of failing on ENOENT - the same guard nav-meta uses. */
+const hasBuild = existsSync(built('index.html'));
+const whenBuilt = hasBuild ? describe : describe.skip;
+/* Named so a skipped run says why, not just "skipped". */
+const why = 'dist/index.html is missing: run `bun run build` before the unit suite';
+
 const routes = [
   { file: 'index.html', route: '/', heading: 'name display' },
   { file: 'work/ticket-pipeline/index.html', route: '/work/ticket-pipeline', heading: 'display study-title' },
@@ -22,7 +30,7 @@ const routes = [
   { file: '404.html', route: '/404', heading: 'No such state' },
 ];
 
-describe('pre-rendered routes', () => {
+whenBuilt(`pre-rendered routes (${hasBuild ? 'built output' : why})`, () => {
   it('writes a document for every route', () => {
     for (const route of routes) {
       expect(existsSync(built(route.file)), `${route.file} was not written`).toBe(true);
@@ -73,6 +81,36 @@ describe('pre-rendered routes', () => {
     for (const route of routes) {
       expect(read(route.file)).toContain(`data-route="${route.route}"`);
     }
+  });
+
+  it('gives every document its own title and description', () => {
+    /* Every document starts from the same template, so without this all four
+       ship the home page's title and description. The title matches what
+       useTitle sets once the app is live, so the tab does not change text. */
+    const titles = routes.map((route) => {
+      const html = read(route.file);
+      return html.match(/<title>([^<]*)<\/title>/)?.[1] ?? '';
+    });
+    expect(new Set(titles).size, `titles are not distinct: ${titles.join(' | ')}`).toBe(routes.length);
+    expect(titles[0]).toBe('Toshifur Rahman, Software Engineer');
+    expect(titles[1]).toBe('Ticket-Pipeline case study · Toshifur Rahman');
+    expect(titles[2]).toBe('RannaGhor case study · Toshifur Rahman');
+    expect(titles[3]).toBe('Page not found · Toshifur Rahman');
+
+    /* The description follows the title, in all three places it is written. */
+    const study = read('work/ticket-pipeline/index.html');
+    const description = study.match(/<meta\s+name="description"\s+content="([^"]*)"/)?.[1] ?? '';
+    expect(description).toMatch(/support-ticket pipeline/i);
+    expect(study).toContain(`<meta property="og:description" content="${description}"`);
+    expect(study).toContain(`<meta name="twitter:description" content="${description}"`);
+    /* And the home page keeps its own. */
+    expect(read('index.html')).toMatch(/<meta\s+name="description"\s+content="Toshifur Rahman, software engineer/);
+  });
+
+  it('leaves no server bundle behind', () => {
+    /* dist-server is a build intermediate; shipping it would put a second copy
+       of the app, react-dom/server included, next to the real one. */
+    expect(existsSync(resolve(root, 'dist-server'))).toBe(false);
   });
 
   it('hydrates the pre-rendered markup instead of replacing it', () => {

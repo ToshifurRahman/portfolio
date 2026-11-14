@@ -1,5 +1,6 @@
 import { renderToString } from 'react-dom/server';
 import { StaticRouter } from 'react-router';
+import { caseStudies, owner } from './content';
 import { App } from './App';
 
 /*
@@ -13,3 +14,8 @@ export function render(url: string) {
     </StaticRouter>,
   );
 }
+
+/* The route metadata the pre-render needs for each document's head. Exported
+   from here rather than importing content.js separately: the server build is a
+   single bundle, so content.ts has no file of its own to import. */
+export { caseStudies, owner };

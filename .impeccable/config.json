@@ -8,6 +8,18 @@
         "value": "archivo fallback",
         "createdAt": "2026-11-14T05:52:09.557Z",
         "reason": "review-final-2-rv-ds P1 fix: not a brand face, a metrics shim (size-adjust/ascent-override) so the layout survives when the optional web font misses first paint; no extra download."
+      },
+      {
+        "rule": "design-system-font",
+        "value": "archivo fallback narrow",
+        "createdAt": "2026-11-14T07:07:35.779Z",
+        "reason": "review-final-3-rv-ds P1 fix: metric shim for the display width on machines with no narrow face, not a brand face; no download."
+      },
+      {
+        "rule": "design-system-font",
+        "value": "archivo fallback wide",
+        "createdAt": "2026-11-14T07:07:35.791Z",
+        "reason": "review-final-3-rv-ds P1 fix: same shim built from the wide local face at size-adjust 72%, not a brand face; no download."
       }
     ]
   }
