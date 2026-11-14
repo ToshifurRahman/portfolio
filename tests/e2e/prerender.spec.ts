@@ -50,6 +50,28 @@ test.describe('unknown path', () => {
   });
 });
 
+test.describe('unknown case study', () => {
+  test('keeps the not-found title in the tab', async ({ page }) => {
+    /* CaseStudyPage called useTitle(undefined) before returning <NotFound />,
+       and the parent effect ran after the child's, so the tab reset to the
+       home title while the page said "No such state". */
+    const problems = collect(page);
+    await page.goto('/work/unknown-slug');
+    await expect(notFound(page)).toBeVisible();
+    await expect(page).toHaveTitle('Page not found · Toshifur Rahman');
+    await page.waitForTimeout(400);
+    await expect(page).toHaveTitle('Page not found · Toshifur Rahman');
+    expect(problems).toEqual([]);
+  });
+
+  test('keeps it after hydration too', async ({ page }) => {
+    await page.goto('/work/unknown-slug');
+    await page.waitForFunction(() => document.readyState === 'complete');
+    await page.waitForTimeout(500);
+    await expect(page).toHaveTitle('Page not found · Toshifur Rahman');
+  });
+});
+
 test.describe('unknown path without JavaScript', () => {
   test.use({ javaScriptEnabled: false });
 

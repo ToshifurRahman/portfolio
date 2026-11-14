@@ -107,6 +107,25 @@ whenBuilt(`pre-rendered routes (${hasBuild ? 'built output' : why})`, () => {
     expect(read('index.html')).toMatch(/<meta\s+name="description"\s+content="Toshifur Rahman, software engineer/);
   });
 
+  it('gives every document its own share-card title too', () => {
+    /* og:title and twitter:title stayed the home page's on both studies and
+       the 404, so a shared link to a case study previewed as the home page. */
+    const share = (file: string) => {
+      const html = read(file);
+      const og = html.match(/<meta\s+property="og:title"\s+content="([^"]*)"/)?.[1] ?? '';
+      const twitter = html.match(/<meta\s+name="twitter:title"\s+content="([^"]*)"/)?.[1] ?? '';
+      const title = html.match(/<title>([^<]*)<\/title>/)?.[1] ?? '';
+      return { og, twitter, title };
+    };
+    for (const route of routes) {
+      const { og, twitter, title } = share(route.file);
+      expect(og, `${route.file} og:title`).toBe(title);
+      expect(twitter, `${route.file} twitter:title`).toBe(title);
+    }
+    expect(share('work/ticket-pipeline/index.html').og).toMatch(/Ticket-Pipeline/);
+    expect(share('404.html').og).toMatch(/Page not found/);
+  });
+
   it('leaves no server bundle behind', () => {
     /* dist-server is a build intermediate; shipping it would put a second copy
        of the app, react-dom/server included, next to the real one. */
