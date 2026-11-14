@@ -209,7 +209,8 @@ describe('case-study facts checked against the repositories', () => {
     /* Six URLs are crawlable: lighthouserc.cjs skips /confirm and /ops for SEO,
        and the whole gate runs through `bun run lighthouse`, never in CI. */
     expect(text).toContain('six crawlable pages');
-    expect(text).toContain('run with `bun run lighthouse`');
+    expect(text).toContain('run with bun run lighthouse');
+    expect(text).not.toContain('`');
     expect(text).not.toContain('required in CI on every crawlable page');
   });
 

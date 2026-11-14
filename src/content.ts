@@ -506,7 +506,7 @@ const ticketPipeline: CaseStudy = {
             { value: '266', label: 'commits since April 2026' },
             {
               value: '0.9',
-              label: 'Lighthouse gate in all four categories on six crawlable pages, run with `bun run lighthouse`',
+              label: 'Lighthouse gate in all four categories on six crawlable pages, run with bun run lighthouse',
             },
             { value: '10', label: 'Redis commands per ticket, and none while idle' },
           ],
