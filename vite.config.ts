@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 
@@ -90,13 +90,20 @@ function prerenderedRoutes(): Plugin {
         const url = req.url ?? '/';
         const path = url.split('?')[0];
         const rest = url.slice(path.length);
-        if (path === '/' || /\.[a-z0-9]+$/i.test(path)) return next();
+        if (path === '/') return next();
+        /* A real file in dist is served as itself, whatever its name. It has
+           to be a file: a route is a directory, and treating that as a file
+           sent /work/ticket-pipeline to the SPA fallback (the home page). */
+        if (statSync(`dist${path}`, { throwIfNoEntry: false })?.isFile()) return next();
         const route = path.replace(/\/$/, '');
         const own = `dist${route}/index.html`;
         if (existsSync(own)) {
           req.url = `${route}/index.html${rest}`;
           return next();
         }
+        /* Everything else is a missing page, including a dotted path that is
+           not a file: /nope.html and /missing.png used to answer 200 with the
+           home document, which is the whole home page with JavaScript off. */
         const notFound = 'dist/404.html';
         if (!existsSync(notFound)) return next();
         /* Answered here rather than by rewriting and calling next(): the static
@@ -110,4 +117,10 @@ function prerenderedRoutes(): Plugin {
   };
 }
 
-export default defineConfig({ plugins: [react(), preloadFont(), inlineCss(), prerenderedRoutes()] });
+export default defineConfig({
+  /* The footer's year is fixed at build time so the pre-rendered document and
+     the client bundle always agree, even when the site is served into a new
+     year. Both builds (client and SSR) get the same number. */
+  define: { __BUILD_YEAR__: JSON.stringify(String(new Date().getFullYear())) },
+  plugins: [react(), preloadFont(), inlineCss(), prerenderedRoutes()],
+});
