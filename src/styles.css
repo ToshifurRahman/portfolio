@@ -34,9 +34,30 @@
 }
 
 @font-face {
-  font-family: 'Archivo Fallback'; /* ds-allow-hardcode: @font-face names a face, it cannot take a token */
+  font-family: 'Archivo Fallback Narrow'; /* ds-allow-hardcode: @font-face names a face, it cannot take a token */
   src: local('Liberation Sans Narrow'), local('Arial Narrow'), local('Nimbus Sans Narrow');
   size-adjust: 87%;
+  ascent-override: 88%;
+  descent-override: 21%;
+  line-gap-override: 0%;
+  font-stretch: 62%;
+  font-weight: 100 900;
+}
+
+/* macOS and iOS ship no narrow face, and Windows only has one with Office, so
+   the face above is often unavailable. This one is the same 62% width built
+   from the ordinary wide face: Liberation Sans has no width axis, so
+   `font-stretch` alone leaves it at full width (measured: 974 px for the name
+   where Archivo at 62% is 699), and size-adjust 72% is what brings it back
+   (0.72 x 974 = 701). It is a separate family, listed after 'Archivo
+   Fallback' in --font, because two faces of one family with the same stretch
+   and weight would shadow each other: the browser would use whichever came
+   last and the narrow face would never paint. As its own family it is only
+   reached when the narrow face has no local source. */
+@font-face {
+  font-family: 'Archivo Fallback Wide'; /* ds-allow-hardcode: @font-face names a face, it cannot take a token */
+  src: local('Liberation Sans'), local('Arial'), local('Helvetica');
+  size-adjust: 72%;
   ascent-override: 88%;
   descent-override: 21%;
   line-gap-override: 0%;
@@ -67,6 +88,10 @@
      the metric-matched local face above, so a cold visit that misses the
      90 kB woff2 paints in a local face whose widths and line box match. */
   --font: 'Archivo Variable', 'Archivo', 'Archivo Fallback', system-ui, sans-serif;
+  /* Display type asks for 62% width, so it needs the narrow face, then the
+     wide face shrunk to that width, then the body face as a last resort. */
+  --font-display: 'Archivo Variable', 'Archivo', 'Archivo Fallback Narrow', 'Archivo Fallback Wide',
+    'Archivo Fallback', system-ui, sans-serif;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
 
   color-scheme: dark;
@@ -179,6 +204,7 @@ button {
 /* Shared type ------------------------------------------------------------ */
 
 .display {
+  font-family: var(--font-display);
   font-stretch: 62%;
   font-weight: 900;
   text-transform: uppercase;
@@ -481,7 +507,10 @@ a:hover > .action .arrow {
 
 @media (max-width: 45rem) {
   .navbar {
-    gap: 0.25rem 0.5rem;
+    /* 6 px between the brand, the menu button and the tools: the display
+       fallback is a hair wider than the narrow face, and at 8 px the tools
+       dropped to a second row on a machine with no narrow face. */
+    gap: 0.25rem 0.375rem;
     padding-block: 0.375rem;
   }
 
@@ -1094,6 +1123,7 @@ a:hover > .action .arrow {
   top: 0.75rem;
   font-size: 1.75rem;
   font-weight: 900;
+  font-family: var(--font-display);
   font-stretch: 62%;
   line-height: 1.2;
   color: var(--ink);
