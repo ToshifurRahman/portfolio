@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "test": "vitest run --maxWorkers=1 --no-file-parallelism",
     "e2e": "playwright test --workers=1",
-    "lighthouse": "node scripts/lighthouse.mjs"
+    "lighthouse": "node scripts/lighthouse.mjs",
+    "og": "node scripts/og.mjs"
   },
   "dependencies": {
     "@fontsource-variable/archivo": "^5.3.0",
