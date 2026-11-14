@@ -46,7 +46,7 @@ export function Certificates() {
                   src={certificate.preview}
                   width={certificate.width}
                   height={certificate.height}
-                  alt={certificate.alt}
+                  alt=""
                   loading="lazy"
                   decoding="async"
                 />

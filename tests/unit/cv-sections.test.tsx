@@ -75,20 +75,36 @@ describe('CvSections', () => {
     expect(text.indexOf('Codeforces')).toBeLessThan(text.indexOf('1st Runner-up'));
   });
 
-  it('renders one card per certificate with a lazy preview image', () => {
+  it('renders one card per certificate whose text names it, with a decorative preview', () => {
     renderSections();
     const section = document.getElementById('certificates') as HTMLElement;
 
-    for (const cert of certificates) {
-      const image = within(section).getByAltText(cert.alt) as HTMLImageElement;
+    const images = section.querySelectorAll('img');
+    expect(images).toHaveLength(certificates.length);
+
+    for (const [i, cert] of certificates.entries()) {
+      const image = images[i] as HTMLImageElement;
       expect(image.getAttribute('src')).toBe(cert.preview);
       expect(image.getAttribute('loading')).toBe('lazy');
       expect(image.getAttribute('decoding')).toBe('async');
       expect(image.getAttribute('width')).toBe(String(cert.width));
       expect(image.getAttribute('height')).toBe(String(cert.height));
+      /* The card's own text names the certificate, so the image is decorative. */
+      expect(image.getAttribute('alt')).toBe('');
     }
 
-    expect(within(section).getAllByRole('button')).toHaveLength(certificates.length);
+    const buttons = within(section).getAllByRole('button');
+    expect(buttons).toHaveLength(certificates.length);
+    for (const [i, cert] of certificates.entries()) {
+      const name = buttons[i].textContent ?? '';
+      expect(name).toContain(cert.title);
+      expect(name).toContain(cert.issuer);
+    }
+
+    /* Nothing announces a certificate twice. */
+    for (const cert of certificates) {
+      expect(within(section).queryAllByAltText(cert.alt)).toHaveLength(0);
+    }
   });
 
   it('opens a certificate in a modal dialog labelled by its title, then closes it', async () => {
@@ -108,10 +124,32 @@ describe('CvSections', () => {
 
     expect(within(dialog).getByRole('link', { name: /open original/i }).getAttribute('href')).toBe(cert.file);
 
+    /* The dialog's text names the certificate, so its image is decorative. */
+    const dialogImage = dialog.querySelector('img') as HTMLImageElement;
+    expect(dialogImage.getAttribute('alt')).toBe('');
+
     await user.click(within(dialog).getByRole('button', { name: /close/i }));
 
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(document.activeElement).toBe(card);
+  });
+
+  it('opens every original in a new tab with noopener, image files included', async () => {
+    const user = userEvent.setup();
+    renderSections();
+    const section = document.getElementById('certificates') as HTMLElement;
+
+    for (const cert of certificates) {
+      const card = within(section).getByRole('button', { name: new RegExp(cert.title) });
+      await user.click(card);
+
+      const dialog = screen.getByRole('dialog');
+      const original = within(dialog).getByRole('link', { name: /open original/i });
+      expect(original.getAttribute('target'), cert.file).toBe('_blank');
+      expect(original.getAttribute('rel'), cert.file).toBe('noopener');
+
+      await user.click(within(dialog).getByRole('button', { name: /close/i }));
+    }
   });
 
   it('returns focus to the card when Escape closes the dialog', async () => {

@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -46,29 +48,52 @@ describe('owner', () => {
 });
 
 describe('no phone number in the site source', () => {
-  const phoneDigits = ['REDACTED', 'REDACTED', 'REDACTED', 'REDACTED'];
+  /* Ten or more digits, optionally starting with + and optionally grouped by
+     single spaces or dashes. The guard describes the shape, never the number. */
+  const phoneShaped = /(?<!\d)(?:\+\d{1,3}[ -]?)?(?:\d[ -]?){9,14}\d(?!\d)/;
 
-  it('keeps the number out of src/ and public/ (the CV PDF aside)', () => {
-    const files = [...walk(join(root, 'src')), ...walk(join(root, 'public'))].filter(
-      (file) => statSync(file).isFile() && !/\.(pdf|png|webp|woff2?|ico)$/i.test(file),
+  const noPhone = (text: string, where: string) => {
+    const match = text.match(phoneShaped);
+    expect(match?.[0], `${where} contains a phone-shaped string`).toBeUndefined();
+  };
+
+  it('catches phone-shaped strings, so the guard is not vacuous', () => {
+    expect(phoneShaped.test('1234567890')).toBe(true);
+    expect(phoneShaped.test('+1 555 123 4567')).toBe(true);
+    expect(phoneShaped.test('call 555-123-4567 now')).toBe(true);
+    expect(phoneShaped.test('Toshifur Rahman')).toBe(false);
+    expect(phoneShaped.test('Aug 2026 – Present')).toBe(false);
+    expect(phoneShaped.test('Chattogram, Bangladesh')).toBe(false);
+  });
+
+  it('keeps phone-shaped text out of content.ts', () => {
+    noPhone(readFileSync(join(root, 'src', 'content.ts'), 'utf8'), 'src/content.ts');
+  });
+
+  it('keeps it out of every text file the site ships', () => {
+    const files = [...walk(join(root, 'src')), ...walk(join(root, 'public')), join(root, 'index.html')].filter(
+      (file) => existsSync(file) && !/\.(pdf|png|webp|woff2?|ico)$/i.test(file),
     );
 
     expect(files.length).toBeGreaterThan(0);
-    for (const file of files) {
-      const text = readFileSync(file, 'utf8');
-      for (const digits of phoneDigits) {
-        expect(text.includes(digits), `${file} contains the phone number`).toBe(false);
-      }
+    for (const file of files) noPhone(readFileSync(file, 'utf8'), file);
+  });
+
+  it('keeps it out of the certificates, whose PDFs are scanned as text', () => {
+    const pdfs = walk(join(root, 'public', 'certificates')).filter((file) => file.endsWith('.pdf'));
+    expect(pdfs.length).toBeGreaterThan(0);
+
+    for (const file of pdfs) {
+      const text = execFileSync('pdftotext', ['-layout', file, '-'], { encoding: 'utf8' });
+      noPhone(text, file);
     }
   });
 
-  it('keeps the number out of index.html when it is present', () => {
-    const file = join(root, 'index.html');
-    if (!existsSync(file)) return;
-    const text = readFileSync(file, 'utf8');
-    for (const digits of phoneDigits) {
-      expect(text.includes(digits), 'index.html contains the phone number').toBe(false);
-    }
+  it('allows it only inside the CV PDF, where the owner put it', () => {
+    const cv = join(root, 'public', 'cv', 'Toshifur-Rahman-CV.pdf');
+    const text = execFileSync('pdftotext', ['-layout', cv, '-'], { encoding: 'utf8' });
+    /* The CV is the one place the number lives; this pins the exception. */
+    expect(phoneShaped.test(text)).toBe(true);
   });
 });
 
@@ -192,9 +217,10 @@ describe('certificates', () => {
     expect(certificates.find((c) => c.slug === 'botany-olympiad')?.date).toBe('2018');
   });
 
-  it('keeps the CV download byte-identical on disk', () => {
+  it('serves the CV byte for byte, checked against a committed checksum', () => {
     const cv = join(root, 'public', 'cv', 'Toshifur-Rahman-CV.pdf');
-    expect(statSync(cv).size).toBeGreaterThan(0);
+    const digest = createHash('sha256').update(readFileSync(cv)).digest('hex');
+    expect(digest).toBe('8b77620f0d84dcd03b27d89d52fa6a60c8736f4eaee0c1460067a7002acbb799');
   });
 });
 
@@ -245,9 +271,7 @@ describe('owner headline and summary', () => {
 
   it('still has no phone number and no invented availability', () => {
     expect(owner.availability).toBe('');
-    for (const digits of ['REDACTED', 'REDACTED', 'REDACTED']) {
-      expect(JSON.stringify(owner)).not.toContain(digits);
-    }
+    expect(JSON.stringify(owner)).not.toMatch(/(?<!\d)(?:\+\d{1,3}[ -]?)?(?:\d[ -]?){9,14}\d(?!\d)/);
   });
 });
 
