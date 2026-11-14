@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 
@@ -75,21 +75,36 @@ function inlineCss(): Plugin {
 /*
  * Serve the pre-rendered documents. `vite preview` answers an extensionless
  * path with the SPA fallback (dist/index.html), so /work/ticket-pipeline would
- * get the home page's markup. This rewrites such a request to the route's own
- * index.html when the build wrote one, and leaves everything else alone.
+ * get the home page's markup and an unknown path would get it too. This
+ * rewrites a request to the route's own pre-rendered document when the build
+ * wrote one, and otherwise to dist/404.html with a 404 status, which is what a
+ * host that serves the folder would do. Anything after the path (a hash is not
+ * sent; a query is) is kept.
  */
 function prerenderedRoutes(): Plugin {
   return {
     name: 'prerendered-routes',
     apply: 'serve',
     configurePreviewServer(server) {
-      server.middlewares.use((req, _res, next) => {
+      server.middlewares.use((req, res, next) => {
         const url = req.url ?? '/';
         const path = url.split('?')[0];
+        const rest = url.slice(path.length);
         if (path === '/' || /\.[a-z0-9]+$/i.test(path)) return next();
-        const file = `dist${path.replace(/\/$/, '')}/index.html`;
-        if (existsSync(file)) req.url = `${path.replace(/\/$/, '')}/index.html${url.slice(path.length)}`;
-        next();
+        const route = path.replace(/\/$/, '');
+        const own = `dist${route}/index.html`;
+        if (existsSync(own)) {
+          req.url = `${route}/index.html${rest}`;
+          return next();
+        }
+        const notFound = 'dist/404.html';
+        if (!existsSync(notFound)) return next();
+        /* Answered here rather than by rewriting and calling next(): the static
+           middleware that follows sets its own 200, so the status would be
+           lost. A real host serves this file with a 404, so preview does too. */
+        res.statusCode = 404;
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.end(readFileSync(notFound));
       });
     },
   };

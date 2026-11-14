@@ -13,8 +13,15 @@ const app = (
   </StrictMode>
 );
 
-/* The build pre-renders every route, so the first paint shows the real page
-   rather than an empty shell. Hydrating reuses that markup: without SSR
-   (plain `vite dev`, or a route the build did not pre-render) it renders. */
-if (root.firstElementChild) hydrateRoot(root, app);
+/* The build pre-renders every route and stamps #root with the route it was
+   rendered for. Hydrate only when that is the address being shown: a document
+   served for an address it was not rendered for (a route added after the
+   build) is rendered over instead, so React never hydrates markup it did not
+   produce. The 404 document is rendered for any unknown address, so it always
+   matches. Without a stamp (plain `vite dev`) it renders. */
+const rendered = root.dataset.route;
+const here = location.pathname.replace(/\/$/, '') || '/';
+const matches = rendered === here || rendered === '/404';
+
+if (root.firstElementChild && matches) hydrateRoot(root, app);
 else createRoot(root).render(app);
