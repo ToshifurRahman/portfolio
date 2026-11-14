@@ -57,23 +57,29 @@ const ROUTES = [
 ];
 
 /* Replace the template's title and description; everything else in the head
-   (the preload, the theme script, the share card) stays as it is. */
+   (the preload, the theme script) stays as it is. Both title tags are
+   replaced: og:title and twitter:title stayed the home page's, so a shared
+   link to a case study previewed as the home page. */
 const escape = (text) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
 function applyHead(html, own) {
   if (!own) return html;
+  const title = escape(own.title);
+  const description = escape(own.description);
   return html
-    .replace(/<title>[\s\S]*?<\/title>/, `<title>${escape(own.title)}</title>`)
+    .replace(/<title>[\s\S]*?<\/title>/, `<title>${title}</title>`)
     .replace(
       /<meta\s+name="description"[\s\S]*?\/>/,
-      `<meta name="description" content="${escape(own.description)}" />`,
+      `<meta name="description" content="${description}" />`,
     )
+    .replace(/<meta\s+property="og:title"[\s\S]*?\/>/, `<meta property="og:title" content="${title}" />`)
     .replace(
       /<meta\s+property="og:description"[\s\S]*?\/>/,
-      `<meta property="og:description" content="${escape(own.description)}" />`,
+      `<meta property="og:description" content="${description}" />`,
     )
+    .replace(/<meta\s+name="twitter:title"[\s\S]*?\/>/, `<meta name="twitter:title" content="${title}" />`)
     .replace(
       /<meta\s+name="twitter:description"[\s\S]*?\/>/,
-      `<meta name="twitter:description" content="${escape(own.description)}" />`,
+      `<meta name="twitter:description" content="${description}" />`,
     );
 }
 

@@ -11,7 +11,10 @@ export function CaseStudyPage() {
   const { slug } = useParams();
   const index = caseStudies.findIndex((c) => c.slug === slug);
   const study = caseStudies[index];
-  useTitle(study ? `${study.title} case study` : undefined);
+  /* No study means <NotFound /> renders below, and it sets its own title. The
+     parent's effect runs after the child's, so passing undefined here would
+     reset the tab to the home title while the page says "No such state". */
+  useTitle(study ? `${study.title} case study` : null);
   const { hash, pathname } = useLocation();
   const [current, setCurrent] = useState(0);
   const nav = useRef<HTMLOListElement>(null);

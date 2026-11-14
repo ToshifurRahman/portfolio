@@ -1,1 +1,22 @@
-/* /index.html 200
+# Host rules for a static host that reads this file (Netlify and friends).
+# The last matching rule wins, so the specific routes come before the catch-all.
+#
+# Every route is pre-rendered, so each one is served its own document rather
+# than the home page's. An unknown path gets the 404 document with a real 404
+# status: `/* /index.html 200` used to send every unknown path to the home page
+# with a 200, which is a soft 404 and hides the page from a crawler.
+
+/  /index.html  200
+/work/ticket-pipeline  /work/ticket-pipeline/index.html  200
+/work/rannaghor  /work/rannaghor/index.html  200
+
+# Assets are files, not routes: serve them as themselves.
+/assets/*  /assets/:splat  200
+/cv/*  /cv/:splat  200
+/certificates/*  /certificates/:splat  200
+/favicon.svg  /favicon.svg  200
+/og.png  /og.png  200
+/robots.txt  /robots.txt  200
+
+# Anything else is a missing page.
+/*  /404.html  404
