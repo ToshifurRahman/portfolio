@@ -11,6 +11,7 @@
   --pad: clamp(1rem, 4.4vw, 4rem);
   --gap: clamp(1.5rem, 3.9vw, 3.5rem);
   --box: 7.5rem;
+  --header-h: 3.75rem;
   --line: 2px;
   --line-thick: 3px;
   --nudge: 4px;
@@ -42,7 +43,7 @@
 
 html {
   background: var(--bg);
-  scroll-padding-top: 5rem;
+  scroll-padding-top: calc(var(--header-h) + 1rem);
   scrollbar-color: var(--muted) var(--bg);
   -webkit-text-size-adjust: 100%;
 }
@@ -108,11 +109,13 @@ button {
   white-space: nowrap;
 }
 
+/* Above the sticky header (z-index 30), or the focused link is painted under
+   it and cannot be seen or clicked. */
 .skip {
   position: absolute;
   left: var(--pad);
   top: 0;
-  z-index: 20;
+  z-index: 40;
   padding: 0.75rem 1rem;
   background: var(--ink);
   color: var(--bg);
@@ -251,186 +254,440 @@ a:hover > .action .arrow {
   }
 }
 
-/* Home: the chain -------------------------------------------------------- */
+/* Header and navbar ------------------------------------------------------- */
 
-.chain {
-  position: relative;
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  column-gap: var(--gap);
-  margin-top: clamp(1.5rem, 2.8vw, 2.75rem);
-  padding-inline: 3rem;
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  border-bottom: var(--line) solid var(--rule);
+  background: var(--bg);
 }
 
-/* start dot and end ring */
-.chain::before,
-.chain::after {
-  content: '';
-  position: absolute;
-  top: calc(var(--box) / 2);
-  transform: translateY(-50%);
-  border-radius: 50%;
+.navbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem var(--gap);
+  max-width: 100rem;
+  margin-inline: auto;
+  padding: 0.5rem var(--pad);
 }
 
-.chain::before {
-  left: 0;
-  width: 1.125rem;
-  height: 1.125rem;
-  background: var(--ink);
+.brand {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  font-size: 1.25rem;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  white-space: nowrap;
 }
 
-.chain::after {
-  right: 0;
-  width: 1.5rem;
-  height: 1.5rem;
+.brand:hover {
+  color: var(--accent);
+}
+
+.nav-links {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 1.25rem;
+}
+
+.nav-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0 0.125rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--muted);
+}
+
+.nav-links a:hover {
+  color: var(--ink);
+}
+
+.nav-links a[aria-current='true'],
+.nav-links a.is-current {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-thickness: var(--line);
+  text-underline-offset: 0.35em;
+  text-decoration-color: var(--accent);
+}
+
+.nav-tools {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: auto;
+}
+
+.cv-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0 0.25rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: underline;
+  text-decoration-thickness: var(--line);
+  text-underline-offset: 0.35em;
+  color: var(--accent);
+}
+
+.cv-link:hover {
+  color: var(--ink);
+}
+
+.menu-button {
+  display: none;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0 0.75rem;
   border: var(--line) solid var(--ink);
-  background: radial-gradient(circle, var(--ink) 0 0.3rem, transparent 0.36rem);
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
 }
 
-.state {
-  display: contents;
+.menu-button:hover,
+.menu-button[aria-expanded='true'] {
+  background: var(--ink);
+  color: var(--bg);
 }
 
-.state-head {
+/* theme picker: two radio-style buttons in one outlined group */
+.theme-picker {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  border: var(--line) solid var(--rule);
+}
+
+.theme-option {
   position: relative;
-  grid-row: 1;
-  grid-column: var(--col);
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0 0.625rem;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
 }
 
-/* the arrow that leads into each state */
-.state-head::before,
-.state-head::after {
+.theme-option + .theme-option {
+  border-left: var(--line) solid var(--rule);
+}
+
+.theme-option:hover {
+  color: var(--ink);
+}
+
+.theme-option[data-selected='true'] {
+  background: var(--ink);
+  color: var(--bg);
+}
+
+/* the radio itself is the control; its label carries the look */
+.theme-option input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.theme-option:focus-within {
+  outline: var(--line) solid var(--ink);
+  outline-offset: var(--line-thick);
+}
+
+@media (max-width: 45rem) {
+  .navbar {
+    gap: 0.25rem 0.5rem;
+    padding-block: 0.375rem;
+  }
+
+  .brand {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 1rem;
+  }
+
+  .nav-tools {
+    order: 2;
+    gap: 0.375rem;
+    margin-left: 0;
+  }
+
+  .theme-option {
+    padding: 0 0.4375rem;
+    font-size: 0.75rem;
+  }
+
+  .cv-link {
+    padding: 0 0.125rem;
+    font-size: 0.75rem;
+  }
+}
+
+/* Between the menu breakpoint and a wide screen the seven labels, the brand
+   and the tools do not fit at full size: the bar wrapped to two or three rows
+   from 992 to 1180 px. Tighter type and gaps keep it one row there. */
+@media (min-width: 62rem) and (max-width: 80rem) {
+  .navbar {
+    gap: 0.25rem 1rem;
+  }
+
+  .brand {
+    font-size: 1.0625rem;
+  }
+
+  .nav-links {
+    gap: 0 0.625rem;
+  }
+
+  .nav-links a {
+    font-size: 0.75rem;
+    letter-spacing: 0.02em;
+  }
+
+  .nav-tools {
+    gap: 0.5rem;
+  }
+
+  .theme-option {
+    padding: 0 0.4375rem;
+    font-size: 0.75rem;
+  }
+
+  .cv-link {
+    padding: 0 0.125rem;
+    font-size: 0.75rem;
+  }
+}
+
+/* The menu collapses at the same 62rem the rest of the page switches at: the
+   seven R1 labels need the full width inline, and between 45rem and 62rem they
+   wrapped the bar into two or three rows. */
+@media (max-width: 61.99rem) {
+  .menu-button {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .nav-links {
+    display: none;
+    order: 3;
+    flex-basis: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding-top: 0.25rem;
+    border-top: var(--line) solid var(--rule);
+    margin-top: 0.25rem;
+  }
+
+  .nav-links[data-open='true'] {
+    display: flex;
+  }
+
+  .nav-links a {
+    min-height: 2.75rem;
+    color: var(--ink);
+  }
+}
+
+/* Home: mast, chain diagram and sections --------------------------------- */
+
+.mast {
+  padding-top: clamp(1rem, 3vw, 2.5rem);
+}
+
+.mast-role {
+  margin-top: 0.75rem;
+  color: var(--muted);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.mast .lede {
+  margin-top: 1rem;
+}
+
+/* The plain-language identity line and summary cv-content adds; they replace
+   nothing, they sit above the engineer-to-engineer statement. */
+.mast-summary {
+  max-width: 34em;
+  margin-top: 0.75rem;
+  color: var(--muted);
+  font-size: clamp(1rem, 1.4vw, 1.1875rem);
+  line-height: 1.45;
+}
+
+.headline {
+  margin-top: 0.875rem;
+  font-size: clamp(1.0625rem, 1.6vw, 1.375rem);
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.summary {
+  max-width: 40em;
+  margin-top: 0.5rem;
+  color: var(--muted);
+}
+
+/* the seven sections, drawn once as a diagram instead of as controls */
+.chain-diagram {
+  margin-top: clamp(1.25rem, 4vw, 3.5rem);
+  padding-bottom: 0.75rem;
+  border-bottom: var(--line) solid var(--rule);
+}
+
+.chain-states {
+  display: grid;
+  grid-auto-flow: column;
+  /* Boxes are as wide as their longest label, then share the rest: a label
+     never spills over its border, and a row that cannot fit scrolls. */
+  grid-auto-columns: minmax(min-content, 1fr);
+  gap: 0 1.75rem;
+  /* Below 62rem the row stops fitting seven boxes: it scrolls as one chain,
+     the same affordance the case-study step bar uses. */
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--muted) transparent;
+  padding-bottom: 0.375rem;
+}
+
+.chain-state {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-height: 5.5rem;
+  padding: 0.625rem 0.75rem;
+  border: var(--line) solid var(--ink);
+  font-size: clamp(0.9375rem, 2vw, 1.5rem);
+}
+
+.chain-state .state-num {
+  color: var(--muted);
+}
+
+.chain-state + .chain-state::before,
+.chain-state + .chain-state::after {
   content: '';
   position: absolute;
-  top: calc(var(--box) / 2);
+  top: 50%;
   right: 100%;
-  pointer-events: none;
 }
 
-.state-head::before {
-  width: var(--gap);
+.chain-state + .chain-state::before {
+  width: 1.75rem;
   height: var(--line);
-  margin-top: -1px;
+  margin: -1px var(--line) 0 0;
   background: var(--ink);
 }
 
-.state:first-of-type .state-head::before {
-  width: calc(3rem - 1.125rem);
-}
-
-.state-head::after {
-  width: 0.625rem;
-  height: 0.625rem;
-  margin: -0.3125rem 1px 0 0;
+.chain-state + .chain-state::after {
+  width: 0.5rem;
+  height: 0.5rem;
+  margin: -0.25rem calc(var(--line) + 1px) 0 0;
   border-top: var(--line) solid var(--ink);
   border-right: var(--line) solid var(--ink);
   transform: rotate(45deg);
 }
 
-/* the last state also leads out to the end ring */
-.state:last-of-type .state-button::after {
-  content: '';
-  position: absolute;
-  left: 100%;
-  top: calc(var(--box) / 2 - var(--line) - 1px);
-  width: calc(3rem - 1.5rem);
-  height: var(--line);
-  background: var(--ink);
+.chain-diagram figcaption {
+  margin-top: 0.875rem;
+  color: var(--muted);
+  font-size: 0.9375rem;
+  line-height: 1.45;
 }
 
-.state-button {
-  position: relative;
+.state-section {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: 1.5rem var(--gap);
+  align-items: start;
+  padding-block: clamp(2.5rem, 6vw, 5rem);
+  border-bottom: var(--line) solid var(--rule);
+  scroll-margin-top: calc(var(--header-h) + 1rem);
+}
+
+.section-heading {
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  width: 100%;
-  height: var(--box);
-  padding: 0.75rem 1rem 0.875rem;
-  border: var(--line) solid var(--ink);
-  background: var(--bg);
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: clamp(2.5rem, 4.8vw, 4.75rem);
+}
+
+.section-heading .state-num {
+  color: var(--muted);
+}
+
+.state-body {
+  min-width: 0;
+}
+
+.state-body .panel-title {
+  font-size: clamp(1.75rem, 3.4vw, 3rem);
+}
+
+.state-body .subhead-title {
+  margin-top: clamp(2rem, 4vw, 3rem);
+}
+
+.state-section:target .state-num {
   color: var(--ink);
-  text-align: left;
-  cursor: pointer;
 }
 
-.state-label {
-  font-size: clamp(1.375rem, 2.6vw, 2.875rem);
-}
-
-.state-button .state-num {
-  font-size: 1.125rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: var(--ink);
-}
-
-.state-button:hover {
-  background: var(--ink);
-  color: var(--bg);
-}
-
-.state-button:hover .state-num {
-  color: inherit;
-}
-
-.state-button[aria-expanded='true'] {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: var(--on-accent);
-}
-
-.state-button[aria-expanded='true'] .state-num {
-  color: inherit;
-}
-
-.panel {
-  position: relative;
-  grid-row: 2;
-  grid-column: 1 / -1;
-  margin-top: 3rem;
-  padding: clamp(1.75rem, 3.2vw, 3rem) clamp(1.25rem, 3.2vw, 3rem) clamp(1rem, 2vw, 1.5rem);
-  border: var(--line) solid var(--accent);
-  animation: panel-in var(--dur) var(--ease);
-}
-
-/* the transition from the selected state down into its panel */
-.panel::before {
-  content: '';
-  position: absolute;
-  bottom: 100%;
-  left: calc((100% - 4 * var(--gap)) / 5 * (var(--col) - 0.5) + var(--gap) * (var(--col) - 1) - 1px);
-  width: var(--line);
-  height: 3rem;
-  background: var(--accent);
-}
-
-@keyframes panel-in {
-  from {
-    clip-path: inset(0 0 100% 0);
+@media (max-width: 61.99rem) {
+  /* The chain stays one horizontal strip and scrolls, so it costs a single
+     row of height and the first section still starts above the fold. */
+  .chain-states {
+    grid-auto-columns: 8.5rem;
+    gap: 0 1.25rem;
   }
-  to {
-    clip-path: inset(-4rem 0 0 0);
+
+  .chain-state {
+    min-height: 4.25rem;
+    padding: 0.5rem 0.625rem;
+    font-size: 0.9375rem;
+  }
+
+  .chain-state + .chain-state::before {
+    width: 1.25rem;
+  }
+
+  .state-section {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
-.panel-title {
-  margin-bottom: clamp(1rem, 1.8vw, 1.5rem);
-  font-size: clamp(2.75rem, 6.6vw, 6rem);
-}
-
-.transitions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 0 2rem;
-  margin-top: clamp(1.75rem, 3vw, 2.75rem);
-  padding-top: 0.5rem;
-  border-top: var(--line) solid var(--rule);
-}
-
-.transitions .next {
-  margin-left: auto;
-}
+/* Section content -------------------------------------------------------- */
 
 /* 01 Who */
 .facts-row {
@@ -569,113 +826,6 @@ a:hover > .action .arrow {
   color: var(--accent);
 }
 
-/* Home: narrow screens. The chain turns vertical and each panel opens
-   directly under its own state. */
-
-@media (max-width: 61.99rem) {
-  :root {
-    --box: 3.25rem;
-  }
-
-  .name {
-    font-size: 24.5vw;
-    white-space: normal;
-  }
-
-  .name span {
-    display: block;
-  }
-
-  /* all five states stay visible above the panel */
-  .chain {
-    grid-template-columns: minmax(0, 1fr);
-    row-gap: 1.25rem;
-    padding: 2.25rem 0 0;
-  }
-
-  .chain::before,
-  .chain::after {
-    left: 1.5rem;
-    right: auto;
-    transform: translateX(-50%);
-  }
-
-  .chain::before {
-    top: 0;
-  }
-
-  .chain::after {
-    top: calc(2.25rem + 5 * var(--box) + 4 * 1.25rem + 1rem);
-  }
-
-  .state-head {
-    grid-row: var(--col);
-    grid-column: 1;
-  }
-
-  .state-head::before,
-  .state:first-of-type .state-head::before {
-    top: auto;
-    right: auto;
-    bottom: 100%;
-    left: 1.5rem;
-    width: var(--line);
-    height: 1.25rem;
-    margin: 0 0 0 -1px;
-  }
-
-  .state-head::after {
-    top: -0.75rem;
-    right: auto;
-    left: 1.5rem;
-    margin: 0 0 0 -0.3125rem;
-    transform: rotate(135deg);
-  }
-
-  .state:last-of-type .state-button::after {
-    left: calc(1.5rem - var(--line) - 1px);
-    top: 100%;
-    width: var(--line);
-    height: 1rem;
-  }
-
-  .state-button {
-    flex-direction: row;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 1rem;
-    padding: 0 1.125rem;
-  }
-
-  .state-label {
-    font-size: 1.875rem;
-  }
-
-  .panel {
-    grid-row: 6;
-    margin-top: 3.5rem;
-  }
-
-  .panel::before {
-    display: none;
-  }
-
-  .rows li,
-  .skills > div,
-  .more li,
-  .contact li {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .rows .action {
-    justify-self: start;
-  }
-
-  .cases {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
 /* Case study -------------------------------------------------------------- */
 
 .back {
@@ -712,7 +862,7 @@ a:hover > .action .arrow {
 
 .progress {
   position: sticky;
-  top: 0;
+  top: var(--header-h);
   z-index: 10;
   margin: clamp(1.5rem, 3vw, 2.5rem) calc(-1 * var(--pad)) 0;
   padding: 0.625rem var(--pad);
@@ -724,7 +874,10 @@ a:hover > .action .arrow {
   display: flex;
   align-items: center;
   overflow-x: auto;
-  scrollbar-width: none;
+  /* A visible track on narrow widths, where the chain really does scroll;
+     above 62rem the steps fit, so it adds nothing. */
+  scrollbar-width: thin;
+  scrollbar-color: var(--muted) transparent;
 }
 
 /* start dot and end ring, as on the home chain */
@@ -808,6 +961,22 @@ a:hover > .action .arrow {
   color: var(--on-accent);
 }
 
+/* Above 62rem the whole chain has to fit without scrolling: nine labelled
+   steps plus both terminals at 1280 px. Tighter padding and tracking buy the
+   ~60 px that used to cut the last step. */
+@media (min-width: 62rem) {
+  .progress a {
+    padding: 0.4375rem 0.25rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.015em;
+  }
+
+  .progress li::before {
+    flex-basis: 0.5rem;
+    min-width: 0.5rem;
+  }
+}
+
 .section {
   display: grid;
   grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
@@ -815,11 +984,14 @@ a:hover > .action .arrow {
   align-items: start;
   padding-block: clamp(2.5rem, 6vw, 5rem);
   border-bottom: var(--line) solid var(--rule);
+  /* A step link has to clear the sticky bar and the sticky progress chain
+     under it, not only the bar. */
+  scroll-margin-top: calc(var(--header-h) + 4.5rem);
 }
 
 .section-title {
   position: sticky;
-  top: 5rem;
+  top: calc(var(--header-h) + 4.5rem);
   font-size: clamp(2.5rem, 4.8vw, 4.75rem);
 }
 
@@ -1030,6 +1202,27 @@ a:hover > .action .arrow {
 
   .progress li::before {
     flex: 0 0 1rem;
+  }
+}
+
+/* Every ruled row on the home page is a two- or three-column grid on a wide
+   screen. Below 62rem each collapses to one column: the fixed tracks (12rem,
+   16rem) and the 11rem action column otherwise push the row past the viewport
+   and squeeze the description to one word a line. */
+@media (max-width: 61.99rem) {
+  .rows li,
+  .skills > div,
+  .more li,
+  .contact li {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rows .action {
+    justify-self: start;
+  }
+
+  .cases {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

@@ -56,7 +56,7 @@ export function CaseStudyPage() {
     <>
       <main id="main" className="page study">
         <p className="back">
-          <Link className="textbutton" to="/#projects">
+          <Link className="textbutton" to="/#work">
             <Arrow /> All projects
           </Link>
         </p>
