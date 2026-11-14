@@ -453,7 +453,12 @@ a:hover > .action .arrow {
   color: var(--ink);
 }
 
-.theme-option[data-selected='true'] {
+/* The highlight follows the theme the page is painted in, not React state:
+   the inline pre-paint script sets :root[data-theme] from storage, so a
+   stored choice is highlighted in the pre-rendered document before the app
+   hydrates and never disagrees with the page around it. */
+:root[data-theme='light'] .theme-option:has(input[value='light']),
+:root[data-theme='dark'] .theme-option:has(input[value='dark']) {
   background: var(--ink);
   color: var(--bg);
 }
