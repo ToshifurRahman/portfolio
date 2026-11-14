@@ -38,14 +38,19 @@ function Section({
   );
 }
 
+/* cv-content adds these two to `owner`; until it does, they are absent from the
+   object's type, so a local guard reads them without widening the shared type
+   or editing content.ts. Anything not a non-empty string counts as absent. */
+const optionalText = (source: object, key: string): string | undefined => {
+  const value = (source as Record<string, unknown>)[key];
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+};
+
 export function Home() {
   useTitle();
   const { hash } = useLocation();
-  /* cv-content adds these two; they are optional until then, so the branch
-     builds and the fields simply do not render while they are absent. */
-  const identity = owner as typeof owner & { headline?: string; summary?: string };
-  const headline = identity.headline?.trim();
-  const summary = identity.summary?.trim();
+  const headline = optionalText(owner, 'headline');
+  const summary = optionalText(owner, 'summary');
 
   /* A hash link lands on its section without hiding the heading under the
      sticky navbar (scroll-margin-top does that part). */
