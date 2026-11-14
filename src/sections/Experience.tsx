@@ -1,9 +1,9 @@
 import { experience, owner } from '../content';
-import { CvSection } from './CvSection';
+import { Section } from '../Section';
 
 export function Experience() {
   return (
-    <CvSection id="experience" title="Experience">
+    <Section id="experience" title="Experience">
       {owner.cv && (
         <a className="action cv-download" href={owner.cv} download="">
           Download CV (PDF)
@@ -14,7 +14,7 @@ export function Experience() {
           <li key={`${role.title}-${role.organization}`} className="cv-role">
             <h3 className="cv-role-title display">{role.title}</h3>
             <p className="cv-org">
-              <span className="cv-org-name">{role.organization}</span>
+              <span>{role.organization}</span>
               <span className="cv-period">{role.period}</span>
             </p>
             <ul className="cv-points">
@@ -25,6 +25,6 @@ export function Experience() {
           </li>
         ))}
       </ol>
-    </CvSection>
+    </Section>
   );
 }

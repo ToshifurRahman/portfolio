@@ -56,7 +56,7 @@ describe('phone menu', () => {
 describe('current section', () => {
   /* The bar reads scroll position, so the test moves sections by giving each
      one a top offset and letting the scroll listener run. Sections not named
-     sit below the fold; the CV sections do not exist on this branch yet. */
+     sit below the fold. */
   function scrollTo(tops: { id: string; top: number }[]) {
     for (const { id } of sections) {
       const element = document.getElementById(id);

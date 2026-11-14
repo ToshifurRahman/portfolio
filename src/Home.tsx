@@ -1,9 +1,10 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { builds, caseStudies, moreProjects, owner, skills } from './content';
 import { Footer } from './Footer';
 import { Arrow } from './NotFound';
-import { sectionNumbers, sections, type SectionId } from './nav';
+import { sections } from './nav';
+import { Section } from './Section';
 import { CvSections } from './sections';
 import { useTitle } from './useTitle';
 
@@ -15,39 +16,9 @@ function Missing({ what }: { what: string }) {
 
 /* One page, read top to bottom: each section is a state on the same chain
    the case-study pages draw, numbered 01 to 08. Nothing is hidden. */
-function Section({
-  id,
-  title,
-  children,
-}: {
-  id: SectionId;
-  title: string;
-  children: ReactNode;
-}) {
-  return (
-    <section id={id} className="state-section" aria-labelledby={`${id}-title`}>
-      <h2 id={`${id}-title`} className="display section-heading">
-        <span className="state-num">{sectionNumbers[id]}</span>
-        <span>{title}</span>
-      </h2>
-      <div className="state-body">{children}</div>
-    </section>
-  );
-}
-
-/* cv-content adds these two to `owner`; until it does, they are absent from the
-   object's type, so a local guard reads them without widening the shared type
-   or editing content.ts. Anything not a non-empty string counts as absent. */
-const optionalText = (source: object, key: string): string | undefined => {
-  const value = (source as Record<string, unknown>)[key];
-  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
-};
-
 export function Home() {
   useTitle();
   const { hash } = useLocation();
-  const headline = optionalText(owner, 'headline');
-  const summary = optionalText(owner, 'summary');
 
   /* A hash link lands on its section without hiding the heading under the
      sticky navbar (scroll-margin-top does that part). */
@@ -66,7 +37,7 @@ export function Home() {
           </h1>
           <p className="mast-role">{owner.role}</p>
           <p className="lede">{owner.statement}</p>
-          {summary && <p className="mast-summary">{summary}</p>}
+          {owner.summary.trim() && <p className="mast-summary">{owner.summary}</p>}
         </div>
 
         <figure className="chain-diagram">
@@ -89,8 +60,7 @@ export function Home() {
 
         <Section id="about" title="About">
           <h3 className="display panel-title">{owner.role}</h3>
-          {headline && <p className="headline">{headline}</p>}
-          {summary && <p className="summary">{summary}</p>}
+          {owner.headline.trim() && <p className="headline">{owner.headline}</p>}
           <dl className="facts-row">
             <div>
               <dt>Focus</dt>
@@ -197,6 +167,27 @@ export function Home() {
   );
 }
 
+/* An address may only break at its own separators, never mid-word: the links
+   are set large, and the column is narrower than a full address in a 7fr
+   body. A <wbr> after each separator gives the browser those break points. */
+function BreakableLink({ value }: { value: string }) {
+  const parts = value.split(/([/@])/);
+  return (
+    <>
+      {parts.map((part, i) =>
+        /^[/@]$/.test(part) ? (
+          <span key={i}>
+            {part}
+            <wbr />
+          </span>
+        ) : (
+          part
+        ),
+      )}
+    </>
+  );
+}
+
 function Contact() {
   const links = [
     owner.email && { label: 'Email', value: owner.email, href: `mailto:${owner.email}` },
@@ -214,7 +205,7 @@ function Contact() {
           <li key={l.label}>
             <span className="contact-label">{l.label}</span>
             <a className="display contact-link" href={l.href} download={l.download || undefined}>
-              {l.value}
+              <BreakableLink value={l.value} />
             </a>
           </li>
         ))}

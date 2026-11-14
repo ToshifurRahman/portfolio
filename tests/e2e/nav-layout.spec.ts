@@ -70,12 +70,9 @@ test.describe('design review 1 regressions', () => {
         tools.prepend(cv);
       }
       const bar = document.querySelector('.navbar') as HTMLElement;
-      const brand = document.querySelector('.brand') as HTMLElement;
-      const menu = document.querySelector('.menu-button') as HTMLElement;
       const picker = document.querySelector('.theme-picker') as HTMLElement;
       return {
         height: bar.getBoundingClientRect().height,
-        crowded: menu.getBoundingClientRect().right - brand.getBoundingClientRect().left,
         overlap: cv.getBoundingClientRect().right - picker.getBoundingClientRect().left,
         scroll: document.documentElement.scrollWidth,
         client: document.documentElement.clientWidth,

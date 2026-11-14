@@ -349,7 +349,9 @@ a:hover > .action .arrow {
 .cv-link {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   min-height: 2.75rem;
+  min-width: 1.5rem;
   padding: 0 0.25rem;
   font-size: 0.9375rem;
   font-weight: 700;
@@ -455,8 +457,10 @@ a:hover > .action .arrow {
     margin-left: 0;
   }
 
+  /* The CV link keeps its 24 px target now, so the phone bar has ~4 px less to
+     spend: the picker's cells give it back and the bar stays one row. */
   .theme-option {
-    padding: 0 0.4375rem;
+    padding: 0 0.3125rem;
     font-size: 0.75rem;
   }
 
@@ -552,8 +556,8 @@ a:hover > .action .arrow {
   margin-top: 1rem;
 }
 
-/* The plain-language identity line and summary cv-content adds; they replace
-   nothing, they sit above the engineer-to-engineer statement. */
+/* The plain-language identity line and summary; they replace nothing, they sit
+   above the engineer-to-engineer statement. The summary appears once, here. */
 .mast-summary {
   max-width: 34em;
   margin-top: 0.75rem;
@@ -567,12 +571,6 @@ a:hover > .action .arrow {
   font-size: clamp(1.0625rem, 1.6vw, 1.375rem);
   font-weight: 600;
   line-height: 1.35;
-}
-
-.summary {
-  max-width: 40em;
-  margin-top: 0.5rem;
-  color: var(--muted);
 }
 
 /* the seven sections, drawn once as a diagram instead of as controls */
@@ -832,9 +830,12 @@ a:hover > .action .arrow {
 
 .contact-link {
   justify-self: start;
-  font-size: clamp(1.75rem, 4.4vw, 3.5rem);
+  /* The linked address sits in the 7fr body column, which is narrower than a
+     full address at the old 3.5rem ceiling. At this size the address fits, and
+     a long one may break only at its own separators (see BreakableLink). */
+  font-size: clamp(1.75rem, 2.6vw, 2.25rem);
   line-height: 1;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
   text-decoration-thickness: var(--line-thick);
   text-underline-offset: 0.14em;
 }

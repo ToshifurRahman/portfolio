@@ -1,10 +1,11 @@
 import type { ReactNode } from 'react';
-import { sectionNumbers, type SectionId } from '../nav';
+import { sectionNumbers, type SectionId } from './nav';
 
-/* A CV section is a state on the same chain as the rest of the home page, so
-   it takes the page's own section layout and reads its number from src/nav.ts
-   rather than carrying a copy of it. */
-export function CvSection({
+/* One section of the home page: a state on the same chain the case-study pages
+   draw, numbered from src/nav.ts so the diagram, the bar and the heading can
+   never disagree. Every section on `/`, the CV's four included, renders
+   through this, so there is one definition of the layout. */
+export function Section({
   id,
   title,
   children,

@@ -1,6 +1,9 @@
 import { expect, test } from '@playwright/test';
+import { pageSections } from '../../src/nav';
 
-const sections = ['about', 'work', 'skills', 'contact'];
+/* Every R1 section, not a sample of them: the list comes from the page's own
+   source, so a section added there is covered here without a second edit. */
+const sections = pageSections.map((section) => section.id);
 
 test.describe('navbar', () => {
   test('is sticky and present on every route', async ({ page }) => {

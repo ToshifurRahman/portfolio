@@ -43,46 +43,38 @@ describe('navbar', () => {
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('No such state');
   });
 
-  it('shows the CV link exactly when the owner has a CV file', () => {
+  it('shows the CV link with the owner file', () => {
     render(
       <MemoryRouter initialEntries={['/']}>
         <App />
       </MemoryRouter>,
     );
-    /* cv-content fills owner.cv in; the expectation follows the content rather
-       than assuming the field is still empty. Scoped to the bar: the CV
-       section below it carries a download link of its own. */
+    /* Scoped to the bar: the CV section below it carries a download link of
+       its own. The empty case is the mocked-content test under it. */
     const nav = screen.getByRole('navigation', { name: 'Primary' });
-    const link = within(nav).queryByRole('link', { name: /CV/i });
-    if (owner.cv) {
-      expect(link).toHaveAttribute('href', owner.cv);
-      expect(link).toHaveAttribute('download');
-    } else {
-      expect(link).not.toBeInTheDocument();
-    }
+    const link = within(nav).getByRole('link', { name: /CV/i });
+    expect(link).toHaveAttribute('href', owner.cv);
+    expect(link).toHaveAttribute('download');
   });
 });
 
-/* The branch above only proves the empty case while content.ts has no CV. This
-   one mocks the content module with a CV in place, so the link's href and
-   download attribute are proven here rather than after the merge. */
-describe('navbar with a CV file', () => {
-  it('links to the CV and marks it as a download', async () => {
+/* The test above proves the populated case from the real content. This one
+   mocks the content module with no CV, so the empty case stays proven too. */
+describe('navbar without a CV file', () => {
+  it('renders no CV link', async () => {
     vi.resetModules();
     vi.doMock('../../src/content', async (importOriginal) => {
       const actual = await importOriginal<typeof import('../../src/content')>();
-      return { ...actual, owner: { ...actual.owner, cv: '/cv/Toshifur-Rahman-CV.pdf' } };
+      return { ...actual, owner: { ...actual.owner, cv: '' } };
     });
-    const { App: AppWithCv } = await import('../../src/App');
+    const { App: AppWithoutCv } = await import('../../src/App');
     render(
       <MemoryRouter initialEntries={['/']}>
-        <AppWithCv />
+        <AppWithoutCv />
       </MemoryRouter>,
     );
     const nav = screen.getByRole('navigation', { name: 'Primary' });
-    const link = within(nav).getByRole('link', { name: 'CV' });
-    expect(link).toHaveAttribute('href', '/cv/Toshifur-Rahman-CV.pdf');
-    expect(link).toHaveAttribute('download');
+    expect(within(nav).queryByRole('link', { name: 'CV' })).not.toBeInTheDocument();
     vi.doUnmock('../../src/content');
     vi.resetModules();
   });

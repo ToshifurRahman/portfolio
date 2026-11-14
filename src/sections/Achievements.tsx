@@ -1,9 +1,9 @@
 import { achievements } from '../content';
-import { CvSection } from './CvSection';
+import { Section } from '../Section';
 
 export function Achievements() {
   return (
-    <CvSection id="achievements" title="Achievements">
+    <Section id="achievements" title="Achievements">
       <ul className="cv-achievements">
         {achievements.map((entry) => (
           <li key={entry.text}>
@@ -20,6 +20,6 @@ export function Achievements() {
           </li>
         ))}
       </ul>
-    </CvSection>
+    </Section>
   );
 }
