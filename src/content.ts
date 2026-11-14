@@ -4,9 +4,6 @@
  * Fields marked TODO are facts only the owner can supply. An empty string is
  * simply not shown on the built site. While running `bun run dev`, each missing
  * field shows a visible note so nothing is forgotten.
- *
- * Paragraphs marked DRAFT were written from the project repositories and need
- * the owner's confirmation before publishing.
  */
 
 export const owner = {
@@ -298,17 +295,15 @@ export type CaseStudy = {
   sections: Section[];
 };
 
-/* The nine sections every case study has, in this order. */
+/* The seven sections every case study has, in this order. */
 export const sectionOrder = [
   { id: 'overview', title: 'Overview' },
   { id: 'problem', title: 'Problem' },
-  { id: 'motivation', title: 'Motivation' },
   { id: 'architecture', title: 'Architecture' },
   { id: 'tech-decisions', title: 'Tech decisions' },
   { id: 'challenges', title: 'Challenges' },
   { id: 'solutions', title: 'Solutions' },
   { id: 'results', title: 'Results' },
-  { id: 'future', title: 'Future improvements' },
 ] as const;
 
 const ticketPipeline: CaseStudy = {
@@ -348,17 +343,6 @@ const ticketPipeline: CaseStudy = {
         {
           kind: 'p',
           text: 'An LLM can read and answer a ticket in seconds, but it is an unreliable part: providers time out, go down, and sometimes return output in the wrong shape. The problem was to put that part inside a workflow that still behaves correctly when it misbehaves.',
-        },
-      ],
-    },
-    {
-      id: 'motivation',
-      title: 'Motivation',
-      blocks: [
-        {
-          // DRAFT: confirm this is why you built it.
-          kind: 'p',
-          text: 'I wanted a project that treats an LLM call as one dependency inside a properly built asynchronous system, not as a chat demo. It let me work through the parts I care about most: queues, retries, observability and privacy boundaries, each with tests.',
         },
       ],
     },
@@ -518,23 +502,6 @@ const ticketPipeline: CaseStudy = {
         },
       ],
     },
-    {
-      id: 'future',
-      title: 'Future improvements',
-      blocks: [
-        {
-          // DRAFT: replace with your own plans.
-          kind: 'list',
-          items: [
-            {
-              text: 'Run the API and the worker as separate services so they scale on their own. The image already supports it.',
-            },
-            { text: 'Let staff edit a drafted reply before it is sent.' },
-            { text: 'Track reply quality over time, not only whether a call succeeded.' },
-          ],
-        },
-      ],
-    },
   ],
 };
 
@@ -575,17 +542,6 @@ const rannaghor: CaseStudy = {
         {
           kind: 'p',
           text: 'A marketplace has three kinds of user working on the same data with different rights. A vendor must be able to change their own products and nobody else’s. A customer must never reach a vendor or admin action. Stock and orders must stay correct while all of them act at once.',
-        },
-      ],
-    },
-    {
-      id: 'motivation',
-      title: 'Motivation',
-      blocks: [
-        {
-          // DRAFT: confirm this is why you built it.
-          kind: 'p',
-          text: 'I wanted to build a complete product from end to end, not one feature: sign-in, catalogue, cart, orders, payments and an admin panel, all in one typed codebase.',
         },
       ],
     },
@@ -637,7 +593,7 @@ const rannaghor: CaseStudy = {
             },
             {
               lead: 'Better Auth for sign-in.',
-              text: 'Email and password with verification, phone one-time codes, Google sign-in, and sessions with a “remember me” option.',
+              text: 'Email and password with verification, Google sign-in, and sessions with a “remember me” option.',
             },
             {
               lead: 'Environment variables validated at start-up.',
@@ -725,21 +681,6 @@ const rannaghor: CaseStudy = {
         {
           kind: 'p',
           text: 'The platform covers the full path from sign-up to a managed order, with a vendor dashboard and an admin panel.',
-        },
-      ],
-    },
-    {
-      id: 'future',
-      title: 'Future improvements',
-      blocks: [
-        {
-          // DRAFT: replace with your own plans.
-          kind: 'list',
-          items: [
-            { text: 'Take the payment gateway from configured to live, with tests against its sandbox.' },
-            { text: 'Add browser end-to-end tests for the checkout path.' },
-            { text: 'Give vendors sales reports in their dashboard.' },
-          ],
         },
       ],
     },

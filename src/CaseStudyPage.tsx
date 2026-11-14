@@ -76,7 +76,7 @@ export function CaseStudyPage() {
             {study.sections.map((s, i) => (
               <li key={s.id}>
                 <a href={`#${s.id}`} aria-current={i === current ? 'location' : undefined}>
-                  <span className="state-num">{num(i)}</span> {s.title === 'Future improvements' ? 'Future' : s.title}
+                  <span className="state-num">{num(i)}</span> {s.title}
                 </a>
               </li>
             ))}

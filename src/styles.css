@@ -961,9 +961,9 @@ a:hover > .action .arrow {
   color: var(--on-accent);
 }
 
-/* Above 62rem the whole chain has to fit without scrolling: nine labelled
+/* Above 62rem the whole chain has to fit without scrolling: seven labelled
    steps plus both terminals at 1280 px. Tighter padding and tracking buy the
-   ~60 px that used to cut the last step. */
+   room the longest label needs. */
 @media (min-width: 62rem) {
   .progress a {
     padding: 0.4375rem 0.25rem;

@@ -128,7 +128,7 @@ test.describe('design review 1 regressions', () => {
 test.describe('case-study step chain', () => {
   const pages = ['/work/ticket-pipeline', '/work/rannaghor'];
 
-  test('fits all nine steps and both terminals at 1280 px', async ({ page }) => {
+  test('fits all seven steps and both terminals at 1280 px', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     for (const path of pages) {
       await page.goto(path);
@@ -147,7 +147,7 @@ test.describe('case-study step chain', () => {
       const last = page.locator('.progress a').last();
       await expect(last).toBeInViewport();
       const text = (await last.textContent())!.trim();
-      expect(text).toBe('09 Future');
+      expect(text).toBe('07 Results');
       const clipped = await last.evaluate((el) => el.scrollWidth > el.clientWidth + 1);
       expect(clipped).toBe(false);
     }
