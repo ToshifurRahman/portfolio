@@ -40,6 +40,14 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- The build pre-renders the markup above, so the page is complete before
+         the bundle runs. This forces that markup to be laid out first: without
+         it the browser may defer the first layout into the module's own task,
+         which puts the 293 kB bundle on the LCP critical path in Lantern's
+         model (1.21 s simulated instead of 0.61 s) in roughly one run in three. -->
+    <script>
+      document.documentElement.getBoundingClientRect();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

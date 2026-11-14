@@ -8,3 +8,5 @@ dist
 .lighthouse/
 test-results/
 playwright-report/
+dist-server
+scratch/

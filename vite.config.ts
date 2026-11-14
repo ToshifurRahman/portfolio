@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 
@@ -71,4 +72,27 @@ function inlineCss(): Plugin {
   };
 }
 
-export default defineConfig({ plugins: [react(), preloadFont(), inlineCss()] });
+/*
+ * Serve the pre-rendered documents. `vite preview` answers an extensionless
+ * path with the SPA fallback (dist/index.html), so /work/ticket-pipeline would
+ * get the home page's markup. This rewrites such a request to the route's own
+ * index.html when the build wrote one, and leaves everything else alone.
+ */
+function prerenderedRoutes(): Plugin {
+  return {
+    name: 'prerendered-routes',
+    apply: 'serve',
+    configurePreviewServer(server) {
+      server.middlewares.use((req, _res, next) => {
+        const url = req.url ?? '/';
+        const path = url.split('?')[0];
+        if (path === '/' || /\.[a-z0-9]+$/i.test(path)) return next();
+        const file = `dist${path.replace(/\/$/, '')}/index.html`;
+        if (existsSync(file)) req.url = `${path.replace(/\/$/, '')}/index.html${url.slice(path.length)}`;
+        next();
+      });
+    },
+  };
+}
+
+export default defineConfig({ plugins: [react(), preloadFont(), inlineCss(), prerenderedRoutes()] });
