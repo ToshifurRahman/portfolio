@@ -45,3 +45,47 @@ describe('contact CV link', () => {
     expect(document.querySelector('.contact a[download]')).toBeNull();
   });
 });
+
+/* The addresses are set large, so they may break at their own separators and
+   nowhere else. BreakableLink inserts a <wbr> after each "/" and "@"; without
+   it the browser would break mid-word at 1280, and a later overflow-wrap
+   change would go unnoticed because nothing else asserts this. */
+describe('contact links break only at their separators', () => {
+  it('puts a <wbr> after every "/" and "@" and nowhere else', () => {
+    renderHome();
+    const links = [...document.querySelectorAll('.contact a.contact-link')];
+    expect(links.length).toBeGreaterThan(0);
+
+    let checked = 0;
+    for (const link of links) {
+      const breaks = [...link.querySelectorAll('wbr')];
+      /* A <wbr> must follow each separator, in order. */
+      const separatorCount = (link.textContent ?? '').replace(/[^/@]/g, '').length;
+      expect(breaks.length, `${link.getAttribute('href')} has ${breaks.length} <wbr> for ${separatorCount} separators`).toBe(separatorCount);
+
+      /* Walk the text: every <wbr>'s previous text node has to end in one of
+         the separators, so no break point is offered mid-word. */
+      for (const wbr of breaks) {
+        let node = wbr.previousSibling;
+        while (node && node.nodeType === Node.COMMENT_NODE) node = node.previousSibling;
+        expect(node?.textContent).toMatch(/[/@]$/);
+        checked += 1;
+      }
+    }
+    /* The addresses really do carry separators (a URL and an email), so this
+       is not vacuous. */
+    expect(checked).toBeGreaterThan(1);
+  });
+
+  it('offers no other break point inside an address', () => {
+    renderHome();
+    for (const link of document.querySelectorAll('.contact a.contact-link')) {
+      /* Only the separators and the <wbr>s exist; BreakableLink must not wrap
+         mid-word itself (e.g. by splitting into per-character spans). */
+      const wrappers = [...link.children].filter((el) => el.tagName === 'SPAN');
+      for (const wrapper of wrappers) {
+        expect(wrapper.textContent).toMatch(/^[/@]​?$/);
+      }
+    }
+  });
+});

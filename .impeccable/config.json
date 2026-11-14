@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "design-system-font",
+        "value": "archivo fallback",
+        "createdAt": "2026-11-14T05:52:09.557Z",
+        "reason": "review-final-2-rv-ds P1 fix: not a brand face, a metrics shim (size-adjust/ascent-override) so the layout survives when the optional web font misses first paint; no extra download."
+      }
+    ]
+  }
+}
