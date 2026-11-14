@@ -41,6 +41,11 @@ function Section({
 export function Home() {
   useTitle();
   const { hash } = useLocation();
+  /* cv-content adds these two; they are optional until then, so the branch
+     builds and the fields simply do not render while they are absent. */
+  const identity = owner as typeof owner & { headline?: string; summary?: string };
+  const headline = identity.headline?.trim();
+  const summary = identity.summary?.trim();
 
   /* A hash link lands on its section without hiding the heading under the
      sticky navbar (scroll-margin-top does that part). */
@@ -59,10 +64,13 @@ export function Home() {
           </h1>
           <p className="mast-role">{owner.role}</p>
           <p className="lede">{owner.statement}</p>
+          {summary && <p className="mast-summary">{summary}</p>}
         </div>
 
         <figure className="chain-diagram">
-          <ol className="chain-states">
+          {/* Narrow widths scroll this strip, so it takes a tab stop of its own
+              and a name: a scrollable region must be reachable by keyboard. */}
+          <ol className="chain-states" tabIndex={0} aria-label="The seven sections, in page order">
             {sections.map((s, i) => (
               <li key={s.id} className="chain-state">
                 <span className="state-num">{num(i)}</span>
@@ -77,6 +85,8 @@ export function Home() {
 
         <Section id="about" index={0} title="About">
           <h3 className="display panel-title">{owner.role}</h3>
+          {headline && <p className="headline">{headline}</p>}
+          {summary && <p className="summary">{summary}</p>}
           <p className="lede">{owner.statement}</p>
           <dl className="facts-row">
             <div>
