@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
 import { owner } from '../../src/content';
 
@@ -58,6 +58,31 @@ describe('navbar', () => {
     } else {
       expect(link).not.toBeInTheDocument();
     }
+  });
+});
+
+/* The branch above only proves the empty case while content.ts has no CV. This
+   one mocks the content module with a CV in place, so the link's href and
+   download attribute are proven here rather than after the merge. */
+describe('navbar with a CV file', () => {
+  it('links to the CV and marks it as a download', async () => {
+    vi.resetModules();
+    vi.doMock('../../src/content', async (importOriginal) => {
+      const actual = await importOriginal<typeof import('../../src/content')>();
+      return { ...actual, owner: { ...actual.owner, cv: '/cv/Toshifur-Rahman-CV.pdf' } };
+    });
+    const { App: AppWithCv } = await import('../../src/App');
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <AppWithCv />
+      </MemoryRouter>,
+    );
+    const nav = screen.getByRole('navigation', { name: 'Primary' });
+    const link = within(nav).getByRole('link', { name: 'CV' });
+    expect(link).toHaveAttribute('href', '/cv/Toshifur-Rahman-CV.pdf');
+    expect(link).toHaveAttribute('download');
+    vi.doUnmock('../../src/content');
+    vi.resetModules();
   });
 });
 

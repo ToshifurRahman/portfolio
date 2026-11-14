@@ -13,12 +13,22 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { chromium } from '@playwright/test';
+import { sections } from '../src/nav.ts';
 
 const root = resolve(import.meta.dirname, '..');
 const out = resolve(root, 'public/og.png');
 const font = readFileSync(
   resolve(root, 'node_modules/@fontsource-variable/archivo/files/archivo-latin-wdth-normal.woff2'),
 ).toString('base64');
+
+/* The chain row is drawn from the site's own section list, so the card carries
+   the same numbers as the page (Education has no box, so 04 is skipped). */
+const chain = sections
+  .map(
+    (s, i) =>
+      `<span class="state${i === 0 ? ' now' : ''}"><span>${s.num}</span>${s.label}</span>`,
+  )
+  .join('');
 
 /* The tokens below are copied from `:root` in src/styles.css on purpose: this
    file is a picture of the site, not part of it, and it must not drift with a
@@ -109,7 +119,7 @@ body {
   <div class="rule"></div>
   <p class="statement">Backend and full-stack systems, designed for the moment they fail.</p>
   <div class="chain">
-    <span class="state now"><span>01</span>About</span><span class="state"><span>02</span>Work</span><span class="state"><span>03</span>Experience</span><span class="state"><span>04</span>Achievements</span><span class="state"><span>05</span>Certificates</span><span class="state"><span>06</span>Skills</span><span class="state"><span>07</span>Contact</span>
+    ${chain}
   </div>
 </body></html>`;
 
