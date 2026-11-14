@@ -14,6 +14,9 @@ export const owner = {
   firstName: 'Toshifur',
   lastName: 'Rahman',
   role: 'Software Engineer',
+  headline: 'Web Developer at Taibah Academy · M.Engg. CSE, CUET',
+  summary:
+    'Toshifur Rahman is a software engineer in Chattogram, Bangladesh, who builds backend and full-stack web systems and is completing a master’s in computer science at CUET.',
   statement: 'I build backend and full-stack systems, and I design for the moment they fail.',
   focus: 'Async backends and full-stack web apps',
   location: 'Chattogram, Bangladesh',
@@ -44,6 +47,10 @@ export const builds = [
 
 export type SkillGroup = { group: string; items: string[] };
 
+/*
+ * The CV's Technical Skills, group for group and item for item. The last group
+ * holds only tools the project repositories document.
+ */
 export const skills: SkillGroup[] = [
   {
     group: 'AI / LLM',
@@ -56,38 +63,28 @@ export const skills: SkillGroup[] = [
       'LLM Observability',
     ],
   },
-  { group: 'Languages', items: ['TypeScript', 'JavaScript', 'SQL', 'Python', 'C', 'C++'] },
-  {
-    group: 'Backend',
-    items: [
-      'Bun',
-      'Node.js',
-      'Hono',
-      'Express.js',
-      'REST APIs',
-      'Socket.io',
-      'PostgreSQL',
-      'MySQL',
-      'MongoDB',
-      'Redis',
-      'Drizzle ORM',
-      'AWS SQS',
-    ],
-  },
+  { group: 'Languages', items: ['TypeScript', 'JavaScript (ES6+)', 'C', 'C++', 'Python (basic)'] },
   {
     group: 'Frontend',
-    items: ['React', 'TanStack Query', 'TanStack Router', 'Vite', 'Tailwind CSS', 'shadcn/ui', 'Jotai'],
+    items: ['React.js', 'TanStack Query', 'TanStack Router', 'Tailwind CSS', 'shadcn/ui', 'Vite', 'Jotai'],
+  },
+  {
+    group: 'Backend',
+    items: ['Node.js', 'Bun', 'Hono', 'Express.js', 'REST APIs', 'WebSockets (Socket.io)'],
+  },
+  {
+    group: 'Databases & Infrastructure',
+    items: ['PostgreSQL', 'MySQL', 'MongoDB', 'Redis', 'Drizzle ORM', 'Supabase', 'AWS SQS', 'Docker'],
   },
   { group: 'Auth & Security', items: ['Better Auth', 'JWT', 'Zod', 'Helmet'] },
   {
-    group: 'Quality',
-    items: ['Vitest', 'Playwright', 'Selenium', 'JMeter', 'axe accessibility checks', 'Lighthouse CI', 'GitHub Actions'],
+    group: 'Testing & Tools',
+    items: ['Vitest', 'Playwright', 'Selenium', 'JMeter', 'Git', 'GitHub', 'Postman', 'ESLint', 'Prettier', 'Husky'],
   },
   {
-    group: 'Tools',
-    items: ['Git', 'GitHub', 'Postman', 'ESLint', 'Prettier', 'Husky'],
+    group: 'Also in this work',
+    items: ['SQL', 'Lighthouse CI', 'GitHub Actions', 'Cloudflare Workers', 'Render', 'Neon'],
   },
-  { group: 'Platform', items: ['Docker', 'Cloudflare Workers', 'Render', 'Supabase', 'Neon'] },
 ];
 
 /* Experience, education and achievements are word for word from the owner's CV. */
@@ -499,11 +496,18 @@ const ticketPipeline: CaseStudy = {
       title: 'Results',
       blocks: [
         {
+          kind: 'p',
+          text: 'A ticket goes from submission to a drafted reply without a staff member touching it, and the customer watches each step happen live.',
+        },
+        {
           kind: 'facts',
           items: [
-            { value: '119', label: 'test files across the API, worker, web app and end-to-end suite' },
+            { value: '120', label: 'test files across the API, worker, web app and end-to-end suite' },
             { value: '266', label: 'commits since April 2026' },
-            { value: '90+', label: 'Lighthouse score required in CI on every crawlable page, in all four categories' },
+            {
+              value: '0.9',
+              label: 'Lighthouse gate in all four categories on six crawlable pages, run with `bun run lighthouse`',
+            },
             { value: '10', label: 'Redis commands per ticket, and none while idle' },
           ],
         },
@@ -704,6 +708,10 @@ const rannaghor: CaseStudy = {
       id: 'results',
       title: 'Results',
       blocks: [
+        {
+          kind: 'p',
+          text: 'Customers shop, vendors manage their own products after an admin approves them, and admins run the platform, each in one area of a single typed codebase.',
+        },
         {
           kind: 'facts',
           items: [

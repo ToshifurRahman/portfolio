@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   achievements,
+  caseStudies,
   certificates,
   education,
   experience,
@@ -197,17 +198,115 @@ describe('certificates', () => {
   });
 });
 
+describe('case-study facts checked against the repositories', () => {
+  const ticketPipeline = caseStudies.find((s) => s.slug === 'ticket-pipeline')!;
+  const results = ticketPipeline.sections.find((s) => s.id === 'results')!;
+  const text = JSON.stringify(results);
+
+  it('states the Lighthouse gate as it actually runs, not as CI', () => {
+    expect(text).toContain('"value":"0.9"');
+    expect(text).toContain('all four categories');
+    /* Six URLs are crawlable: lighthouserc.cjs skips /confirm and /ops for SEO,
+       and the whole gate runs through `bun run lighthouse`, never in CI. */
+    expect(text).toContain('six crawlable pages');
+    expect(text).toContain('run with `bun run lighthouse`');
+    expect(text).not.toContain('required in CI on every crawlable page');
+  });
+
+  it('counts the test files the repository has', () => {
+    expect(text).toContain('"value":"120"');
+    expect(text).not.toContain('"value":"119"');
+  });
+
+  it('opens each Results section with a plain outcome sentence from the docs', () => {
+    for (const study of caseStudies) {
+      const first = study.sections.find((s) => s.id === 'results')!.blocks[0];
+      expect(first.kind, study.slug).toBe('p');
+      expect((first as { kind: 'p'; text: string }).text.length, study.slug).toBeGreaterThan(40);
+      expect((first as { kind: 'p'; text: string }).text, study.slug).toMatch(/\.$/);
+    }
+  });
+});
+
+describe('owner headline and summary', () => {
+  it('states the role and degree from the CV', () => {
+    expect(owner.headline).toBe('Web Developer at Taibah Academy · M.Engg. CSE, CUET');
+  });
+
+  it('summarises in one plain sentence without inventing anything', () => {
+    /* One sentence: no full stop followed by a new capitalised sentence. */
+    expect(owner.summary).toMatch(/\.$/);
+    expect(owner.summary).not.toMatch(/\. [A-Z]/);
+    expect(owner.summary).toMatch(/Chattogram, Bangladesh/);
+    expect(owner.summary).toMatch(/Software Engineer|Web Developer/i);
+    expect(owner.summary.length).toBeLessThan(240);
+  });
+
+  it('still has no phone number and no invented availability', () => {
+    expect(owner.availability).toBe('');
+    for (const digits of ['REDACTED', 'REDACTED', 'REDACTED']) {
+      expect(JSON.stringify(owner)).not.toContain(digits);
+    }
+  });
+});
+
 describe('skills', () => {
-  it('keeps the existing entries and adds the CV groups', () => {
-    const groups = skills.map((g) => g.group);
-    for (const group of ['Languages', 'Backend', 'Frontend', 'Quality', 'Platform']) {
-      expect(groups).toContain(group);
+  /* The CV's Technical Skills, word for word, as the base of the export. */
+  const cvGroups: [string, string[]][] = [
+    [
+      'AI / LLM',
+      [
+        'LLM APIs',
+        'Portkey',
+        'Function / Tool Calling',
+        'Structured Outputs (Zod)',
+        'Provider Failover',
+        'LLM Observability',
+      ],
+    ],
+    ['Languages', ['TypeScript', 'JavaScript (ES6+)', 'C', 'C++', 'Python (basic)']],
+    ['Frontend', ['React.js', 'TanStack Query', 'TanStack Router', 'Tailwind CSS', 'shadcn/ui', 'Vite', 'Jotai']],
+    ['Backend', ['Node.js', 'Bun', 'Hono', 'Express.js', 'REST APIs', 'WebSockets (Socket.io)']],
+    [
+      'Databases & Infrastructure',
+      ['PostgreSQL', 'MySQL', 'MongoDB', 'Redis', 'Drizzle ORM', 'Supabase', 'AWS SQS', 'Docker'],
+    ],
+    ['Auth & Security', ['Better Auth', 'JWT', 'Zod', 'Helmet']],
+    [
+      'Testing & Tools',
+      ['Vitest', 'Playwright', 'Selenium', 'JMeter', 'Git', 'GitHub', 'Postman', 'ESLint', 'Prettier', 'Husky'],
+    ],
+  ];
+
+  it('uses the CV groups, in order, as the base', () => {
+    expect(skills.map((g) => g.group)).toEqual([
+      'AI / LLM',
+      'Languages',
+      'Frontend',
+      'Backend',
+      'Databases & Infrastructure',
+      'Auth & Security',
+      'Testing & Tools',
+      'Also in this work',
+    ]);
+  });
+
+  it('has every CV skill word for word in its own group', () => {
+    for (const [group, items] of cvGroups) {
+      const actual = skills.find((g) => g.group === group);
+      expect(actual, group).toBeDefined();
+      expect(actual!.items, group).toEqual(expect.arrayContaining(items));
     }
-    const all = skills.flatMap((g) => g.items);
-    for (const item of ['TypeScript', 'Hono', 'PostgreSQL', 'Redis', 'React', 'Docker']) {
-      expect(all).toContain(item);
+  });
+
+  it('adds only the tools the repositories document, and no other CV group gains items', () => {
+    const extras = skills.at(-1)!;
+    expect(extras.items).toEqual(['SQL', 'Lighthouse CI', 'GitHub Actions', 'Cloudflare Workers', 'Render', 'Neon']);
+
+    /* Nothing outside the CV groups may smuggle in an unlisted CV item. */
+    const cvItems = new Set(cvGroups.flatMap(([, items]) => items));
+    for (const group of skills.slice(0, -1)) {
+      for (const item of group.items) expect(cvItems.has(item), `${group.group}: ${item}`).toBe(true);
     }
-    const llm = skills.find((g) => g.group === 'AI / LLM');
-    expect(llm?.items).toContain('Portkey');
   });
 });
