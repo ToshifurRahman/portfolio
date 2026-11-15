@@ -207,6 +207,32 @@ describe('certificates', () => {
     }
   });
 
+  it('leads with coding and problem solving, newest first inside each group', () => {
+    /* Owner's order (2026-11-15): programming contests, algorithms, TypeScript
+       and mentoring first; olympiads and the Hult Prize after. Within a group
+       the newer certificate comes first. Slug order put 2018 high-school
+       Botany and Chemistry at positions 2 and 3, ahead of the 2025 software
+       engineering certificates. */
+    const order = certificates.map((c) => c.slug);
+    expect(order).toEqual([
+      'beginners-typescript',
+      'frontend-masters-algorithms',
+      'iiuccps-best-mentor',
+      'pu-contest',
+      'cu-contest',
+      'hult-prize',
+      'chemistry-olympiad',
+      'botany-olympiad',
+    ]);
+
+    /* And the grouping itself, not just this one list: every programming,
+       algorithm, TypeScript or mentoring entry precedes every olympiad and
+       the Hult Prize. */
+    const lead = (slug: string) => (slug === 'botany-olympiad' || slug === 'chemistry-olympiad' || slug === 'hult-prize' ? 1 : 0);
+    const groups = certificates.map((c) => lead(c.slug));
+    expect(groups).toEqual([...groups].sort((a, b) => a - b));
+  });
+
   it('keeps a date only when the file states one', () => {
     const stated = /^(?:\d{1,2} )?[A-Z][a-z]+ \d{4}$|^\d{4}$/;
     for (const cert of certificates) {
@@ -229,15 +255,14 @@ describe('case-study facts checked against the repositories', () => {
   const results = ticketPipeline.sections.find((s) => s.id === 'results')!;
   const text = JSON.stringify(results);
 
-  it('states the Lighthouse gate as it actually runs, not as CI', () => {
-    expect(text).toContain('"value":"0.9"');
-    expect(text).toContain('all four categories');
-    /* Six URLs are crawlable: lighthouserc.cjs skips /confirm and /ops for SEO,
-       and the whole gate runs through `bun run lighthouse`, never in CI. */
-    expect(text).toContain('six crawlable pages');
-    expect(text).toContain('run with bun run lighthouse');
+  it('states the Lighthouse gate in plain words, with no command name', () => {
+    /* The owner's wording (2026-11-15): "0.9" read as a failing 0.9/100 score
+       to a recruiter, and the label exposed an internal CLI command. */
+    expect(text).toContain('"value":"90+"');
+    expect(text).toContain('minimum Lighthouse score in all four categories, on six pages');
+    expect(text).not.toContain('"value":"0.9"');
+    expect(text).not.toContain('bun run lighthouse');
     expect(text).not.toContain('`');
-    expect(text).not.toContain('required in CI on every crawlable page');
   });
 
   it('counts the test files the repository has', () => {

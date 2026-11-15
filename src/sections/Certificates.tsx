@@ -4,6 +4,13 @@ import { CertificateDialog } from './CertificateDialog';
 
 /* A sub-list of Achievements: one row per certificate. Each row opens the
    certificate's image in a dialog, with a link to the original file. */
+
+/* Coding and problem solving lead the list, then the rest. The band comes from
+   the certificate's own `group`, so appending an entry cannot quietly put an
+   olympiad above a programming contest; the order inside a band is the order
+   in src/content.ts, newest first. `sort` is stable, so that order is kept. */
+const ordered = [...certificates].sort((a, b) => (a.group === b.group ? 0 : a.group === 'coding' ? -1 : 1));
+
 export function Certificates() {
   const [open, setOpen] = useState<Certificate | null>(null);
   const dialog = useRef<HTMLDialogElement | null>(null);
@@ -32,7 +39,7 @@ export function Certificates() {
     <div className="certificates" id="certificates">
       <h3 className="subhead">Certificates</h3>
       <ul className="certificate-list">
-        {certificates.map((certificate) => (
+        {ordered.map((certificate) => (
           <li key={certificate.slug}>
             <button
               type="button"

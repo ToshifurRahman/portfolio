@@ -6,6 +6,13 @@
  * field shows a visible note so nothing is forgotten.
  */
 
+/* The site's deployed origin, with no trailing slash (for example
+   "https://toshifur.dev"). Empty until the owner names the host: while it is
+   empty the build emits no canonical link, no og:url and a path-only share
+   image, and when it is set those three become absolute with no other change.
+   One constant, read only by the pre-render, so a host is never guessed. */
+export const siteOrigin = '';
+
 export const owner = {
   name: 'Toshifur Rahman',
   firstName: 'Toshifur',
@@ -19,7 +26,6 @@ export const owner = {
      the rest of the motto stays in the muted tone. */
   statementEmphasis: 'and I design for the moment they fail.',
   now: 'Web Developer at Taibah Academy',
-  focus: 'Async backends and full-stack web apps',
   mainStack: 'TypeScript, Bun, PostgreSQL, React',
   location: 'Chattogram, Bangladesh',
   availability: '', // TODO: e.g. "Open to full-time roles"
@@ -168,11 +174,29 @@ export const achievements: Achievement[] = [
   { text: 'Best Mentor Award, IIUCCPS Competitive Programming Bootcamps (Autumn 2023 and Spring 2024).' },
 ];
 
+/* The Work section's lede. The first sentence is set in full ink, the rest in
+   the muted tone; the owner confirmed both lines on 2026-11-15. */
+export const workLede = {
+  lead: 'Two systems, built end to end.',
+  rest: ' Each case study covers the problem, the architecture, the decisions and the results.',
+};
+
+/* The Contact lede, shown only when there is an address to write to. Owner
+   confirmed 2026-11-15. */
+export const contactLede = {
+  lead: 'Hiring for a backend or full-stack role?',
+  rest: ' Email is the fastest way to reach me.',
+};
+
 export type Certificate = {
   slug: string;
   title: string;
   issuer: string;
   date?: string;
+  /* Which band the certificate sits in. Coding and problem solving lead the
+     list, the rest follows; within a band the newer certificate comes first.
+     Stated as data so the order is not a side effect of the slug. */
+  group: 'coding' | 'other';
   file: string;
   preview: string;
   width: number;
@@ -186,6 +210,7 @@ export const certificates: Certificate[] = [
     title: 'Beginner’s TypeScript Workshop',
     issuer: 'Total TypeScript',
     date: '30 December 2025',
+    group: 'coding',
     file: '/certificates/files/beginners-typescript.png',
     preview: '/certificates/previews/beginners-typescript.webp',
     width: 800,
@@ -193,43 +218,11 @@ export const certificates: Certificate[] = [
     alt: 'Certificate of Completion for the Beginner’s TypeScript workshop, Total TypeScript, 30 December 2025.',
   },
   {
-    slug: 'botany-olympiad',
-    title: 'Bangladesh Botany Olympiad 2018',
-    issuer: 'Bangladesh Botanical Society',
-    date: '2018',
-    file: '/certificates/files/botany-olympiad.pdf',
-    preview: '/certificates/previews/botany-olympiad.webp',
-    width: 800,
-    height: 656,
-    alt: 'Certificate of participation in the Bangladesh Botany Olympiad 2018, Divisional Round, Bangladesh Botanical Society.',
-  },
-  {
-    slug: 'chemistry-olympiad',
-    title: '9th Bangladesh Chemistry Olympiad-2018',
-    issuer: 'Bangladesh Chemical Society',
-    date: '25 January 2019',
-    file: '/certificates/files/chemistry-olympiad.pdf',
-    preview: '/certificates/previews/chemistry-olympiad.webp',
-    width: 800,
-    height: 646,
-    alt: 'Certificate of participation in the preliminary round of the 9th Bangladesh Chemistry Olympiad 2018, CU Chattogram region.',
-  },
-  {
-    slug: 'cu-contest',
-    title: 'IT Fiesta 2024, Certificate of Appreciation',
-    issuer: 'Chittagong University Scientific Society',
-    date: '2024',
-    file: '/certificates/files/cu-contest.pdf',
-    preview: '/certificates/previews/cu-contest.webp',
-    width: 800,
-    height: 636,
-    alt: 'Certificate of appreciation from IT Fiesta 2024, Chittagong University Scientific Society.',
-  },
-  {
     slug: 'frontend-masters-algorithms',
     title: 'The Last Algorithms Course You’ll Need',
     issuer: 'Frontend Masters',
     date: '21 December 2025',
+    group: 'coding',
     file: '/certificates/files/frontend-masters-algorithms.pdf',
     preview: '/certificates/previews/frontend-masters-algorithms.webp',
     width: 800,
@@ -237,21 +230,11 @@ export const certificates: Certificate[] = [
     alt: 'Certificate of completion for The Last Algorithms Course You’ll Need, Frontend Masters, completed 21 December 2025.',
   },
   {
-    slug: 'hult-prize',
-    title: 'Hult Prize at International Islamic University Chittagong',
-    issuer: 'Hult Prize',
-    date: '12 February 2023',
-    file: '/certificates/files/hult-prize.png',
-    preview: '/certificates/previews/hult-prize.webp',
-    width: 800,
-    height: 570,
-    alt: 'Certificate recognising participation as a competitor in the Hult Prize at International Islamic University Chittagong, 12 February 2023.',
-  },
-  {
     slug: 'iiuccps-best-mentor',
     title: 'Certificate of Appreciation, Competitive Programming Bootcamp Trainer',
     issuer: 'IIUC Competitive Programming Society (IIUCCPS)',
     date: '2025',
+    group: 'coding',
     file: '/certificates/files/iiuccps-best-mentor.pdf',
     preview: '/certificates/previews/iiuccps-best-mentor.webp',
     width: 800,
@@ -263,11 +246,60 @@ export const certificates: Certificate[] = [
     title: 'PU-CSE IT Fest 2024, Programming Contest',
     issuer: 'Department of Computer Science and Engineering, Premier University',
     date: '27 January 2024',
+    group: 'coding',
     file: '/certificates/files/pu-contest.pdf',
     preview: '/certificates/previews/pu-contest.webp',
     width: 800,
     height: 674,
     alt: 'Certificate of participation in the programming contest at PU-CSE IT Fest 2024, Premier University, 27 January 2024.',
+  },
+  {
+    slug: 'cu-contest',
+    title: 'IT Fiesta 2024, Certificate of Appreciation',
+    issuer: 'Chittagong University Scientific Society',
+    date: '2024',
+    group: 'coding',
+    file: '/certificates/files/cu-contest.pdf',
+    preview: '/certificates/previews/cu-contest.webp',
+    width: 800,
+    height: 636,
+    alt: 'Certificate of appreciation from IT Fiesta 2024, Chittagong University Scientific Society.',
+  },
+  {
+    slug: 'hult-prize',
+    title: 'Hult Prize at International Islamic University Chittagong',
+    issuer: 'Hult Prize',
+    date: '12 February 2023',
+    group: 'other',
+    file: '/certificates/files/hult-prize.png',
+    preview: '/certificates/previews/hult-prize.webp',
+    width: 800,
+    height: 570,
+    alt: 'Certificate recognising participation as a competitor in the Hult Prize at International Islamic University Chittagong, 12 February 2023.',
+  },
+  {
+    slug: 'chemistry-olympiad',
+    title: '9th Bangladesh Chemistry Olympiad-2018',
+    issuer: 'Bangladesh Chemical Society',
+    date: '25 January 2019',
+    group: 'other',
+    file: '/certificates/files/chemistry-olympiad.pdf',
+    preview: '/certificates/previews/chemistry-olympiad.webp',
+    width: 800,
+    height: 646,
+    alt: 'Certificate of participation in the preliminary round of the 9th Bangladesh Chemistry Olympiad 2018, CU Chattogram region.',
+  },
+  {
+    slug: 'botany-olympiad',
+    title: 'Bangladesh Botany Olympiad 2018',
+    issuer: 'Bangladesh Botanical Society',
+    date: '2018',
+    group: 'other',
+    file: '/certificates/files/botany-olympiad.pdf',
+    preview: '/certificates/previews/botany-olympiad.webp',
+    width: 800,
+    height: 656,
+    alt: 'Certificate of participation in the Bangladesh Botany Olympiad 2018, Divisional Round, Bangladesh Botanical Society.',
   },
 ];
 
@@ -505,8 +537,8 @@ const ticketPipeline: CaseStudy = {
             { value: '120', label: 'test files across the API, worker, web app and end-to-end suite' },
             { value: '266', label: 'commits since April 2026' },
             {
-              value: '0.9',
-              label: 'Lighthouse gate in all four categories on six crawlable pages, run with bun run lighthouse',
+              value: '90+',
+              label: 'minimum Lighthouse score in all four categories, on six pages',
             },
             { value: '10', label: 'Redis commands per ticket, and none while idle' },
           ],
