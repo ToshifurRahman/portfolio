@@ -227,7 +227,8 @@ for (const d of DIAGRAMS) {
         );
         return Math.min(...sizes);
       });
-      expect(smallest).toBeGreaterThanOrEqual(11.5);
+      /* Exactly the floor: 11.5 accepted an 11.5px label, and 11.9 accepted 11.97. */
+      expect(smallest).toBeGreaterThanOrEqual(12);
     });
 
     test('red is used only for a refusal or a failure', async ({ page }) => {
@@ -404,8 +405,9 @@ for (const d of DIAGRAMS) {
             edge: edge ? parseFloat(getComputedStyle(edge).fontSize) * scale : 0,
           };
         });
-        expect(sizes.name, `node name at ${width}px`).toBeGreaterThanOrEqual(11.9);
-        if (sizes.edge) expect(sizes.edge, `edge label at ${width}px`).toBeGreaterThanOrEqual(10.4);
+        /* Exactly the floor. 11.9 accepted 11.97 at 1280, which is where F5-1 hid. */
+        expect(sizes.name, `node name at ${width}px`).toBeGreaterThanOrEqual(12);
+        if (sizes.edge) expect(sizes.edge, `edge label at ${width}px`).toBeGreaterThanOrEqual(12);
       }
     });
   });
@@ -744,5 +746,64 @@ for (const d of DIAGRAMS) {
     /* Muted, and demonstrably not the failure colour. */
     expect(painted, 'the stub is painted in the muted ink').toBe(muted);
     expect(painted, 'the stub is painted red like a failure').not.toBe(fail);
+  });
+}
+
+/* ---------------------------------------------------------------- fix pass 5
+ *
+ * F5-2 first, because F5-1 hid behind the old test: it sampled 390/834/1280/1440 and
+ * accepted 11.9, so a 9.6px label at 1024 passed. This sweeps every width the layout
+ * can be drawn at and demands exactly 12px of every piece of diagram text.
+ *
+ * Measured in screen pixels from each element's own rect, not from the computed font
+ * size times an assumed scale: the SVG is scaled to fit, and a test that multiplies by
+ * the scale it *thinks* applies will agree with the bug.
+ */
+
+const SWEEP: number[] = (() => {
+  const out: number[] = [];
+  for (let w = 360; w <= 1920; w += 20) out.push(w);
+  /* The container query switches layout at 56rem = 896px, and the panel's own padding
+     means the switch lands between viewport widths; sample both sides of it. */
+  for (const w of [895, 896, 897, 927, 928, 929]) if (!out.includes(w)) out.push(w);
+  return [...new Set(out)].sort((a, b) => a - b);
+})();
+
+for (const d of DIAGRAMS) {
+  test(`${d.slug}: every diagram text renders at 12px or more, 360 to 1920`, async ({ page }) => {
+    test.setTimeout(600_000);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto(d.path);
+    await panel(page, d.slug).scrollIntoViewIfNeeded();
+
+    const bad: string[] = [];
+    for (const width of SWEEP) {
+      await page.setViewportSize({ width, height: 900 });
+      /* The chart re-lays out after a resize; measuring in the same frame reads the
+         previous width's SVG, which made this sweep report one number at every viewport. */
+      await page.waitForTimeout(260);
+      const smallest = await page.evaluate(() => {
+        const svg = [...document.querySelectorAll('.flow-svg')].find(
+          (s) => s.getBoundingClientRect().width > 0,
+        ) as SVGSVGElement;
+        if (!svg) return null;
+        /* Every text the diagram draws: names, details, edge labels, cluster headings,
+           stubs, rail pills. Each measured from its own height rather than a shared
+           scale, so a scaled viewBox cannot hide a small label. */
+        /* The scale the SVG is actually drawn at. A <text>'s own bounding rect is not
+           usable for this: it is clipped by overflow and by the parent's box, so an
+           element's on-screen height came out at 8px while the label rendered at 12 —
+           which is the kind of measurement that agrees with the bug. */
+        const scale = svg.getBoundingClientRect().width / svg.viewBox.baseVal.width;
+        const sizes = [...svg.querySelectorAll('text')]
+          .filter((t) => (t.textContent ?? '').trim().length > 0)
+          .map((t) => parseFloat(getComputedStyle(t).fontSize) * scale);
+        return sizes.length ? Math.min(...sizes) : null;
+      });
+      if (smallest !== null && smallest < 11.995) {
+        bad.push(`${width}px: ${smallest.toFixed(2)}px`);
+      }
+    }
+    expect(bad, 'widths where diagram text renders under 12px').toEqual([]);
   });
 }
