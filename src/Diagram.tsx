@@ -425,7 +425,6 @@ const pillFor = (text: string, x: number, y: number) => {
 
 export function Diagram({ spec }: { spec: DiagramSpec }) {
   const svg = useRef<SVGSVGElement>(null);
-  const token = useRef<SVGGElement>(null);
   const status = useRef<HTMLSpanElement>(null);
   const statusText = useRef<HTMLSpanElement>(null);
   const [playing, setPlaying] = useState(true);
@@ -441,24 +440,36 @@ export function Diagram({ spec }: { spec: DiagramSpec }) {
 
   useEffect(() => {
     const root = svg.current;
-    const tok = token.current;
-    const canMeasure = typeof root?.querySelector<SVGPathElement>('[data-edge]')?.getTotalLength === 'function';
-    if (!root || !tok || !canMeasure || reduceMotion()) return;
+    /* The figure holds both layouts. Scoping the clock to either SVG means the other
+       layout is never collected — which is exactly how the phone token stayed frozen. */
+    const figure = root?.closest('.flow-panel') as HTMLElement | null;
+    const canMeasure =
+      typeof root?.querySelector<SVGPathElement>('[data-edge]')?.getTotalLength === 'function';
+    if (!root || !figure || !canMeasure || reduceMotion()) return;
     setAnimated(true);
 
-    const lit = new Map<string, SVGPathElement>();
+    /* Both layouts are in the DOM; a container query shows one. Each edge id exists
+       twice, with its own length in its own viewBox, so every copy is kept and every
+       copy is driven. Step timing comes from the first copy found (the desktop one),
+       which is the feel the desktop layout already had. */
+    const lit = new Map<string, SVGPathElement[]>();
     const len = new Map<string, number>();
-    root.querySelectorAll<SVGPathElement>('[data-edge]').forEach((p) => {
-      const id = p.dataset.edge as string;
-      /* Both layouts are in the DOM, so an edge id appears twice; the desktop one
-         is the only one the clock drives and the phone layout shares its ids. */
-      if (!lit.has(id)) {
-        lit.set(id, p);
-        len.set(id, p.getTotalLength());
-      }
-    });
+    const pathLen = new Map<SVGPathElement, number>();
+    for (const el of figure.querySelectorAll<SVGPathElement>('[data-edge]')) {
+      const id = el.dataset.edge as string;
+      const l = el.getTotalLength();
+      pathLen.set(el, l);
+      lit.set(id, [...(lit.get(id) ?? []), el]);
+      if (!len.has(id)) len.set(id, l);
+    }
+    /* Every token in the figure: one per layout. */
+    const tokens = [...figure.querySelectorAll<SVGGElement>('.flow-token')];
+    /* The token that belongs to a given path is the one in the same SVG. Two layouts
+       hold two viewBoxes, so a coordinate from one is meaningless in the other. */
+    const tokenFor = (p: SVGPathElement) =>
+      (p.ownerSVGElement?.querySelector('.flow-token') as SVGGElement | null) ?? null;
     const nodes = new Map<string, Element[]>();
-    root.querySelectorAll('[data-node]').forEach((el) => {
+    figure.querySelectorAll('[data-node]').forEach((el) => {
       const id = el.getAttribute('data-node') as string;
       nodes.set(id, [...(nodes.get(id) ?? []), el]);
     });
@@ -479,40 +490,44 @@ export function Diagram({ spec }: { spec: DiagramSpec }) {
     };
 
     const setTone = (tone: Tone) => {
-      tok.dataset.tone = tone;
+      for (const t of tokens) t.dataset.tone = tone;
       if (status.current) status.current.dataset.tone = tone;
     };
 
     const reset = () => {
-      lit.forEach((p, id) => {
-        const l = len.get(id) ?? 0;
-        p.style.strokeDasharray = `${l} ${l}`;
-        p.style.strokeDashoffset = `${l}`;
-        p.classList.remove('is-fail');
+      lit.forEach((paths) => {
+        for (const p of paths) {
+          const l = pathLen.get(p) ?? 0;
+          p.style.strokeDasharray = `${l} ${l}`;
+          p.style.strokeDashoffset = `${l}`;
+          p.classList.remove('is-fail');
+        }
       });
       for (const n of spec.nodes) setNode(n.id, 'off');
       setTone('run');
     };
 
     const place = (edge: string, t: number) => {
-      const p = lit.get(edge);
-      const l = len.get(edge) ?? 0;
-      if (!p) return;
-      const at = p.getPointAtLength(l * t);
-      const ahead = p.getPointAtLength(Math.min(l, l * t + 1));
-      const behind = p.getPointAtLength(Math.max(0, l * t - 1));
-      let angle = (Math.atan2(ahead.y - behind.y, ahead.x - behind.x) * 180) / Math.PI;
-      if (angle > 90) angle -= 180;
-      if (angle < -90) angle += 180;
-      tok.setAttribute('transform', `translate(${at.x} ${at.y}) rotate(${angle})`);
-      p.style.strokeDashoffset = `${l * (1 - t)}`;
+      const paths = lit.get(edge);
+      if (!paths) return;
+      for (const p of paths) {
+        const l = pathLen.get(p) ?? 0;
+        const at = p.getPointAtLength(l * t);
+        const ahead = p.getPointAtLength(Math.min(l, l * t + 1));
+        const behind = p.getPointAtLength(Math.max(0, l * t - 1));
+        let angle = (Math.atan2(ahead.y - behind.y, ahead.x - behind.x) * 180) / Math.PI;
+        if (angle > 90) angle -= 180;
+        if (angle < -90) angle += 180;
+        tokenFor(p)?.setAttribute('transform', `translate(${at.x} ${at.y}) rotate(${angle})`);
+        p.style.strokeDashoffset = `${l * (1 - t)}`;
+      }
     };
 
     const enter = (s: Step) => {
       if (s.status && statusText.current) statusText.current.textContent = s.status;
       if (s.tone) setTone(s.tone);
       if (s.nodes) for (const [id, state] of Object.entries(s.nodes)) setNode(id, state);
-      if (s.edge && s.failEdge) lit.get(s.edge)?.classList.add('is-fail');
+      if (s.edge && s.failEdge) for (const p of lit.get(s.edge) ?? []) p.classList.add('is-fail');
     };
 
     const duration = (s: Step) => (s.edge ? (len.get(s.edge) ?? 0) / 0.34 : (s.dur ?? 0));
@@ -551,7 +566,7 @@ export function Diagram({ spec }: { spec: DiagramSpec }) {
             visible = entry.isIntersecting;
           })
         : null;
-    io?.observe(root.parentElement as HTMLElement);
+    io?.observe(figure);
     frame = requestAnimationFrame(tick);
     return () => {
       cancelAnimationFrame(frame);
@@ -600,7 +615,7 @@ export function Diagram({ spec }: { spec: DiagramSpec }) {
           >
             <Marker id={`arrow-${spec.id}`} />
             <Graph spec={spec} placed={desktop.nodes} bounds={desktop} animated={animated} marker={`arrow-${spec.id}`} />
-            <Token at={startOf(spec, desktop.nodes)} ref={token} />
+            <Token at={startOf(spec, desktop.nodes)} />
           </svg>
         </div>
         <div className="flow-v">

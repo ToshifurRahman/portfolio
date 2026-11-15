@@ -582,3 +582,110 @@ for (const d of DIAGRAMS) {
     });
   });
 }
+
+/* ---------------------------------------------------------------- fix pass 4
+ *
+ * F4-1: the token must move on the layout a visitor is actually looking at. The
+ * engine held a ref to the desktop SVG only, so at 390 and 834 the phone token sat
+ * frozen at its rest position for the whole run — the chart looked dead on the only
+ * layout most visitors will see.
+ *
+ * The test measures the token's rendered position on screen, not a class or a
+ * transform attribute: a token can carry a transform and still be painted in the
+ * wrong place, and a class proves nothing about what moved.
+ */
+
+for (const d of DIAGRAMS) {
+  test.describe(`${d.slug}: the running token`, () => {
+    for (const width of [390, 834]) {
+      test(`${width}px: the visible layout's token travels`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        await page.goto(d.path);
+        const fig = panel(page, d.slug);
+        await fig.scrollIntoViewIfNeeded();
+
+        const at = () =>
+          page.evaluate(() => {
+            /* Whichever SVG the browser is actually showing. */
+            const svg = [...document.querySelectorAll('.flow-svg')].find(
+              (s) => s.getBoundingClientRect().width > 0,
+            ) as SVGSVGElement;
+            const tok = svg?.querySelector('.flow-token') as SVGGElement | null;
+            const circle = tok?.querySelector('circle');
+            if (!tok || !circle) return null;
+            const r = circle.getBoundingClientRect();
+            return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) };
+          });
+
+        const first = await at();
+        await page.waitForTimeout(1200);
+        const second = await at();
+        await page.waitForTimeout(1200);
+        const third = await at();
+
+        expect(first, 'a token on the visible layout').not.toBeNull();
+        /* One sample pair can coincide by luck as the loop wraps; three samples of a
+           moving token cannot all be the same place. */
+        const moved =
+          (second && (second.x !== first!.x || second.y !== first!.y)) ||
+          (third && (third.x !== second!.x || third.y !== second!.y));
+        expect(
+          { first, second, third },
+          'the token never moved on the layout in view',
+        ).toEqual(expect.objectContaining({}));
+        expect(moved, `token frozen at ${first!.x},${first!.y} for 2.4s`).toBe(true);
+      });
+    }
+
+    test('stops when paused, on the phone layout', async ({ page }) => {
+      await page.setViewportSize({ width: 390, height: 900 });
+      await page.goto(d.path);
+      const fig = panel(page, d.slug);
+      await fig.scrollIntoViewIfNeeded();
+      await page.waitForTimeout(900);
+
+      const at = () =>
+        page.evaluate(() => {
+          const svg = [...document.querySelectorAll('.flow-svg')].find(
+            (s) => s.getBoundingClientRect().width > 0,
+          ) as SVGSVGElement;
+          const c = svg?.querySelector('.flow-token circle');
+          if (!c) return null;
+          const r = c.getBoundingClientRect();
+          return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) };
+        });
+
+      await page.locator(`.flow-panel[data-diagram="${d.slug}"] .flow-pause`).click();
+      await page.waitForTimeout(150);
+      const a = await at();
+      await page.waitForTimeout(1000);
+      const b = await at();
+      expect(b, 'the token kept moving while paused').toEqual(a);
+    });
+
+    test('respects reduced motion on the phone layout', async ({ page }) => {
+      await page.setViewportSize({ width: 390, height: 900 });
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.goto(d.path);
+      const fig = panel(page, d.slug);
+      await fig.scrollIntoViewIfNeeded();
+      await page.waitForTimeout(400);
+
+      const at = () =>
+        page.evaluate(() => {
+          const svg = [...document.querySelectorAll('.flow-svg')].find(
+            (s) => s.getBoundingClientRect().width > 0,
+          ) as SVGSVGElement;
+          const c = svg?.querySelector('.flow-token circle');
+          if (!c) return null;
+          const r = c.getBoundingClientRect();
+          return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) };
+        });
+
+      const a = await at();
+      await page.waitForTimeout(1200);
+      const b = await at();
+      expect(b, 'the token moved under prefers-reduced-motion').toEqual(a);
+    });
+  });
+}
