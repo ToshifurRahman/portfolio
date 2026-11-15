@@ -169,8 +169,13 @@ function layoutDesktop(spec: DiagramSpec) {
   const labels = spec.edges.filter((e) => e.label).map((e) => (e.label as string).length);
   const widestLabel = labels.length ? Math.max(...labels) : 0;
   const gap = Math.max(GAP_X, Math.ceil(widestLabel * adv(11)) + 20);
+  /* The margin only has to hold a loop's lane, not the label: a label beside a lane is
+     centred on it, inside the drawing. Sizing the margin for the label added ~190 units
+     a side, and because the graph is scaled to fit, that shrank every name to 10.6px
+     at 1280 — a worse defect than the cut label it fixed. */
+  const sideMargin = 16;
   const colX: number[] = [];
-  let x = 16;
+  let x = sideMargin;
   for (let c = 0; c < cols; c++) {
     colX[c] = x;
     x += colW[c] + gap;
@@ -197,8 +202,9 @@ function layoutDesktop(spec: DiagramSpec) {
 
   /* The bottom margin is where a loop edge runs: below every row, so it crosses no
      box (ruling 10). */
-  /* Room under the last row for a loop edge and its label. */
-  return { nodes, w: x - gap + 16, h: y - GAP_Y + 76 };
+  /* Room under the last row for a loop edge and its label, and the margin on the right
+     that the left one reserves. */
+  return { nodes, w: x - gap + sideMargin, h: y - GAP_Y + 76 };
 }
 
 /* The vertical layout: the spine in track 0, branches on a track of their own
@@ -319,12 +325,12 @@ function edgePath(a: Placed, b: Placed, route: Route, bounds: Bounds, vertical =
 /* A label's anchor: the middle of the gap its edge crosses. */
 function labelPos(a: Placed, b: Placed, route: Route, bounds: Bounds, labelW: number): { x: number; y: number } {
   if (route === 'loop-side') {
-    const mid = (a.y + a.h / 2 + b.y + b.h / 2) / 2;
-    return { x: bounds.w - 10 - labelW / 2, y: mid };
+    /* Beside its own vertical leg, at the height it leaves the source. */
+    return { x: bounds.w - 12 - labelW / 2, y: (a.y + a.h / 2 + b.y + b.h / 2) / 2 };
   }
   if (route === 'loop-side-left') {
-    const mid = (a.y + a.h / 2 + b.y + b.h / 2) / 2;
-    return { x: 10 + labelW / 2, y: mid };
+    /* Beside its own leg in the reserved left lane. */
+    return { x: 12 + labelW / 2, y: (a.y + a.h / 2 + b.y + b.h / 2) / 2 };
   }
   if (route === 'loop-bottom') {
     return { x: (a.x + a.w / 2 + b.x + b.w / 2) / 2, y: Math.max(a.y + a.h, b.y + b.h) + 24 };
@@ -332,9 +338,9 @@ function labelPos(a: Placed, b: Placed, route: Route, bounds: Bounds, labelW: nu
   /* Below the source: on its own vertical run, just under the box. */
   if (b.y >= a.y + a.h) {
     if (Math.abs(a.x + a.w / 2 - (b.x + b.w / 2)) < 1) {
-      return { x: clampX(a.x + a.w / 2 + 6 + labelW / 2, labelW, bounds), y: (a.y + a.h + b.y) / 2 };
+      return { x: a.x + a.w / 2 + 6 + labelW / 2, y: (a.y + a.h + b.y) / 2 };
     }
-    return { x: clampX(b.x - 6 - labelW / 2, labelW, bounds), y: b.y + b.h / 2 };
+    return { x: b.x + b.w / 2, y: b.y - 8 };
   }
   if (b.y + b.h <= a.y) {
     return { x: (a.x + a.w / 2 + b.x + b.w / 2) / 2, y: b.y + b.h + (a.y - (b.y + b.h)) / 2 - 4 };
@@ -355,12 +361,6 @@ function touchesBox(lab: { x: number; y: number }, pill: { w: number; h: number 
       lab.y - pill.h < n.y + n.h - 2 &&
       lab.y > n.y + 2,
   );
-}
-
-/* Keep a label's whole box inside the drawing. A label at the edge of the graph
-   would otherwise be cut by the panel, which a visitor reads as a broken word. */
-function clampX(x: number, labelW: number, bounds: Bounds): number {
-  return Math.min(Math.max(x, labelW / 2 + 2), bounds.w - labelW / 2 - 2);
 }
 
 /* The pill behind an edge label, sized from the label's own advance, so a label
