@@ -2113,7 +2113,10 @@ textarea {
 /* Contact ----------------------------------------------------------------- */
 
 .contact-email {
+  /* A standalone link, so it carries the full tap target: at its own font size
+     the box was 31px tall at 360, under the 44px minimum. */
   display: inline-block;
+  min-height: var(--target);
   margin-top: var(--space-6);
   font-size: var(--text-email);
   font-weight: var(--weight-bold);
@@ -2140,6 +2143,14 @@ textarea {
 
 .contact-address .contact-email {
   margin-top: 0;
+}
+
+/* The underline sits at the bottom of the visible text, not of the enlarged
+   tap target, so the address still reads as a link and not as a button. */
+.contact-email {
+  align-content: center;
+  padding-block: 0.5rem;
+  margin-block: calc(var(--space-6) - 0.5rem) -0.5rem;
 }
 
 .copy-button {
