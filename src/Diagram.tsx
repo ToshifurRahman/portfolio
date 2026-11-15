@@ -537,9 +537,7 @@ export function Diagram({ spec }: { spec: DiagramSpec }) {
           >
             <Marker id={`arrow-${spec.id}`} />
             <Graph spec={spec} placed={desktop.nodes} bounds={desktop} animated={animated} marker={`arrow-${spec.id}`} />
-            <g className="flow-token" ref={token} data-tone="done">
-              <circle r="5.5" />
-            </g>
+            <Token at={startOf(spec, desktop.nodes)} ref={token} />
           </svg>
         </div>
         <div className="flow-v">
@@ -552,14 +550,29 @@ export function Diagram({ spec }: { spec: DiagramSpec }) {
           >
             <Marker id={`arrow-${spec.id}-v`} />
             <Graph spec={spec} placed={vertical.nodes} bounds={vertical} animated={animated} marker={`arrow-${spec.id}-v`} vertical />
-            <g className="flow-token" data-tone="done">
-              <circle r="5.5" />
-            </g>
+            <Token at={startOf(spec, vertical.nodes)} />
           </svg>
         </div>
       </div>
       <figcaption className="visually-hidden">{spec.caption}</figcaption>
     </figure>
+  );
+}
+
+/* Where the token rests before a run: on the box the first run starts from, so the
+   still picture has no dot floating in a corner. */
+function startOf(spec: DiagramSpec, nodes: Placed[]) {
+  const first = spec.runs[0].find((s) => s.edge);
+  const edge = spec.edges.find((e) => e.id === first?.edge);
+  const from = nodes.find((n) => n.id === edge?.from) ?? nodes[0];
+  return from ? { x: from.x + from.w / 2, y: from.y + from.h / 2 } : { x: 0, y: 0 };
+}
+
+function Token({ at, ref }: { at: { x: number; y: number }; ref?: React.Ref<SVGGElement> }) {
+  return (
+    <g className="flow-token" ref={ref} data-tone="done" transform={`translate(${at.x} ${at.y})`}>
+      <circle r="5.5" />
+    </g>
   );
 }
 

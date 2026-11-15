@@ -461,18 +461,27 @@ for (const d of DIAGRAMS) {
         const svg = [...el.querySelectorAll('.flow-svg')].find(
           (s) => s.getBoundingClientRect().width > 0,
         ) as SVGSVGElement;
-        const box = svg.getBoundingClientRect();
-        return [...svg.querySelectorAll('.flow-token')]
-          .filter((t) => {
-            const r = t.getBoundingClientRect();
-            if (r.width === 0 && r.height === 0) return false;
-            const cx = r.left + r.width / 2;
-            const cy = r.top + r.height / 2;
-            return cx < box.left || cx > box.right || cy < box.top || cy > box.bottom;
-          })
-          .map((t) => t.getAttribute('transform') ?? '?');
+        const out: string[] = [];
+        for (const tok of svg.querySelectorAll('.flow-token')) {
+          const r = tok.getBoundingClientRect();
+          if (r.width === 0 && r.height === 0) continue;
+          const cx = r.left + r.width / 2;
+          const cy = r.top + r.height / 2;
+          /* A token with no transform is drawn at the SVG's origin: the corner. */
+          if (!tok.getAttribute('transform')) {
+            out.push('no transform, drawn at the origin');
+            continue;
+          }
+          /* And it must rest on a box rather than in empty space. */
+          const onNode = [...svg.querySelectorAll('.flow-node rect')].some((n) => {
+            const b = n.getBoundingClientRect();
+            return cx >= b.left - 2 && cx <= b.right + 2 && cy >= b.top - 2 && cy <= b.bottom + 2;
+          });
+          if (!onNode) out.push('not on a node');
+        }
+        return out;
       });
-      expect(stray, 'tokens drawn outside the graph').toEqual([]);
+      expect(stray, 'the token is not at rest on the graph').toEqual([]);
     });
   });
 }
