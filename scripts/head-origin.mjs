@@ -27,11 +27,12 @@ export function applyOrigin(html, origin) {
 
   const url = `${base}${own}`;
   const image = `${base}/og.png`;
+  /* Only the two tags the document does not already have. The share images are
+     rewritten in place below, so appending them here too would ship each twice
+     — the count is what the unit test checks, since `toContain` cannot see it. */
   const tags = [
     `<link rel="canonical" href="${escapeAttr(url)}" />`,
     `<meta property="og:url" content="${escapeAttr(url)}" />`,
-    `<meta property="og:image" content="${escapeAttr(image)}" />`,
-    `<meta name="twitter:image" content="${escapeAttr(image)}" />`,
   ].join('\n    ');
 
   return html

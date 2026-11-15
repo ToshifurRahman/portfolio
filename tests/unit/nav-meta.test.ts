@@ -75,6 +75,31 @@ describe('social meta', () => {
     expect(bare).toContain('<meta name="twitter:image" content="/og.png" />');
   });
 
+  /* Named with an id so a duplicate is counted, not merely found: `toContain`
+     sees one tag and is satisfied by two. */
+  const countTags = (html: string, attr: 'property' | 'name' | 'rel', value: string) =>
+    (html.match(new RegExp(`<${attr === 'rel' ? 'link' : 'meta'}\\s[^>]*?${attr}="${value}"[^>]*>`, 'g')) ?? [])
+      .length;
+
+  it('emits exactly one of each absolute tag when an origin is set', () => {
+    const html = applyOrigin(read('index.html'), 'https://example.com');
+    expect(countTags(html, 'rel', 'canonical'), 'canonical links').toBe(1);
+    expect(countTags(html, 'property', 'og:url'), 'og:url tags').toBe(1);
+    expect(countTags(html, 'property', 'og:image'), 'og:image tags').toBe(1);
+    expect(countTags(html, 'name', 'twitter:image'), 'twitter:image tags').toBe(1);
+    /* No relative image survives beside the absolute one. */
+    expect(html).not.toContain('content="/og.png"');
+  });
+
+  it('emits none of those four when the origin is empty', () => {
+    const html = applyOrigin(read('index.html'), '');
+    expect(countTags(html, 'rel', 'canonical')).toBe(0);
+    expect(countTags(html, 'property', 'og:url')).toBe(0);
+    /* The path-only share image stays, exactly once each. */
+    expect(countTags(html, 'property', 'og:image')).toBe(1);
+    expect(countTags(html, 'name', 'twitter:image')).toBe(1);
+  });
+
   it('ships a 1200x630 PNG share image', () => {
     const png = readFileSync(resolve(root, 'public/og.png'));
     expect(png.subarray(0, 8).toString('hex')).toBe('89504e470d0a1a0a');
