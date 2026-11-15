@@ -62,6 +62,20 @@ export type Node = {
   state?: boolean;
 };
 
+export type Cluster = {
+  id: string;
+  /* "From the LLM gateway", "Every step": the heading names where the group starts,
+     which is why no line has to be drawn from the spine into it. */
+  heading: string;
+  /* The box the group hangs off. The edge from it to `nodes[0]` is replaced by the
+     heading on the vertical layout. */
+  from: string;
+  /* The group's boxes, in the order they chain down the page. */
+  nodes: string[];
+  /* Taken only when something fails or is refused. */
+  branch?: boolean;
+};
+
 export type Edge = {
   id: string;
   from: string;
@@ -70,6 +84,9 @@ export type Edge = {
   /* A branch is dashed: taken only when something fails or is refused. */
   branch?: boolean;
   route: Route;
+  /* On the vertical layout this edge is not drawn across the graph: a short arrow
+     leaves the box and this text names the destination. Kept short to fit the panel. */
+  stub?: string;
 };
 
 export type DiagramSpec = {
@@ -79,6 +96,8 @@ export type DiagramSpec = {
   note: string;
   nodes: Node[];
   edges: Edge[];
+  /* The vertical layout's branch groups, in the order they stack below the spine. */
+  clusters?: Cluster[];
   runs: Step[][];
   still: { edges: string[]; nodes: Record<string, LampState> };
   caption: string;
@@ -93,7 +112,7 @@ const CHAR = 0.895;
 const NAME = 12;
 const DETAIL = 11.7;
 const PAD = 13;
-const LINE = 15;
+const LINE = 17;
 
 const reduceMotion = () =>
   typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -169,10 +188,14 @@ function layoutDesktop(spec: DiagramSpec) {
   const labels = spec.edges.filter((e) => e.label).map((e) => (e.label as string).length);
   const widestLabel = labels.length ? Math.max(...labels) : 0;
   const gap = Math.max(GAP_X, Math.ceil(widestLabel * adv(11)) + 20);
-  /* The margin only has to hold a loop's lane, not the label: a label beside a lane is
-     centred on it, inside the drawing. Sizing the margin for the label added ~190 units
-     a side, and because the graph is scaled to fit, that shrank every name to 10.6px
-     at 1280 — a worse defect than the cut label it fixed. */
+  /* The graph reserves a gutter for the labels it draws outside a box — a loop's label
+     runs in the reserved margin — so the widest of them decides the margin on each
+     side. A label is then never clamped and never cut: it has room that was planned
+     for it. */
+  /* A loop runs its line down a narrow reserved lane, and its label sits beside that
+     lane *inside* the drawing. The margin therefore only has to hold the lane, not the
+     label: sizing it for the label added ~190 units a side, and because the graph is
+     scaled to fit, that shrank every name to 10.6px at 1280. */
   const sideMargin = 16;
   const colX: number[] = [];
   let x = sideMargin;
@@ -202,51 +225,89 @@ function layoutDesktop(spec: DiagramSpec) {
 
   /* The bottom margin is where a loop edge runs: below every row, so it crosses no
      box (ruling 10). */
-  /* Room under the last row for a loop edge and its label, and the margin on the right
-     that the left one reserves. */
+  /* Room under the last row for a loop edge and its label, and the same gutter on the
+     right as on the left. */
   return { nodes, w: x - gap + sideMargin, h: y - GAP_Y + 76 };
 }
 
-/* The vertical layout: the spine in track 0, branches on a track of their own
- * beside it, and the states on a rail at the end. The two tracks are narrower than
- * a single full-width box, because a branch has to be visibly beside the spine —
- * reading it as the next step is exactly the misreading the review found. */
+/* The vertical layout, designed rather than patched.
+ *
+ * Four passes of moving one label at a time failed here, because a two-track graph
+ * cannot be read at 390: a branch beside the spine looks like the next step, and a
+ * line from the spine to a group far below can only cross the boxes in between. So the
+ * page is not a graph with branches: it is a *spine*, then each branch group as its own
+ * stacked cluster with a heading naming where it starts, a visible gap between groups,
+ * and no line joining one group to the next. Inside a group the boxes chain, because
+ * those orders are real (Event log → Customer's page → Ops feed).
+ *
+ * By construction no edge spans more than one gap, so nothing can cross a box, and
+ * every label sits beside its own segment inside the panel. That is F3-2's requirement:
+ * the class of defect is gone, not its instances.
+ */
+const HEADING = 11;
+
 function layoutVertical(spec: DiagramSpec) {
-  const steps = spec.nodes.filter((n) => !n.state);
   const states = spec.nodes.filter((n) => n.state);
-  /* The viewBox is the phone's own width: at 390 the panel is 390 and the graph is
-     drawn at 1:1, so a viewBox unit is a pixel and the 12-unit labels stay 12px. */
+  const inCluster = new Set((spec.clusters ?? []).flatMap((c) => c.nodes));
+  const spine = spec.nodes.filter((n) => !n.state && !inCluster.has(n.id));
+
+  /* The phone's own width: at 390 the panel is 390 and the graph is drawn 1:1, so a
+     viewBox unit is a pixel and the 12-unit names stay 12px (ruling 9). */
   const W = 358;
-  const spineW = 196;
-  const branchW = 146;
-  const trackX = [6, 6 + spineW + 6];
-
-  const rows = [...new Set(steps.map((n) => n.vat.row))].sort((a, b) => a - b);
+  const MARGIN = 8;
+  const boxW = W - MARGIN * 2;
+  const labels: Placed[] = [];
   const nodes: Placed[] = [];
-  let y = 16;
-  for (const row of rows) {
-    const inRow = steps.filter((n) => n.vat.row === row);
-    const h = Math.max(
-      44,
-      ...inRow.map((n) => heightOf(n, (n.vat.track ? branchW : spineW) - PAD * 2)),
-    );
-    for (const node of inRow) {
-      const w = node.vat.track ? branchW : spineW;
-      nodes.push({ ...node, x: trackX[Math.min(node.vat.track, 1)], y, w, h });
+  /* Where each cluster's heading goes: the heading is the entry point, drawn in the gap
+     above its group, so no edge has to come down from the spine. */
+  const headings: { x: number; y: number; text: string; cluster: string }[] = [];
+  /* The spine's own chain order: it is `vat.row`, which the data already states. */
+  let y = 14;
+
+  const place = (node: Node, top: number) => {
+    const h = Math.max(44, heightOf(node, boxW - PAD * 2));
+    const box = { ...node, x: MARGIN, y: top, w: boxW, h };
+    nodes.push(box);
+    return box;
+  };
+
+  for (const node of [...spine].sort((a, b) => a.vat.row - b.vat.row)) {
+    const box = place(node, y);
+    y += box.h + 34;
+  }
+
+  /* The clusters, stacked in the order the data gives. A gap and a heading separate
+     one from the next; no line crosses either. */
+  for (const cluster of spec.clusters ?? []) {
+    y += 16;
+    headings.push({ x: MARGIN, y: y + HEADING, text: cluster.heading, cluster: cluster.id });
+    y += HEADING + 16;
+    for (const id of cluster.nodes) {
+      const node = spec.nodes.find((n) => n.id === id);
+      if (!node) continue;
+      const box = place(node, y);
+      y += box.h + 26;
     }
-    y += h + 30;
+    y += 6;
   }
 
+  /* The ticket's states, on their own rail at the end: this already read correctly. */
   if (states.length) {
-    y += 12;
-    const pillW = 168;
+    y += 18;
+    const pillW = (W - MARGIN * 2 - 8) / 2;
     states.forEach((node, i) => {
-      nodes.push({ ...node, x: 8 + (i % 2) * (pillW + 8), y: y + Math.floor(i / 2) * 60, w: pillW, h: 28 });
+      nodes.push({
+        ...node,
+        x: MARGIN + (i % 2) * (pillW + 8),
+        y: y + Math.floor(i / 2) * 42,
+        w: pillW,
+        h: 30,
+      });
     });
-    y += Math.ceil(states.length / 2) * 60;
+    y += Math.ceil(states.length / 2) * 42;
   }
 
-  return { nodes, w: W, h: y + 40 };
+  return { nodes, w: W, h: y + 26, headings, labels };
 }
 
 const byId = (nodes: Placed[]) => new Map(nodes.map((n) => [n.id, n]));
@@ -257,35 +318,27 @@ function edgePath(a: Placed, b: Placed, route: Route, bounds: Bounds, vertical =
   if (vertical) {
     const acx = a.x + a.w / 2;
     const bcx = b.x + b.w / 2;
-    /* Straight down the spine. */
-    if (Math.abs(acx - bcx) < 1) return `M${acx} ${a.y + a.h} V${b.y - 2}`;
-    /* The state rail runs across, in one row, so its links are side to side. */
-    if (a.state && b.state) {
-      if (Math.abs(a.y - b.y) < 1) return `M${a.x + a.w} ${a.y + a.h / 2} H${b.x - 2}`;
-      /* Different rail rows: down out of the first, across under it, up into the
-         second's bottom, so the line stays in the gaps between pills. */
-      const upper = Math.min(a.y, b.y);
-      const lower = Math.max(a.y, b.y);
-      const mid = upper + 28 + (lower - upper - 28) / 2;
-      const entry = a.y < b.y ? b.y - 3 : b.y + b.h + 3;
-      return `M${a.x + a.w / 2} ${a.y + a.h} V${mid} H${b.x + b.w / 2} V${entry}`;
+    /* Every vertical-layout box is one column wide, so an edge is a straight drop into
+       the next box down, or a link along the state rail. Nothing here can cross a box:
+       an edge only ever spans the single gap between two neighbours. */
+    if (b.y >= a.y + a.h) {
+      if (Math.abs(acx - bcx) < 1) return `M${acx} ${a.y + a.h} V${b.y - 2}`;
+      const mid = (a.y + a.h + b.y) / 2;
+      return `M${acx} ${a.y + a.h} V${mid} H${bcx} V${b.y - 2}`;
     }
-    /* Out to the side that the target is on, down that margin, and in: the margin
-       between the two tracks is empty for the whole height. */
-    const lane = b.x > a.x ? Math.max(a.x + a.w, b.x) - 6 : Math.min(a.x, b.x + b.w) + 6;
-    return `M${acx} ${a.y + a.h} V${a.y + a.h + 10} H${lane} V${b.y + b.h / 2} H${bcx < lane ? b.x + b.w + 2 : b.x - 2}`;
+    /* Along the rail: side to side, or down one row. */
+    if (Math.abs(a.y - b.y) < 1) return `M${a.x + a.w} ${a.y + a.h / 2} H${b.x - 2}`;
+    const mid = (a.y + a.h + b.y) / 2;
+    return `M${acx} ${a.y + a.h} V${mid} H${bcx} V${b.y - 2}`;
   }
   const acx = a.x + a.w / 2;
-  const acy = a.y + a.h / 2;
   const bcx = b.x + b.w / 2;
+  const acy = a.y + a.h / 2;
   const bcy = b.y + b.h / 2;
-
-  /* The two loops are the only shapes that are a decision rather than geometry: they
-     run in a reserved margin so they leave the graph and come back to it. */
+  /* Out to the outer margin, up to the target's own height, and in from the side:
+     the margin is reserved and no box reaches into it. */
   if (route === 'loop-side') {
-    /* Out to the outer margin, up to the target's own height, and in from the side:
-       the margin is reserved and no box reaches into it. */
-    const lane = bounds.w - 8;
+    const lane = bounds.w - 10;
     if (bcy < acy) return `M${a.x + a.w} ${acy} H${lane} V${bcy} H${b.x + b.w + 2}`;
     return `M${a.x + a.w} ${acy} H${lane} V${bcy} H${b.x + b.w + 2}`;
   }
@@ -306,7 +359,7 @@ function edgePath(a: Placed, b: Placed, route: Route, bounds: Bounds, vertical =
        the outer edge of the two, so the horizontal run misses anything between. */
     const right = b.x > a.x;
     const lane = right ? Math.max(a.x + a.w, b.x + b.w) + 10 : Math.min(a.x, b.x) - 10;
-    return `M${acx} ${a.y + a.h} V${a.y + a.h + 12} H${lane} V${b.y + b.h / 2} H${b.x - 2}`;
+    return `M${acx} ${a.y + a.h} V${a.y + a.h + 12} H${lane} V${b.y - 12} H${b.x + b.w / 2} V${b.y - 2}`;
   }
   /* Above the source: up the gap and in from the top. */
   if (b.y + b.h <= a.y) {
@@ -325,12 +378,12 @@ function edgePath(a: Placed, b: Placed, route: Route, bounds: Bounds, vertical =
 /* A label's anchor: the middle of the gap its edge crosses. */
 function labelPos(a: Placed, b: Placed, route: Route, bounds: Bounds, labelW: number): { x: number; y: number } {
   if (route === 'loop-side') {
-    /* Beside its own vertical leg, at the height it leaves the source. */
-    return { x: bounds.w - 12 - labelW / 2, y: (a.y + a.h / 2 + b.y + b.h / 2) / 2 };
+    const mid = (a.y + a.h / 2 + b.y + b.h / 2) / 2;
+    return { x: bounds.w - 10 - labelW / 2, y: mid };
   }
   if (route === 'loop-side-left') {
-    /* Beside its own leg in the reserved left lane. */
-    return { x: 12 + labelW / 2, y: (a.y + a.h / 2 + b.y + b.h / 2) / 2 };
+    const mid = (a.y + a.h / 2 + b.y + b.h / 2) / 2;
+    return { x: 10 + labelW / 2, y: mid };
   }
   if (route === 'loop-bottom') {
     return { x: (a.x + a.w / 2 + b.x + b.w / 2) / 2, y: Math.max(a.y + a.h, b.y + b.h) + 24 };
@@ -340,7 +393,7 @@ function labelPos(a: Placed, b: Placed, route: Route, bounds: Bounds, labelW: nu
     if (Math.abs(a.x + a.w / 2 - (b.x + b.w / 2)) < 1) {
       return { x: a.x + a.w / 2 + 6 + labelW / 2, y: (a.y + a.h + b.y) / 2 };
     }
-    return { x: b.x + b.w / 2, y: b.y - 8 };
+    return { x: b.x + b.w / 2 + 5 + labelW / 2, y: b.y - 7 };
   }
   if (b.y + b.h <= a.y) {
     return { x: (a.x + a.w / 2 + b.x + b.w / 2) / 2, y: b.y + b.h + (a.y - (b.y + b.h)) / 2 - 4 };
@@ -559,7 +612,15 @@ export function Diagram({ spec }: { spec: DiagramSpec }) {
             focusable="false"
           >
             <Marker id={`arrow-${spec.id}-v`} />
-            <Graph spec={spec} placed={vertical.nodes} bounds={vertical} animated={animated} marker={`arrow-${spec.id}-v`} vertical />
+            <Graph
+              spec={spec}
+              placed={vertical.nodes}
+              bounds={vertical}
+              animated={animated}
+              marker={`arrow-${spec.id}-v`}
+              vertical
+              headings={vertical.headings}
+            />
             <Token at={startOf(spec, vertical.nodes)} />
           </svg>
         </div>
@@ -604,6 +665,7 @@ function Graph({
   animated,
   marker,
   vertical = false,
+  headings = [],
 }: {
   spec: DiagramSpec;
   placed: Placed[];
@@ -611,8 +673,14 @@ function Graph({
   animated: boolean;
   marker: string;
   vertical?: boolean;
+  headings?: { x: number; y: number; text: string; cluster: string }[];
 }) {
   const nodes = byId(placed);
+  /* On the vertical layout a cluster's heading stands in for the edge that entered it,
+     and a `stub` edge is text, not a line. Both are drawn rather than crossed. */
+  const headingFor = new Map((spec.clusters ?? []).map((c) => [c.nodes[0], c.id]));
+  const clusterOf = new Map<string, string>();
+  for (const c of spec.clusters ?? []) for (const id of c.nodes) clusterOf.set(id, c.id);
   return (
     <>
       {(() => {
@@ -623,6 +691,11 @@ function Graph({
         const a = nodes.get(e.from);
         const b = nodes.get(e.to);
         if (!a || !b) return null;
+        /* The heading above a cluster stands in for the edge that entered it, and a
+           stub edge is drawn as text on its source. Drawing either as a line would put
+           one across a gap the design deliberately leaves empty. */
+        if (vertical && headingFor.has(e.to)) return null;
+        if (vertical && e.stub) return null;
         /* The vertical layout goes down the spine or across to an indented branch;
            a horizontal route would cut through the column. */
         const route: Route = vertical
@@ -685,6 +758,37 @@ function Graph({
         );
         });
       })()}
+      {vertical && headings.map((h) => (
+        <text
+          key={h.cluster}
+          className="flow-cluster-heading"
+          data-cluster={h.cluster}
+          x={h.x}
+          y={h.y}
+          textAnchor="start"
+        >
+          {h.text}
+        </text>
+      ))}
+      {vertical && spec.edges.filter((e) => e.stub).map((e) => {
+        const a = nodes.get(e.from);
+        return a ? (
+          <text
+            key={`stub-${e.id}`}
+            className="flow-stub"
+            data-stub={e.id}
+            x={a.x + a.w / 2}
+            y={a.y + a.h + 17}
+            textAnchor="middle"
+          >
+            {wrapToWidth(e.stub ?? '', DETAIL, a.w - 16).map((line, i) => (
+              <tspan key={i} x={a.x + a.w / 2} dy={i === 0 ? 0 : 14}>
+                {line}
+              </tspan>
+            ))}
+          </text>
+        ) : null;
+      })}
       {placed.map((n) => (
         <NodeBox
           key={n.id}

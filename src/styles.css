@@ -1448,6 +1448,25 @@ textarea {
   fill: var(--bg-raised);
 }
 
+/* The heading above a stacked branch cluster on the vertical layout. It names where the
+   group starts, which is what replaces the line from the spine into it, so it is set as
+   a label rather than a node: mono, muted, uppercase, and clearly not a step. */
+.flow-cluster-heading {
+  font-family: var(--mono);
+  font-size: var(--flow-detail);
+  letter-spacing: 0.06em;
+  fill: var(--muted);
+  text-transform: uppercase;
+}
+
+/* A long-range edge on the vertical layout, named in text instead of drawn across the
+   graph. Dashed in tone because these are the failure and replay paths. */
+.flow-stub {
+  font-family: var(--mono);
+  font-size: var(--flow-detail);
+  fill: var(--fail);
+}
+
 .flow-token circle {
   fill: var(--accent);
   transition: fill var(--dur-lamp) linear;

@@ -485,3 +485,100 @@ for (const d of DIAGRAMS) {
     });
   });
 }
+
+/* ---------------------------------------------------------------- fix pass 3
+ *
+ * F3-2 redesigned the vertical layout rather than patching it: the spine is one
+ * column, each branch is a stacked cluster under a heading naming where it starts,
+ * and no line joins one cluster to the next. These check the design's promises, not
+ * a set of coordinates, so a regression cannot pass by moving a label.
+ */
+
+for (const d of DIAGRAMS) {
+  test.describe(`${d.slug}: vertical layout`, () => {
+    test('heads each branch cluster by where it starts', async ({ page }) => {
+      await page.setViewportSize({ width: 390, height: 900 });
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.goto(d.path);
+      await panel(page, d.slug).scrollIntoViewIfNeeded();
+
+      const headings = await page.evaluate(() => {
+        const svg = [...document.querySelectorAll('.flow-svg')].find(
+          (s) => s.getBoundingClientRect().width > 0,
+        ) as SVGSVGElement;
+        return [...svg.querySelectorAll('.flow-cluster-heading')].map((h) => h.textContent ?? '');
+      });
+      /* Each cluster is named. An unnamed group is the misreading the review found:
+       * boxes stacked with no statement of why they are there. */
+      expect(headings.length, 'cluster headings on the vertical layout').toBeGreaterThan(0);
+      for (const h of headings) expect(h.trim().length).toBeGreaterThan(3);
+    });
+
+    test('draws no line between clusters', async ({ page }) => {
+      await page.setViewportSize({ width: 390, height: 900 });
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.goto(d.path);
+      await panel(page, d.slug).scrollIntoViewIfNeeded();
+
+      /* Every edge on the vertical layout must join two boxes that are neighbours in
+       * the same chain. An edge that skips over a heading or a gap is a line between
+       * clusters, which is what made the old layout read as one chain. */
+      const spans = await page.evaluate(() => {
+        const svg = [...document.querySelectorAll('.flow-svg')].find(
+          (s) => s.getBoundingClientRect().width > 0,
+        ) as SVGSVGElement;
+        const boxes = [...svg.querySelectorAll('.flow-node')].map((n) => ({
+          id: n.getAttribute('data-node') ?? '',
+          r: n.querySelector('rect')!.getBoundingClientRect(),
+        }));
+        const bad: string[] = [];
+        for (const path of svg.querySelectorAll<SVGPathElement>('.flow-edge')) {
+          const id = path.getAttribute('data-edge') ?? '?';
+          /* The path's own extent tells us whether it spans more than one gap. */
+          const len = path.getTotalLength();
+          if (len < 1) continue;
+          const a = path.getPointAtLength(0);
+          const b = path.getPointAtLength(len);
+          const ctm = svg.getScreenCTM()!;
+          const toPage = (p: { x: number; y: number }) => ({
+            x: ctm.a * p.x + ctm.c * p.y + ctm.e,
+            y: ctm.b * p.x + ctm.d * p.y + ctm.f,
+          });
+          const pa = toPage(a);
+          const pb = toPage(b);
+          /* The two boxes it joins, by containment of its endpoints. */
+          const near = (q: { x: number; y: number }) =>
+            boxes
+              .map((n) => ({ id: n.id, d: Math.hypot(q.x - (n.r.left + n.r.right) / 2, q.y - (n.r.top + n.r.bottom) / 2) }))
+              .sort((m, n) => m.d - n.d)[0];
+          const na = near(pa);
+          const nb = near(pb);
+          const between = boxes.filter((n) => {
+            if (n.id === na.id || n.id === nb.id) return false;
+            const midY = (pa.y + pb.y) / 2;
+            return n.r.top < midY && n.r.bottom > midY && Math.abs(pa.y - pb.y) > 1;
+          });
+          /* A long vertical span whose middle passes through another cluster's box is
+           * the defect: the line runs from one cluster to the next. */
+          if (between.length && Math.abs(pa.y - pb.y) > 200) bad.push(`${id} spans ${Math.round(pb.y - pa.y)}px`);
+        }
+        return bad;
+      });
+      expect(spans, 'edges joining one cluster to another').toEqual([]);
+    });
+
+    test('never scrolls sideways, at 390 or 834', async ({ page }) => {
+      for (const width of [390, 834]) {
+        await page.setViewportSize({ width, height: 900 });
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        await page.goto(d.path);
+        await panel(page, d.slug).scrollIntoViewIfNeeded();
+        const overflow = await page.evaluate(
+          () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        );
+        /* Ruling 11: the phone graph may be tall, never wide. */
+        expect(overflow, `sideways scroll at ${width}px`).toBeLessThanOrEqual(1);
+      }
+    });
+  });
+}

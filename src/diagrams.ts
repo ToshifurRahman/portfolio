@@ -1,5 +1,5 @@
 import { securityCheckLabel } from './content';
-import type { DiagramSpec, Edge, Node, Step } from './Diagram';
+import type { Cluster, DiagramSpec, Edge, Node, Step } from './Diagram';
 
 /*
  * The two case studies' flowcharts, as data.
@@ -98,7 +98,15 @@ const TP_EDGES: Edge[] = [
   { id: 'retry', from: 'stageFails', to: 'retry', label: 'up to 3', route: 'right' },
   { id: 'again', from: 'retry', to: 'attention', route: 'right' },
   { id: 'escalate', from: 'attention', to: 'replay', label: 'staff', route: 'down-left' },
-  { id: 'replayToQueue', from: 'replay', to: 'queue', label: 'to the failed stage', branch: true, route: 'loop-side' },
+  {
+    id: 'replayToQueue',
+    from: 'replay',
+    to: 'queue',
+    label: 'to the failed stage',
+    branch: true,
+    route: 'loop-side',
+    stub: 'back to the SQS queue, at the stage that failed',
+  },
 
   /* The state rail. */
   { id: 'q2t', from: 'queued', to: 'triaging', route: 'right' },
@@ -148,6 +156,21 @@ const tpRuns: Step[][] = [
   ],
 ];
 
+/* The vertical layout's branch groups. Each is headed by where it starts, so the
+   entry edge from the spine is the heading rather than a line: a line from a spine box
+   to a group three rows below can only run through the boxes between them. */
+const TP_CLUSTERS: Cluster[] = [
+  { id: 'backup', heading: 'From the LLM gateway', from: 'gateway', nodes: ['backup'], branch: true },
+  { id: 'feed', heading: 'Every step', from: 'worker', nodes: ['eventLog', 'customerPage', 'opsFeed'] },
+  {
+    id: 'failure',
+    heading: 'When a stage fails',
+    from: 'worker',
+    nodes: ['stageFails', 'retry', 'attention', 'replay'],
+    branch: true,
+  },
+];
+
 const ticketPipeline: DiagramSpec = {
   id: 'ticket-pipeline',
   title: 'Ticket-Pipeline',
@@ -155,6 +178,7 @@ const ticketPipeline: DiagramSpec = {
   note: 'A demo ticket through the system’s real states',
   nodes: TP_NODES,
   edges: TP_EDGES,
+  clusters: TP_CLUSTERS,
   runs: tpRuns,
   still: {
     edges: ['submit', 'enqueue', 'consume', 'call', 'toPrimary', 'log', 'toPage', 'toOps', 'q2t', 't2d', 'd2c'],
@@ -233,6 +257,11 @@ const rgRuns: Step[][] = [
   ],
 ];
 
+const RG_CLUSTERS: Cluster[] = [
+  { id: 'roleRefused', heading: 'Refused at the role check', from: 'role', nodes: ['refuseRole'], branch: true },
+  { id: 'stock', heading: 'The order', from: 'tx', nodes: ['refuseStock'], branch: true },
+];
+
 const rannaghor: DiagramSpec = {
   id: 'rannaghor',
   title: 'RannaGhor',
@@ -240,6 +269,7 @@ const rannaghor: DiagramSpec = {
   note: 'A customer’s request through every check it meets',
   nodes: RG_NODES,
   edges: RG_EDGES,
+  clusters: RG_CLUSTERS,
   runs: rgRuns,
   still: {
     edges: ['sec', 'lim', 'sess', 'authorise', 'query', 'commit'],
