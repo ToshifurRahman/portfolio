@@ -42,7 +42,6 @@ export const owner = {
 export const proof = [
   { value: '1,600+', label: 'algorithm problems solved' },
   { value: '100+', label: 'programming contests' },
-  { value: '2', label: 'open-source case studies' },
 ];
 
 export const builds = [

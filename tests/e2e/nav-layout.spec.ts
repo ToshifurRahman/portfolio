@@ -3,15 +3,16 @@ import { expect, test } from '@playwright/test';
 test.describe('first screen at 390 px', () => {
   test('shows who this is, the statement, the CV and every figure above the fold', async ({ page }) => {
     /* Must-prove 2: the first viewport shows the name, the role and the Download
-       CV action. The readout now carries three figures (owner, 2026-11-15: drop
-       the test-file count), so the count is read rather than hard-coded. */
+       CV action. The readout now carries two figures (owner, 2026-11-15 23:03:
+       drop the open-source figure), so the count is read rather than
+       hard-coded. */
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');
     for (const selector of ['.name', '.role', '.statement', '.readout .button']) {
       await expect(page.locator(selector)).toBeInViewport();
     }
     const figures = page.locator('.readout .proof li');
-    expect(await figures.count()).toBe(3);
+    expect(await figures.count()).toBe(2);
     for (const figure of await figures.all()) {
       await expect(figure).toBeInViewport({ ratio: 1 });
     }

@@ -77,12 +77,13 @@ describe('introduction', () => {
     });
   });
 
-  it('keeps three proof figures, with no test-file count', () => {
-    /* Owner, 2026-11-15: "drop 120 test files from hero". A test-file count is
-       a fact about one repository, not a proof about the person, and four
-       figures had to share a row that reads better with three. */
-    expect(proof).toHaveLength(3);
-    expect(proof.map((p) => p.value)).toEqual(['1,600+', '100+', '2']);
+  it('keeps two proof figures, with no test-file count', () => {
+    /* Owner, 2026-11-15: "drop 120 test files from hero" (a test-file count is a
+       fact about one repository, not a proof about the person), and 23:03:
+       "drop open-source case studies". Two figures remain, and the readout
+       divides its width between them. */
+    expect(proof).toHaveLength(2);
+    expect(proof.map((p) => p.value)).toEqual(['1,600+', '100+']);
     const text = JSON.stringify(proof);
     expect(text).not.toMatch(/test files/i);
     expect(text).not.toMatch(/"120"/);
