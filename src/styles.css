@@ -1467,6 +1467,22 @@ textarea {
   border-radius: var(--radius-sm);
   color: var(--ink-2);
   line-height: 1.5;
+  transition:
+    color var(--dur-fast) linear,
+    border-color var(--dur-fast) linear;
+}
+
+/* Owner: "hovering on skills section, text & border will be primary color". The
+   text takes --accent-text, not --accent: in the light theme --accent is a light
+   amber that fails AA on the page background, while --accent-text is the darker
+   one that passes. The items are not focusable (they do nothing), so no
+   :focus-visible rule pretends otherwise. The transition is dropped by the
+   reduced-motion block at the end of this file. */
+@media (hover: hover) {
+  .skill-list li:hover {
+    color: var(--accent-text);
+    border-color: var(--accent);
+  }
 }
 
 /* Contact ----------------------------------------------------------------- */
