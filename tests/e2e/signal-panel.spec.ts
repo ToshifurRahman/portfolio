@@ -218,52 +218,11 @@ test('the home page no longer carries the animated diagram', async ({ page }) =>
   await expect(page.locator('#now')).toBeVisible();
 });
 
-test.describe('mini-track labels', () => {
-  /* The case-study architecture lanes still draw `.line`. RannaGhor's first
-     node, "Security and CSRF", wrapped to two lines while its four siblings held
-     one, so the lamps stopped being level; the whole lane wrapped at 1024. Every
-     label holds one line, at every width.
-
-     `/` is no longer in this list: the owner replaced the Work cards' station
-     rail with a node diagram (2026-11-15), so the home page has no `.line`. The
-     node diagram has its own spec, which checks the same thing — no wrapped,
-     clipped or spilling label — where that diagram actually is. */
-  for (const width of [390, 768, 1024, 1100, 1280, 1440]) {
-    for (const path of ['/work/ticket-pipeline', '/work/rannaghor']) {
-      test(`${path} at ${width} px: every node label is one line`, async ({ page }) => {
-        await page.setViewportSize({ width, height: 900 });
-        await page.goto(path);
-        const rows = await page.evaluate(() => {
-          return [...document.querySelectorAll('.line')].map((line) => {
-            const lineBox = line.getBoundingClientRect();
-            return {
-              label: line.getAttribute('aria-label') ?? '',
-              nodes: [...line.querySelectorAll('li')].map((li) => {
-                const range = document.createRange();
-                range.selectNodeContents(li);
-                const rects = [...range.getClientRects()].filter((r) => r.width > 1);
-                return {
-                  text: (li.textContent ?? '').trim(),
-                  lines: new Set(rects.map((r) => Math.round(r.top))).size,
-                  clipped: li.scrollWidth > li.clientWidth + 1,
-                  spills: rects.some((r) => r.right > lineBox.right + 1),
-                };
-              }),
-            };
-          });
-        });
-        expect(rows.length).toBeGreaterThan(0);
-        for (const row of rows) {
-          for (const node of row.nodes) {
-            expect(node.lines, `${row.label} -> "${node.text}" wrapped`).toBe(1);
-            expect(node.clipped, `${row.label} -> "${node.text}" was clipped`).toBe(false);
-            expect(node.spills, `${row.label} -> "${node.text}" left the track`).toBe(false);
-          }
-        }
-      });
-    }
-  }
-});
+/* The case studies' architecture lanes used to draw `.line`, a small CSS track
+   of station labels. The owner replaced that section's content with the
+   flowchart (2026-11-15), so `.line` is gone from these pages and its old spec
+   with it. The flowchart's own labels are checked by `flowchart.spec.ts`, and the
+   Work card's node diagram by the block below. */
 
 test.describe('the Work card node diagram', () => {
   /* Owner, 2026-11-15: the Work card chart becomes a small node diagram. Every

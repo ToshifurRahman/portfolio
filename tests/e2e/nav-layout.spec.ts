@@ -176,12 +176,14 @@ test.describe('design review 1 regressions', () => {
 test.describe('case-study contents', () => {
   const pages = ['/work/ticket-pipeline', '/work/rannaghor'];
 
-  test('shows all seven steps, unclipped, inside the column at 1280 px', async ({ page }) => {
+  test('shows all six steps, unclipped, inside the column at 1280 px', async ({ page }) => {
+    /* Six since 2026-11-15: Challenges and Solutions became one section, because
+       the owner asked for them to read as pairs rather than two lists. */
     await page.setViewportSize({ width: 1280, height: 900 });
     for (const path of pages) {
       await page.goto(path);
       const links = page.locator('.contents a');
-      await expect(links).toHaveCount(7);
+      await expect(links).toHaveCount(6);
       for (const link of await links.all()) await expect(link).toBeInViewport();
       expect((await links.last().textContent())!.trim()).toBe('Results');
       const clipped = await links.evaluateAll((all) => all.some((el) => el.scrollWidth > el.clientWidth + 1));

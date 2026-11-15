@@ -1233,6 +1233,13 @@ textarea {
 }
 
 .track-title a {
+  /* A standalone link to the study, so it carries the full tap target: at its
+     own font size the box was 24px tall on a phone. The negative margin keeps the
+     panel's header the same height it was while the clickable area grows. */
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--target);
+  margin-block: calc((var(--target) - 1.5em) / -2);
   font-weight: var(--weight-semibold);
 }
 
@@ -2217,9 +2224,12 @@ textarea {
 }
 
 .meta dd a {
+  /* The full target, not `--target-sm`: these are standalone links (a GitHub
+     repo, an owner's site), not inline ones inside a paragraph, and 32px is under
+     the 44px minimum at a thumb's distance. */
   display: inline-flex;
   align-items: center;
-  min-height: var(--target-sm);
+  min-height: var(--target);
 }
 
 /* The contents bar is itself a track: one station per section, lit as you
