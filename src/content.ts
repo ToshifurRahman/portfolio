@@ -192,10 +192,11 @@ export const workLede = {
   rest: ' Each case study covers the problem, the architecture, the decisions and the results.',
 };
 
-/* The Contact lede, shown only when there is an address to write to. Owner
-   confirmed 2026-11-15. */
+/* The Contact lede, shown only when there is an address to write to. The
+   owner's own words, 2026-11-15: "Want to talk? email is the fastest way to
+   reach me". The first sentence is set in full ink. */
 export const contactLede = {
-  lead: 'Hiring for a backend or full-stack role?',
+  lead: 'Want to talk?',
   rest: ' Email is the fastest way to reach me.',
 };
 

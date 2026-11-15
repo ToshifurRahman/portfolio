@@ -45,10 +45,13 @@ describe('section ledes', () => {
   });
 
   it('keeps the Contact lede in content, with its lead sentence split out', () => {
-    expect(contactLede.lead).toBe('Hiring for a backend or full-stack role?');
-    expect(contactLede.lead + contactLede.rest).toBe(
-      'Hiring for a backend or full-stack role? Email is the fastest way to reach me.',
-    );
+    /* The owner's own words, 2026-11-15: "keep a simple desc, Want to talk?
+       email is the fastest way to reach me". This replaces the R1 "Hiring for a
+       backend or full-stack role?" line, which made a claim the owner had not
+       written. */
+    expect(contactLede.lead).toBe('Want to talk?');
+    expect(contactLede.lead + contactLede.rest).toBe('Want to talk? Email is the fastest way to reach me.');
+    expect(contactLede.lead + contactLede.rest).not.toMatch(/Hiring/i);
   });
 
   it('renders them from content rather than hard-coding them in the page', () => {

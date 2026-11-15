@@ -9,6 +9,33 @@ const gotoHome = async (page: import('@playwright/test').Page) => {
   await page.locator('#experience-title').waitFor();
 };
 
+test('every email link on the built page is a plain mailto', async ({ page }) => {
+  /* Owner, 2026-11-15: clicking the email should open the default mail app.
+     Checked on the built page, because that is where a stray target="_blank"
+     or download would actually change the click. */
+  await gotoHome(page);
+  const links = page.locator('a[href^="mailto:"]');
+  const count = await links.count();
+  expect(count).toBeGreaterThan(0);
+  for (let i = 0; i < count; i += 1) {
+    const link = links.nth(i);
+    await expect(link).toHaveAttribute('href', `mailto:${owner.email}`);
+    expect(await link.getAttribute('target'), `link ${i} has a target`).toBeNull();
+    expect(await link.getAttribute('download'), `link ${i} downloads`).toBeNull();
+  }
+  /* The large address and the readout button are both there. */
+  await expect(page.locator('.contact-email')).toHaveAttribute('href', `mailto:${owner.email}`);
+  await expect(page.locator('.intro-actions').locator('a[href^="mailto:"]')).toHaveCount(1);
+});
+
+test('the contact lede is the owner’s own sentence', async ({ page }) => {
+  await gotoHome(page);
+  const lede = page.locator('#contact .section-lede');
+  await expect(lede).toContainText('Want to talk?');
+  await expect(lede).toContainText('Email is the fastest way to reach me.');
+  await expect(lede).not.toContainText('Hiring for');
+});
+
 test('the CV downloads as a PDF', async ({ page, request }) => {
   await gotoHome(page);
 

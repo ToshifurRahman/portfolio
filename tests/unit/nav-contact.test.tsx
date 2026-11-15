@@ -46,6 +46,37 @@ describe('contact CV link', () => {
   });
 });
 
+/* Owner, 2026-11-15: "in contact, clicking on email will redirect to default
+   email app". A mailto link opens the mail client; a target would open a tab
+   and a download attribute would save a file. Every visible email link on the
+   site has to stay a plain mailto. */
+describe('email links open the mail client', () => {
+  it('makes every mailto a plain link, with no target and no download', () => {
+    identity.cv = '/cv/Toshifur-Rahman-CV.pdf';
+    renderHome();
+    const mailto = [...document.querySelectorAll('a[href^="mailto:"]')];
+    expect(mailto.length).toBeGreaterThan(0);
+    for (const link of mailto) {
+      expect(link.getAttribute('href')).toBe(`mailto:${owner.email}`);
+      expect(link).not.toHaveAttribute('target');
+      expect(link).not.toHaveAttribute('download');
+      expect(link).not.toHaveAttribute('rel');
+    }
+  });
+
+  it('covers the large address and the readout button', () => {
+    renderHome();
+    const big = document.querySelector('.contact-email');
+    expect(big?.getAttribute('href')).toBe(`mailto:${owner.email}`);
+    const button = [...document.querySelectorAll('.intro-actions a')].find(
+      (a) => a.getAttribute('href') === `mailto:${owner.email}`,
+    );
+    expect(button, 'the readout Email button is missing').toBeTruthy();
+    expect(button).not.toHaveAttribute('target');
+    expect(button).not.toHaveAttribute('download');
+  });
+});
+
 /* The addresses are set large, so they may break at their own separators and
    nowhere else. BreakableLink inserts a <wbr> after each "/" and "@"; without
    it the browser would break mid-word at 1280, and a later overflow-wrap
