@@ -2,9 +2,10 @@ import { Fragment } from 'react';
 import type { CaseStudy } from './content';
 
 /* A card's small node diagram: the study's main chain, drawn as labelled boxes
- * joined by arrows, in the Signal Box line language. It is a static picture of
- * the same lane the case study's architecture section lists, so it states no
- * fact of its own: every label is read from src/content.ts.
+ * joined by arrows, in the Signal Box line language. It is a static summary of the
+ * system the case study's flowchart details in full, and it states no fact of its
+ * own: every label is checked against src/content.ts, and a label the source does
+ * not name fails the unit test.
  *
  * One branch is allowed, and only where the source states one. Ticket-Pipeline's
  * gateway switches to a backup model when the primary fails or times out, so the
@@ -18,24 +19,36 @@ import type { CaseStudy } from './content';
 
 type Node = { label: string; branch?: boolean };
 
-/* The chain to draw, read from the study's own lanes. The Work lane is the
- * longest non-sibling lane and is the one that shows the system in order; for
- * RannaGhor that is the request lane, which ends at PostgreSQL in its diagram
- * even though the lane block stops at the route handler. */
+/* The chain to draw, by slug.
+ *
+ * It is a spec rather than a heuristic. Picking the longest lane gave the wrong
+ * chain twice (R4a-ds-3): Ticket-Pipeline's longest lane starts at the API, so the
+ * card showed no React app in front of it, and RannaGhor's stops at the route
+ * handler, so the card showed no database behind it. Which parts a card shows is a
+ * decision, so it is written down.
+ *
+ * Every label is still sourced: `chain()` checks each one against the study's own
+ * lanes and notes, and the unit test fails on a box the source does not name. The
+ * Ticket-Pipeline card deliberately has no PostgreSQL node — the brief names six
+ * parts plus the branch, and a seventh box does not fit a card. */
+const CHAINS: Record<string, string[]> = {
+  'ticket-pipeline': ['React app', 'Hono API', 'SQS queue', 'Worker', 'LLM gateway', 'Primary model'],
+  rannaghor: ['Security and CSRF', 'Rate limit', 'Session', 'Role check', 'Route handler', 'PostgreSQL'],
+};
+
+/* The branch, where the source states one. Ticket-Pipeline's Work lane says the
+   gateway switches to a backup model when the primary fails or times out; it is
+   the only fork in either study, so it is named here and checked against the note. */
+const BRANCH: Record<string, { after: string; label: string }> = {
+  'ticket-pipeline': { after: 'LLM gateway', label: 'Backup model' },
+};
+
 export function chainFor(study: CaseStudy): Node[] {
-  const lanes = study.sections.flatMap((s) => s.blocks.flatMap((b) => (b.kind === 'diagram' ? b.lanes : [])));
-  const lane = lanes.filter((l) => !l.siblings).sort((a, b) => b.nodes.length - a.nodes.length)[0];
-  if (!lane) return [];
-
-  const nodes: Node[] = lane.nodes.map((label) => ({ label }));
-
-  /* The backup-model branch, where the lane note states it. The note is the
-     source, not a new fact: "The gateway switches to a backup model when the
-     primary fails or times out." */
-  const gateway = nodes.findIndex((n) => /gateway/i.test(n.label));
-  if (gateway >= 0 && /backup model/i.test(lane.note ?? '')) {
-    nodes.push({ label: 'Backup model', branch: true });
-  }
+  const labels = CHAINS[study.slug];
+  if (!labels) return [];
+  const nodes: Node[] = labels.map((label) => ({ label }));
+  const branch = BRANCH[study.slug];
+  if (branch) nodes.push({ label: branch.label, branch: true });
   return nodes;
 }
 
