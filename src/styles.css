@@ -1460,11 +1460,12 @@ textarea {
 }
 
 /* A long-range edge on the vertical layout, named in text instead of drawn across the
-   graph. Dashed in tone because these are the failure and replay paths. */
+   graph. Muted like the other edge labels: the replay it names is a recovery, not a
+   failure, and red is kept for refusals and failures. */
 .flow-stub {
   font-family: var(--mono);
   font-size: var(--flow-detail);
-  fill: var(--fail);
+  fill: var(--muted);
 }
 
 .flow-token circle {

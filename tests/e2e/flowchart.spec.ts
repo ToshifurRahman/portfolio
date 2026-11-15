@@ -689,3 +689,60 @@ for (const d of DIAGRAMS) {
     });
   });
 }
+
+/* F4-2: the replay stub is a recovery, so it is drawn in the muted ink of the other
+ * edge labels. Red is reserved for refusals and failures, and a red replay stub makes
+ * a routine recovery look like something went wrong. Measured from the painted colour,
+ * and compared with a real failure edge's label so the two cannot both pass by being
+ * the same. */
+
+for (const d of DIAGRAMS) {
+  test(`${d.slug}: the replay stub is muted, not red`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto(d.path);
+    await panel(page, d.slug).scrollIntoViewIfNeeded();
+
+    const stub = page.locator(`.flow-panel[data-diagram="${d.slug}"] .flow-stub`).first();
+    if ((await stub.count()) === 0) test.skip(true, 'this study has no long-range stub');
+
+    const ink = await stub.evaluate((el) => {
+      const cs = getComputedStyle(el as SVGElement);
+      const probe = getComputedStyle(document.documentElement);
+      return {
+        fill: cs.fill,
+        muted: probe.getPropertyValue('--muted').trim(),
+        fail: probe.getPropertyValue('--fail').trim(),
+      };
+    });
+
+    const resolve = (token: string) => {
+      if (!token.startsWith('var(')) return token;
+      return getComputedStyle(document.documentElement).getPropertyValue(token.slice(4, -1)).trim();
+    };
+    const painted = await page.evaluate((f) => {
+      const d = document.createElement('span');
+      d.style.color = f;
+      document.body.appendChild(d);
+      const c = getComputedStyle(d).color;
+      d.remove();
+      return c;
+    }, ink.fill);
+
+    const rgb = (tok: string) =>
+      page.evaluate((t) => {
+        const d = document.createElement('span');
+        d.style.color = t;
+        document.body.appendChild(d);
+        const c = getComputedStyle(d).color;
+        d.remove();
+        return c;
+      }, tok);
+
+    const muted = await rgb(ink.muted);
+    const fail = await rgb(ink.fail);
+    /* Muted, and demonstrably not the failure colour. */
+    expect(painted, 'the stub is painted in the muted ink').toBe(muted);
+    expect(painted, 'the stub is painted red like a failure').not.toBe(fail);
+  });
+}
