@@ -2,7 +2,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { certificates, education, experience, owner } from '../../src/content';
+import { achievements, certificates, education, experience, owner } from '../../src/content';
 import { CvSections } from '../../src/sections';
 
 /* jsdom has no <dialog> implementation, so provide the two methods the
@@ -69,6 +69,57 @@ describe('CvSections', () => {
     expect(text).toMatch(/1st Runner-up/);
     expect(text).toMatch(/Best Mentor Award/);
     expect(text.indexOf('Codeforces')).toBeLessThan(text.indexOf('1st Runner-up'));
+  });
+
+  /* Owner: "In achievements, highlight oj rating, problem solving, contests."
+     The four figures are the facts already in the first achievement's sentence,
+     split into fields; the test pins each one to that sentence, so splitting
+     the entry cannot quietly change a number. */
+  it('leads with the problem-solving record, splitting the first achievement', () => {
+    renderSections();
+    const readout = document.querySelector('#achievements .readout-figures');
+    expect(readout).not.toBeNull();
+    const values = [...readout!.querySelectorAll('.proof-value')].map((el) => el.textContent);
+    const labels = [...readout!.querySelectorAll('.proof-label')].map((el) => el.textContent);
+    expect(values).toEqual(['1290', '1461', '1,600+', '100+']);
+    expect(labels).toEqual([
+      'Codeforces max rating, Pupil',
+      'CodeChef max rating',
+      'problems solved',
+      'contests entered',
+    ]);
+
+    /* Every figure is in the sentence it came from, and no fact is new. */
+    const source = achievements[0].text.replace(/,/g, '');
+    for (const fact of ['1290', '1461', '1600+', '100+']) {
+      expect(source, fact).toContain(fact);
+    }
+    expect(achievements[0].record).toBeTruthy();
+    expect(achievements[0].record!.map((r) => r.value).join(' ')).toBe('1290 1461 1,600+ 100+');
+  });
+
+  it('keeps both profile links beside the figures', () => {
+    renderSections();
+    const readout = document.querySelector('#achievements .readout-figures')!;
+    const links = [...readout.querySelectorAll('a')].map((a) => a.getAttribute('href'));
+    expect(links).toEqual([
+      'https://codeforces.com/profile/ToshifurRahman',
+      'https://www.codechef.com/users/tasin_021',
+    ]);
+  });
+
+  it('shows the first achievement once, in the readout, and the rest as the list', () => {
+    renderSections();
+    const readout = document.querySelector('#achievements .readout-figures')!;
+    expect(readout.textContent).toContain(achievements[0].text);
+    const listed = [...document.querySelectorAll('.achievements li')].map((li) => li.textContent ?? '');
+    expect(listed).toHaveLength(achievements.length - 1);
+    for (const entry of achievements.slice(1)) {
+      expect(listed.some((t) => t.includes(entry.text)), entry.text).toBe(true);
+    }
+    /* The record sentence appears once on the page, not twice. */
+    const page = document.getElementById('achievements')!.textContent ?? '';
+    expect(page.split(achievements[0].text).length - 1).toBe(1);
   });
 
   it('lists one row per certificate inside Achievements, named by its own text', () => {

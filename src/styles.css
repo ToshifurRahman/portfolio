@@ -1294,6 +1294,27 @@ textarea {
   max-width: var(--measure);
 }
 
+/* The problem-solving record, in the hero readout's own figure style: the four
+   numbers first, then the sentence they came from and the two profiles. */
+.readout-figures {
+  margin-bottom: var(--space-6);
+  padding-bottom: var(--space-5);
+  border-bottom: var(--line) solid var(--rule);
+}
+
+.readout-figures .proof {
+  grid-column: auto;
+}
+
+.readout-record {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-5);
+  max-width: var(--measure);
+  color: var(--ink-2);
+}
+
 .achievement-links {
   display: flex;
   flex-wrap: wrap;

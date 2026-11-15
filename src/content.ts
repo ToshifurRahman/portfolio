@@ -159,11 +159,23 @@ export const education: EducationEntry[] = [
   },
 ];
 
-export type Achievement = { text: string; links?: { label: string; href: string }[] };
+/* One highlighted figure in the achievements readout. Every value and label is
+   a fact already stated in that achievement's own text below; the readout is a
+   second view of the same sentence, never a new claim. */
+export type RecordFigure = { value: string; label: string };
+
+export type Achievement = { text: string; links?: { label: string; href: string }[]; record?: RecordFigure[] };
 
 export const achievements: Achievement[] = [
   {
     text: 'Codeforces: ToshifurRahman (Pupil, max rating 1290); CodeChef: tasin_021 (max rating 1461). Solved 1,600+ problems and participated in 100+ online and onsite contests.',
+    /* Split from the sentence above, fact for fact, for the section's readout. */
+    record: [
+      { value: '1290', label: 'Codeforces max rating, Pupil' },
+      { value: '1461', label: 'CodeChef max rating' },
+      { value: '1,600+', label: 'problems solved' },
+      { value: '100+', label: 'contests entered' },
+    ],
     links: [
       { label: 'Codeforces profile', href: 'https://codeforces.com/profile/ToshifurRahman' },
       { label: 'CodeChef profile', href: 'https://www.codechef.com/users/tasin_021' },
