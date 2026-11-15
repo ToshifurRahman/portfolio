@@ -636,7 +636,9 @@ function startOf(spec: DiagramSpec, nodes: Placed[]) {
   const first = spec.runs[0].find((s) => s.edge);
   const edge = spec.edges.find((e) => e.id === first?.edge);
   const from = nodes.find((n) => n.id === edge?.from) ?? nodes[0];
-  return from ? { x: from.x + from.w / 2, y: from.y + from.h / 2 } : { x: 0, y: 0 };
+  /* On the box's leading edge, not its centre: the centre is where the box's own name
+     and detail are, and a dot there covers a letter. */
+  return from ? { x: from.x + 11, y: from.y + from.h / 2 } : { x: 0, y: 0 };
 }
 
 function Token({ at, ref }: { at: { x: number; y: number }; ref?: React.Ref<SVGGElement> }) {
