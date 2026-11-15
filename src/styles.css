@@ -138,6 +138,15 @@
   --dur-lamp: 120ms;
   --dur-fast: 160ms;
   --dur-none: 0.01ms;
+  /* The signature motion's own clock. The wave is the owner's "low freq" floor at
+     9s; the pulse runs inside his "at most one every 20 to 30 seconds" at 26s;
+     the fade is what a cell takes to light under the pointer. */
+  --dur-wave: 9s;
+  --dur-pulse: 26s;
+  --dur-fade: 220ms;
+  /* One strip starts this long after the one before it, so the charge crosses
+     the page as well as running down it. */
+  --strip-step: 120ms;
 }
 
 /* The light theme is the same panel by day: only colour tokens change.
@@ -396,6 +405,220 @@ textarea {
   border-left-color: transparent;
 }
 
+/* The signature motion -------------------------------------------------------
+
+   Owner, 23:03: a ray runs from the coloured name down the page's strips to the
+   footer and charges each one as it passes; the hero's cells glow in a slow wave
+   from top to bottom, and three at a time under the pointer. Restraint is the
+   requirement, so:
+
+     - every animation starts only once `[data-motion='on']` is set, which the
+       hook does after mount: the pre-render and the first client frame are the
+       same still picture;
+     - `[data-motion='paused']` is set on a hidden tab, and the hero's cells also
+       stop via `[data-inview='false']`, so nothing animates off-screen;
+     - under `prefers-reduced-motion: reduce` no rule below applies at all;
+     - only transform and opacity move, so this stays on the compositor and
+       cannot shift layout.
+
+   The pulse period is 26s with a short lit slice, which is inside the owner's
+   "at most one every 20 to 30 seconds" once the load pulse is counted. */
+
+.gridlines {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.gridlines span {
+  border-left: var(--line) solid var(--grid);
+}
+
+.gridlines span:first-child {
+  border-left-color: transparent;
+}
+
+/* The cell in each gap between strips: the thing the wave lights. */
+.hero-cells {
+  position: absolute;
+  inset: 0;
+  display: grid;
+}
+
+.hero-cell {
+  align-self: stretch;
+  /* Inset by a hair on each side so the glow sits between the column lines
+     rather than on top of them: a full-bleed block read as heavy vertical
+     banding, not as light travelling down the page. */
+  margin-inline: 1px;
+  background: linear-gradient(to bottom, transparent, var(--accent) 30%, var(--accent) 70%, transparent);
+  opacity: 0;
+  will-change: opacity;
+}
+
+/* The wave: a slow top-to-bottom pass, each cell offset by its own position so
+   the light appears to travel down the page rather than switching on at once.
+   The cycle is the owner's "low freq" floor, held in a token. */
+:root[data-motion='on'] .hero-cell {
+  animation: hero-wave var(--dur-wave) ease-in-out infinite;
+  /* The stagger is the cell's grid position, so the wave is one animation with
+     eleven phases rather than eleven timers. */
+  animation-delay: calc(var(--cell-index, 0) * var(--strip-step) * -3);
+}
+
+@keyframes hero-wave {
+  0%,
+  70%,
+  100% {
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.03;
+  }
+}
+
+:root[data-motion='paused'] .hero-cell,
+.intro[data-inview='false'] .hero-cell {
+  animation-play-state: paused;
+}
+
+/* Three at a time under the pointer, and only where there is a real pointer: a
+   touch screen has no hover, so there the cells would light and then stick. The
+   hook marks exactly three cells with `is-hot` — the one under the pointer and
+   its two nearest neighbours — because "the nearest three" is not something CSS
+   can express over a grid, and a class is cheaper than eleven timers. */
+@media (hover: hover) and (pointer: fine) {
+  .hero-cell {
+    transition: opacity var(--dur-fade) var(--ease-out);
+  }
+
+  /* While the pointer is in the hero the slow wave pauses, so the pointer's
+     three cells are the only thing moving. */
+  :root[data-motion='on'] .intro:hover .hero-cell:not(.is-hot) {
+    animation-play-state: paused;
+    opacity: 0;
+  }
+
+  .intro:hover .hero-cell.is-hot {
+    animation: none;
+    opacity: 0.07;
+  }
+}
+
+/* The pulse: one slow ray down the page's own strips, once on load and then
+   every 26s. It is drawn on the frame's edge, not behind body text. */
+.site-rail {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  display: grid;
+  width: min(100% - 2 * var(--frame-margin), var(--frame));
+  margin-inline: auto;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.site-rail span {
+  position: relative;
+  overflow: hidden;
+}
+
+/* The moving part: a soft length of accent inside its own strip, translated
+   from above the fold to below it. `--line` wide so it reads as a charge in the
+   column line, not a slab. */
+.site-rail i {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: var(--line);
+  background: linear-gradient(to bottom, transparent, var(--accent) 45%, var(--accent) 55%, transparent);
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+/* The pulse: one slow ray down the page's own strips, once on load and then
+   every 26s. It is drawn on the frame's edge, not behind body text. */
+.site-rail {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  display: grid;
+  width: min(100% - 2 * var(--frame-margin), var(--frame));
+  margin-inline: auto;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.site-rail span {
+  position: relative;
+  overflow: hidden;
+}
+
+/* The moving part: a soft length of accent inside its own strip, translated
+   from above the fold to below it. `--line` wide so it reads as a charge in the
+   column line, not a slab. */
+.site-rail i {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: var(--line);
+  background: linear-gradient(to bottom, transparent, var(--accent) 45%, var(--accent) 55%, transparent);
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+/* The pulse: one slow ray down the page's own strips, once on load and then on
+   the cycle token. Each strip starts one step after the one before it, so the
+   charge crosses the page as well as running down it.
+
+   The delay is part of the `animation` shorthand rather than its own
+   declaration: the shorthand resets `animation-delay`, and a separate rule loses
+   to this one on specificity, so a standalone `animation-delay` never applied.
+
+   The stagger is derived from the strip's own index — `--strip-index` from the
+   markup — rather than written out twelve times, so adding or removing a strip
+   needs no CSS change. */
+:root[data-motion='on'] .site-rail i {
+  animation: rail-pulse var(--dur-pulse) linear
+    calc(var(--strip-index, 0) * var(--strip-step)) infinite;
+}
+
+@keyframes rail-pulse {
+  0% {
+    transform: translate3d(0, -100%, 0);
+    opacity: 0;
+  }
+  2% {
+    opacity: 0.5;
+  }
+  12% {
+    transform: translate3d(0, 100%, 0);
+    opacity: 0;
+  }
+  100% {
+    transform: translate3d(0, 100%, 0);
+    opacity: 0;
+  }
+}
+
+:root[data-motion='paused'] .site-rail i {
+  animation-play-state: paused;
+}
+
+/* Reduced motion: no pulse, no wave. The coloured name and the static strips
+   are the design in that mode. Declared last so it wins over the rules above. */
+@media (prefers-reduced-motion: reduce) {
+  .hero-cell,
+  .site-rail i {
+    animation: none !important;
+    opacity: 0 !important;
+    transition: none !important;
+  }
+}
+
 /* Links and buttons ------------------------------------------------------- */
 
 .inline-link,
@@ -547,6 +770,10 @@ textarea {
      the bar fit by breaking it into "Toshifur" / "Rahman" while slack sat unused
      beside it — the owner's name split across two lines in the sticky header. */
   white-space: nowrap;
+  /* The name is where the charge comes from (owner, 23:03: a ray "from this will
+     go down via strips till footer ... they are taking charge from name"), so it
+     is the one coloured thing in the bar. */
+  color: var(--accent-text);
 }
 
 /* The bar speaks the case study's own sub-navbar language (owner, 23:03:

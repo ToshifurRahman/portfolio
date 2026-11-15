@@ -1,8 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, type CSSProperties } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { caseStudies, contactLede, owner, proof, skills, type CaseStudy } from './content';
 import { Footer } from './Footer';
 import { CopyEmail } from './CopyEmail';
+import { useSignatureMotion } from './useSignatureMotion';
 import { NodeDiagram } from './NodeDiagram';
 import { Arrow } from './NotFound';
 import { NowPanel } from './NowPanel';
@@ -31,13 +32,21 @@ function Statement() {
   );
 }
 
-/* The column lines behind the introduction, one per grid column. */
+/* The column lines behind the introduction, one per grid column, with a cell in
+   each gap between them. The cells are what the owner's slow wave lights ("boxes
+   between strips glow up to down"); they are decorative and inert, so they are
+   hidden from assistive tech and never take a pointer. */
 function Gridlines() {
   return (
     <div className="gridlines grid12" aria-hidden="true">
       {Array.from({ length: 12 }, (_, i) => (
         <span key={i} />
       ))}
+      <div className="hero-cells grid12">
+        {Array.from({ length: 11 }, (_, i) => (
+          <span key={i} className="hero-cell" style={{ gridColumn: i + 2 }} />
+        ))}
+      </div>
     </div>
   );
 }
@@ -46,6 +55,7 @@ const meta = (c: CaseStudy, label: string) => c.meta.find((m) => m.label === lab
 
 export function Home() {
   useTitle();
+  const hero = useSignatureMotion();
   const { hash } = useLocation();
 
   /* A hash link lands on its section without hiding the heading under the
@@ -63,8 +73,18 @@ export function Home() {
 
   return (
     <>
+      {/* The strips the signature pulse runs down: the same twelve columns as
+          the page, drawn as fixed positions so the ray is always in a column
+          line and never behind body text. Decorative and inert. */}
+      <div className="site-rail grid12" aria-hidden="true">
+        {Array.from({ length: 12 }, (_, i) => (
+          <span key={i} style={{ gridColumn: i + 1, '--strip-index': i } as CSSProperties}>
+            <i />
+          </span>
+        ))}
+      </div>
       <main id="main" className="page home">
-        <header className="frame grid12 intro">
+        <header className="frame grid12 intro" ref={hero}>
           <Gridlines />
           <div className="intro-id">
             <h1 className="name">
