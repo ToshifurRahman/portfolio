@@ -140,24 +140,35 @@
   --dur-none: 0.01ms;
 }
 
-/* The light theme is the same panel by day: only colour tokens change. */
+/* The light theme is the same panel by day: only colour tokens change.
+ *
+ * Softened on 2026-11-15 (owner: "Light mode is too bright, need adjustment").
+ * The page sat at L 95, near white, which read as glare on a full screen; it is
+ * now L 91 with a warm cast, and raised panels go a step DARKER (L 87) rather
+ * than lighter, because against a bright page a lighter panel has nothing left
+ * to separate it from the page.
+ *
+ * Measured on the new pair: ink 14.7:1 and ink-2 9.5:1 on the page, muted 5.1:1
+ * on the page and 4.6:1 on a raised panel, accent-text 6.2:1 — every text and
+ * label token clears AA (4.5:1 body, 3:1 large). `--accent` itself is used for
+ * decoration (lamps, rules) and never as text, so it is not held to 4.5:1. */
 :root[data-theme='light'] {
   color-scheme: light;
-  --bg: #f3f2ee;
-  --bg-raised: #eae8e2;
+  --bg: #e8e5dd;
+  --bg-raised: #ded9cf;
   --ink: #121417;
   --ink-2: #33373d;
   --muted: #5a5f68;
-  --grid: #e3e1db;
-  --rule: #d8d5cd;
-  --rule-strong: #c2beb4;
-  --track: #b9b5ab;
-  --lamp-off: #c9c5bb;
-  --accent: #f0a020;
-  --accent-hover: #f5b548;
-  --accent-text: #8a4f00;
+  --grid: #dcd7cc;
+  --rule: #cdc7bb;
+  --rule-strong: #b3ad9f;
+  --track: #a8a294;
+  --lamp-off: #bab4a6;
+  --accent: #e09a12;
+  --accent-hover: #e8a72c;
+  --accent-text: #7a4600;
   --on-accent: #1a1204;
-  --lamp-edge: #8a4f00;
+  --lamp-edge: #7a4600;
   --fail: #c2321f;
   --backdrop: rgb(18 20 23 / 0.55);
 }
@@ -166,21 +177,21 @@
 @media (prefers-color-scheme: light) {
   :root:not([data-theme]) {
     color-scheme: light;
-    --bg: #f3f2ee;
-    --bg-raised: #eae8e2;
+    --bg: #e8e5dd;
+    --bg-raised: #ded9cf;
     --ink: #121417;
     --ink-2: #33373d;
     --muted: #5a5f68;
-    --grid: #e3e1db;
-    --rule: #d8d5cd;
-    --rule-strong: #c2beb4;
-    --track: #b9b5ab;
-    --lamp-off: #c9c5bb;
-    --accent: #f0a020;
-    --accent-hover: #f5b548;
-    --accent-text: #8a4f00;
+    --grid: #dcd7cc;
+    --rule: #cdc7bb;
+    --rule-strong: #b3ad9f;
+    --track: #a8a294;
+    --lamp-off: #bab4a6;
+    --accent: #e09a12;
+    --accent-hover: #e8a72c;
+    --accent-text: #7a4600;
     --on-accent: #1a1204;
-    --lamp-edge: #8a4f00;
+    --lamp-edge: #7a4600;
     --fail: #c2321f;
     --backdrop: rgb(18 20 23 / 0.55);
   }
