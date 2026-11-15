@@ -44,7 +44,10 @@ function Gridlines() {
       ))}
       <div className="hero-cells grid12">
         {Array.from({ length: 11 }, (_, i) => (
-          <span key={i} className="hero-cell" style={{ gridColumn: i + 2 }} />
+          /* `--cell-index` is what the wave's stagger reads. Without it every cell
+             reported `animation-delay: 0s` and the whole row lit at once, so the
+             light never travelled down the page (R4a-ds-2). */
+          <span key={i} className="hero-cell" style={{ gridColumn: i + 2, '--cell-index': i } as CSSProperties} />
         ))}
       </div>
     </div>
