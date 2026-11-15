@@ -18,8 +18,9 @@ import type { DiagramSpec, Edge, Node, Step } from './Diagram';
  */
 
 type Pos = { row: number; col: number };
+type Vat = { row: number; track: number };
 
-const n = (id: string, name: string, detail: string | undefined, at: Pos, vat: Pos, extra: Partial<Node> = {}): Node => ({
+const n = (id: string, name: string, detail: string | undefined, at: Pos, vat: Vat, extra: Partial<Node> = {}): Node => ({
   id,
   name,
   detail,
@@ -30,49 +31,79 @@ const n = (id: string, name: string, detail: string | undefined, at: Pos, vat: P
 
 /* ---------------------------------------------------------------- Ticket-Pipeline
  *
- * Desktop reads left to right in three bands: the request and work flow on row 0,
- * the ticket's own states on the right of it at the same height (a state is a
- * different kind of thing, so it gets its own rail below), and the failure path on
- * row 1.
+ * Desktop is five bands, each on its own row so no edge crosses a box:
  *
- * The vertical layout is the same graph read top to bottom, in one column, which
- * is what a phone can hold.
+ *   0  the spine: what a ticket passes through
+ *   1  the backup model, on a branch under the gateway
+ *   2  the live feed: the log, the customer's page and the ops feed
+ *   3  the failure path, fed from the worker
+ *   4  the ticket's own states, on their own rail
+ *
+ * Vertical is the same graph down the page: the spine in track 0, the branches
+ * (backup, live feed, failure) indented in track 1 so they do not chain into the
+ * stage after them, and the states as a rail at the end.
  */
 
 const TP_NODES: Node[] = [
-  n('react', 'React app', 'The ticket page', { row: 0, col: 0 }, { row: 0, col: 0 }),
-  n('api', 'Hono API', 'Stores the ticket', { row: 0, col: 1 }, { row: 1, col: 0 }),
-  n('queue', 'SQS queue', undefined, { row: 0, col: 2 }, { row: 2, col: 0 }),
-  n('worker', 'Worker', 'Triage, then draft', { row: 0, col: 3 }, { row: 3, col: 0 }),
-  n('gateway', 'LLM gateway', 'Portkey', { row: 0, col: 4 }, { row: 4, col: 0 }),
-  n('primary', 'Primary model', 'Gemini', { row: 0, col: 5 }, { row: 5, col: 0 }),
-  /* The branch: it hangs under the gateway it leaves from. */
-  n('backup', 'Backup model', 'Groq, after a timeout', { row: 1, col: 5 }, { row: 6, col: 0, }, { span: 2 }),
+  /* Band 0: the spine. */
+  /* The spine wraps after three, so the graph stays inside the panel's width and
+     the labels stay at full size. `down-right` carries the flow to the next row. */
+  n('react', 'React app', 'The ticket page', { row: 0, col: 0 }, { row: 0, track: 0 }),
+  n('api', 'Hono API', 'Stores the ticket', { row: 0, col: 1 }, { row: 1, track: 0 }),
+  n('queue', 'SQS queue', 'Messages', { row: 0, col: 2 }, { row: 2, track: 0 }),
+  n('worker', 'Worker', 'Runs the stages', { row: 1, col: 0 }, { row: 3, track: 0 }),
+  n('gateway', 'LLM gateway', 'Portkey', { row: 1, col: 1 }, { row: 4, track: 0 }),
+  n('primary', 'Primary model', 'Gemini', { row: 1, col: 2 }, { row: 5, track: 0 }),
 
-  /* The ticket's states, on their own rail under the work flow. */
-  n('queued', 'Queued', undefined, { row: 2, col: 0 }, { row: 7, col: 0 }, { state: true }),
-  n('triaging', 'Triaging', undefined, { row: 2, col: 1 }, { row: 8, col: 0 }, { state: true }),
-  n('drafting', 'Drafting', undefined, { row: 2, col: 2 }, { row: 9, col: 0 }, { state: true }),
-  n('completed', 'Completed', undefined, { row: 2, col: 3 }, { row: 10, col: 0 }, { state: true }),
+  /* Band 1: the branch the gateway takes when the primary fails. */
+  n('backup', 'Backup model', 'Groq', { row: 2, col: 1 }, { row: 6, track: 1 }),
 
-  /* The failure path, on its own band so it never crosses the happy path. */
-  n('attention', 'Needs attention', 'Ops alerted', { row: 3, col: 3 }, { row: 11, col: 0 }, { span: 2 }),
-  n('replay', 'Replay by staff', 'From the failed stage', { row: 3, col: 5 }, { row: 12, col: 0 }, { span: 2 }),
+  /* Band 2: the live feed. Each step is written to the log and pushed out. */
+  n('eventLog', 'Event log', 'Append only', { row: 3, col: 0 }, { row: 7, track: 1 }),
+  n('customerPage', 'Customer’s page', 'Live', { row: 3, col: 1 }, { row: 8, track: 1 }),
+  n('opsFeed', 'Ops feed', 'Staff console', { row: 3, col: 2 }, { row: 9, track: 1 }),
+
+  /* Band 4: the failure path. */
+  n('stageFails', 'Stage fails', 'Invalid response', { row: 4, col: 0 }, { row: 10, track: 1 }),
+  n('retry', 'Retry, up to 3', 'On its own', { row: 4, col: 1 }, { row: 11, track: 1 }),
+  n('attention', 'Needs attention', 'Ops alerted', { row: 4, col: 2 }, { row: 12, track: 1 }),
+  n('replay', 'Replay by staff', 'From the failed stage', { row: 5, col: 0 }, { row: 13, track: 1 }),
+
+  /* Band 5: the ticket's states, on their own rail. */
+  n('queued', 'Queued', undefined, { row: 6, col: 0 }, { row: 15, track: 0 }, { state: true }),
+  n('triaging', 'Triaging', undefined, { row: 6, col: 1 }, { row: 15, track: 1 }, { state: true }),
+  n('drafting', 'Drafting', undefined, { row: 6, col: 2 }, { row: 16, track: 0 }, { state: true }),
+  n('completed', 'Completed', undefined, { row: 7, col: 0 }, { row: 16, track: 1 }, { state: true }),
 ];
 
 const TP_EDGES: Edge[] = [
-  { id: 'submit', from: 'react', to: 'api', label: 'submit' },
-  { id: 'enqueue', from: 'api', to: 'queue', label: 'enqueue' },
-  { id: 'consume', from: 'queue', to: 'worker', label: 'pick up' },
-  { id: 'call', from: 'worker', to: 'gateway', label: 'one call per stage' },
-  { id: 'toPrimary', from: 'gateway', to: 'primary' },
-  { id: 'toBackup', from: 'gateway', to: 'backup', branch: true, label: 'fails or times out' },
-  { id: 'retry', from: 'primary', to: 'attention', branch: true, label: 'fails 3 times' },
-  { id: 'escalate', from: 'attention', to: 'replay', label: 'staff' },
-  { id: 'replayToQueue', from: 'replay', to: 'queue', branch: true, label: 'to the failed stage' },
-  { id: 'q2t', from: 'queued', to: 'triaging' },
-  { id: 't2d', from: 'triaging', to: 'drafting' },
-  { id: 'd2c', from: 'drafting', to: 'completed' },
+  /* The spine. */
+  { id: 'submit', from: 'react', to: 'api', label: 'submit', route: 'right' },
+  { id: 'enqueue', from: 'api', to: 'queue', label: 'enqueue', route: 'right' },
+  { id: 'consume', from: 'queue', to: 'worker', label: 'pick up', route: 'down-left' },
+  { id: 'call', from: 'worker', to: 'gateway', label: 'one call', route: 'right' },
+  { id: 'toPrimary', from: 'gateway', to: 'primary', route: 'right' },
+
+  /* The gateway's branch: straight down to the model it fails over to. */
+  { id: 'toBackup', from: 'gateway', to: 'backup', label: 'on fail', branch: true, route: 'down' },
+
+  /* The live feed. */
+  { id: 'log', from: 'worker', to: 'eventLog', label: 'each step', route: 'down-left' },
+  { id: 'toPage', from: 'eventLog', to: 'customerPage', label: 'push', route: 'right' },
+  { id: 'toOps', from: 'eventLog', to: 'opsFeed', route: 'down' },
+
+  /* The failure path, entered from the worker, and the replay that loops back to
+     the queue around the bottom margin. */
+  { id: 'fails', from: 'worker', to: 'stageFails', label: 'stage fails', branch: true, route: 'right' },
+  { id: 'retry', from: 'stageFails', to: 'retry', label: 'up to 3', route: 'right' },
+  { id: 'again', from: 'retry', to: 'attention', route: 'right' },
+  { id: 'escalate', from: 'attention', to: 'replay', label: 'staff', route: 'down-left' },
+  { id: 'replayToQueue', from: 'replay', to: 'queue', label: 'to the failed stage', branch: true, route: 'loop-side' },
+
+  /* The state rail. */
+  { id: 'q2t', from: 'queued', to: 'triaging', route: 'right' },
+  { id: 't2d', from: 'triaging', to: 'drafting', route: 'down-left' },
+  { id: 'd2c', from: 'drafting', to: 'completed', route: 'down-left' },
 ];
 
 const tpRuns: Step[][] = [
@@ -81,7 +112,10 @@ const tpRuns: Step[][] = [
     { edge: 'submit', status: 'New ticket submitted', nodes: { react: 'lit' } },
     { edge: 'enqueue', status: 'Stored as queued, a message on SQS', nodes: { react: 'done', api: 'done', queue: 'lit', queued: 'lit' } },
     { edge: 'consume', status: 'The worker picks it up', nodes: { queue: 'done' } },
-    { edge: 'call', status: 'Triaging: category, priority, sentiment', nodes: { worker: 'done', triaging: 'lit' } },
+    { edge: 'log', status: 'Each step written to the event log', nodes: { worker: 'lit', eventLog: 'lit', triaging: 'lit' } },
+    { edge: 'toPage', status: 'Pushed live to the customer’s page', nodes: { eventLog: 'done', customerPage: 'done' } },
+    { edge: 'toOps', status: 'And to the ops feed', nodes: { opsFeed: 'done' } },
+    { edge: 'call', status: 'One schema-checked call per stage', nodes: { worker: 'done' } },
     { edge: 'toPrimary', status: 'Drafting the reply', nodes: { gateway: 'done', primary: 'done', triaging: 'done', drafting: 'lit' } },
     { dur: 1500, status: 'Completed: the customer sees it live', tone: 'done', nodes: { drafting: 'done', completed: 'done' } },
   ],
@@ -105,9 +139,10 @@ const tpRuns: Step[][] = [
     { edge: 'toPrimary', status: 'Retry 1 of 3', tone: 'fail', failEdge: true, nodes: { primary: 'fail' } },
     { dur: 700, status: 'Retry 2 of 3', tone: 'fail', nodes: { primary: 'fail' } },
     { dur: 700, status: 'Retry 3 of 3', tone: 'fail', nodes: { primary: 'fail' } },
-    { edge: 'retry', status: 'The retries are used up', tone: 'fail', nodes: { attention: 'fail', drafting: 'off' } },
-    { dur: 1300, status: 'Needs attention: ops alerted', tone: 'fail' },
-    { edge: 'escalate', status: 'Staff replay the ticket', tone: 'run', nodes: { attention: 'lit' } },
+    { edge: 'fails', status: 'The retries are used up', tone: 'fail', nodes: { stageFails: 'fail', drafting: 'off' } },
+    { edge: 'retry', status: 'Retried up to 3 times', tone: 'fail', nodes: { retry: 'fail' } },
+    { edge: 'again', status: 'Needs attention: ops alerted', tone: 'fail', nodes: { attention: 'fail' } },
+    { edge: 'escalate', status: 'Staff replay the ticket', tone: 'run', nodes: { replay: 'lit' } },
     { edge: 'replayToQueue', status: 'Back to the queue at the stage that failed', nodes: { attention: 'off', queue: 'lit' } },
     { dur: 1300, status: 'Drafting: replayed from the failed stage', tone: 'done', nodes: { queue: 'done', drafting: 'done', completed: 'done' } },
   ],
@@ -118,16 +153,14 @@ const ticketPipeline: DiagramSpec = {
   title: 'Ticket-Pipeline',
   href: '/work/ticket-pipeline',
   note: 'A demo ticket through the system’s real states',
-  /* Columns are counted from the nodes themselves, so the viewBox is derived. */
-  rows: 4,
-  cols: 6,
   nodes: TP_NODES,
   edges: TP_EDGES,
   runs: tpRuns,
   still: {
-    edges: ['submit', 'enqueue', 'consume', 'call', 'toPrimary', 'q2t', 't2d', 'd2c'],
+    edges: ['submit', 'enqueue', 'consume', 'call', 'toPrimary', 'log', 'toPage', 'toOps', 'q2t', 't2d', 'd2c'],
     nodes: {
       react: 'done', api: 'done', queue: 'done', worker: 'done', gateway: 'done', primary: 'done',
+      eventLog: 'done', customerPage: 'done', opsFeed: 'done',
       queued: 'done', triaging: 'done', drafting: 'done', completed: 'done',
     },
   },
@@ -142,26 +175,30 @@ const ticketPipeline: DiagramSpec = {
  */
 
 const RG_NODES: Node[] = [
-  n('security', securityCheckLabel, 'Every API call', { row: 0, col: 0 }, { row: 0, col: 0 }),
-  n('rate', 'Rate limit', 'Per account', { row: 0, col: 1 }, { row: 1, col: 0 }),
-  n('session', 'Session', 'Better Auth', { row: 0, col: 2 }, { row: 2, col: 0 }),
-  n('role', 'Role check', 'Vendor, admin, customer', { row: 0, col: 3 }, { row: 3, col: 0 }),
-  n('handler', 'Route handler', '21 route modules', { row: 0, col: 4 }, { row: 4, col: 0 }),
-  n('postgres', 'PostgreSQL', 'Drizzle', { row: 0, col: 5 }, { row: 5, col: 0 }),
-  n('tx', 'One transaction', 'Lock, check, reduce', { row: 0, col: 6 }, { row: 6, col: 0 }),
-  n('refuseRole', '403: refused', 'At the role check', { row: 1, col: 3 }, { row: 7, col: 0 }, { span: 2 }),
-  n('refuseStock', 'Stock refused', 'The second order', { row: 1, col: 5 }, { row: 8, col: 0 }, { span: 2 }),
+  n('security', securityCheckLabel, 'Every API call', { row: 0, col: 0 }, { row: 0, track: 0 }),
+  n('rate', 'Rate limit', 'Per account', { row: 0, col: 1 }, { row: 1, track: 0 }),
+  n('session', 'Session', 'Better Auth', { row: 0, col: 2 }, { row: 2, track: 0 }),
+  n('role', 'Role check', 'Vendor, admin, customer', { row: 0, col: 3 }, { row: 3, track: 0 }),
+  n('handler', 'Route handler', '21 route modules', { row: 1, col: 0 }, { row: 4, track: 0 }),
+  n('postgres', 'PostgreSQL', 'Drizzle', { row: 1, col: 1 }, { row: 5, track: 0 }),
+  n('tx', 'One transaction', 'Lock, check, reduce', { row: 1, col: 2 }, { row: 6, track: 0 }),
+  /* The refusals are branches, so they sit in the indented track and come after the
+     spine: they are what happens instead of the next step, not after it. */
+  /* The refusals are branches, so they sit in the indented track, after the spine:
+     they are what happens instead of the next step, not a step after it. */
+  n('refuseRole', '403: refused', 'At the role check', { row: 2, col: 0 }, { row: 7, track: 1 }),
+  n('refuseStock', 'Stock refused', 'The second order', { row: 2, col: 1 }, { row: 8, track: 1 }),
 ];
 
 const RG_EDGES: Edge[] = [
-  { id: 'sec', from: 'security', to: 'rate', label: 'pass' },
-  { id: 'lim', from: 'rate', to: 'session' },
-  { id: 'sess', from: 'session', to: 'role' },
-  { id: 'authorise', from: 'role', to: 'handler', label: 'allowed' },
-  { id: 'query', from: 'handler', to: 'postgres' },
-  { id: 'commit', from: 'postgres', to: 'tx', label: 'an order' },
-  { id: 'refuse', from: 'role', to: 'refuseRole', branch: true, label: 'vendor route' },
-  { id: 'stockOut', from: 'tx', to: 'refuseStock', branch: true, label: 'stock gone' },
+  { id: 'sec', from: 'security', to: 'rate', label: 'pass', route: 'right' },
+  { id: 'lim', from: 'rate', to: 'session', route: 'right' },
+  { id: 'sess', from: 'session', to: 'role', route: 'right' },
+  { id: 'authorise', from: 'role', to: 'handler', label: 'allowed', route: 'down-right' },
+  { id: 'query', from: 'handler', to: 'postgres', route: 'right' },
+  { id: 'commit', from: 'postgres', to: 'tx', label: 'an order', route: 'right' },
+  { id: 'refuse', from: 'role', to: 'refuseRole', label: 'vendor route', branch: true, route: 'down-right' },
+  { id: 'stockOut', from: 'tx', to: 'refuseStock', label: 'stock gone', branch: true, route: 'down-left' },
 ];
 
 const rgEnter: Step[] = [
@@ -201,8 +238,6 @@ const rannaghor: DiagramSpec = {
   title: 'RannaGhor',
   href: '/work/rannaghor',
   note: 'A customer’s request through every check it meets',
-  rows: 2,
-  cols: 7,
   nodes: RG_NODES,
   edges: RG_EDGES,
   runs: rgRuns,

@@ -127,9 +127,10 @@
   /* The track diagram is drawn at a fixed scale: 1 unit is 1px. */
   --track-w: 1600px;
   --track-label: 12px;
-  /* The flowchart's own type, in the viewBox units its geometry uses. */
+  /* The flowchart's own type, in the viewBox units its geometry uses. The engine
+     lays boxes out with the same numbers, so these are the single source. */
   --flow-label: 12px;
-  --flow-detail: 10px;
+  --flow-detail: 11px;
   --target: 2.75rem;
   --target-sm: 2rem;
   --bar-h: 4rem;
@@ -1349,7 +1350,7 @@ textarea {
   margin-inline: auto;
 }
 
-@container (max-width: 48rem) {
+@container (max-width: 56rem) {
   .flow-h {
     display: none;
   }
@@ -1438,6 +1439,13 @@ textarea {
   letter-spacing: 0.03em;
   fill: var(--muted);
   text-transform: uppercase;
+}
+
+/* A pill under each edge label. The label sits in the gap its edge crosses, and a
+   pill keeps the line from reading through the text (review ruling 10: an edge
+   never crosses a label it does not own). */
+.flow-edge-pill {
+  fill: var(--bg-raised);
 }
 
 .flow-token circle {
