@@ -80,7 +80,7 @@ const TP_EDGES: Edge[] = [
   /* The spine. */
   { id: 'submit', from: 'react', to: 'api', label: 'submit', route: 'right' },
   { id: 'enqueue', from: 'api', to: 'queue', label: 'enqueue', route: 'right' },
-  { id: 'consume', from: 'queue', to: 'worker', label: 'pick up', route: 'down-left' },
+  { id: 'consume', from: 'queue', to: 'worker', label: 'pick up', route: 'down' },
   { id: 'call', from: 'worker', to: 'gateway', label: 'one call', route: 'right' },
   { id: 'toPrimary', from: 'gateway', to: 'primary', route: 'right' },
 
@@ -90,11 +90,11 @@ const TP_EDGES: Edge[] = [
   /* The live feed. */
   { id: 'log', from: 'worker', to: 'eventLog', label: 'each step', route: 'down-left' },
   { id: 'toPage', from: 'eventLog', to: 'customerPage', label: 'push', route: 'right' },
-  { id: 'toOps', from: 'eventLog', to: 'opsFeed', route: 'down' },
+  { id: 'toOps', from: 'customerPage', to: 'opsFeed', route: 'right' },
 
   /* The failure path, entered from the worker, and the replay that loops back to
      the queue around the bottom margin. */
-  { id: 'fails', from: 'worker', to: 'stageFails', label: 'stage fails', branch: true, route: 'right' },
+  { id: 'fails', from: 'worker', to: 'stageFails', label: 'stage fails', branch: true, route: 'loop-side-left' },
   { id: 'retry', from: 'stageFails', to: 'retry', label: 'up to 3', route: 'right' },
   { id: 'again', from: 'retry', to: 'attention', route: 'right' },
   { id: 'escalate', from: 'attention', to: 'replay', label: 'staff', route: 'down-left' },

@@ -240,3 +240,169 @@ for (const d of DIAGRAMS) {
     });
   });
 }
+
+/* ---------------------------------------------------------------- geometry
+ *
+ * Ruling 2: these are the promises, measured in the built page at four widths in
+ * both themes on both studies. A count of nodes or a computed style does not
+ * count, because both were green while the labels spilled, the branch edges cut
+ * through boxes, and the type rendered at 9.6px.
+ */
+
+const WIDTHS = [390, 834, 1280, 1440];
+const THEMES = ['dark', 'light'] as const;
+
+for (const d of DIAGRAMS) {
+  test.describe(`${d.slug}: geometry`, () => {
+    for (const width of WIDTHS) {
+      for (const theme of THEMES) {
+        test(`${width}px ${theme}: labels inside their boxes, nothing intersecting`, async ({ page }) => {
+          await page.setViewportSize({ width, height: 900 });
+          await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+          await page.goto(d.path);
+          await panel(page, d.slug).scrollIntoViewIfNeeded();
+
+          const report = await page.evaluate(() => {
+            const svg = [...document.querySelectorAll('.flow-svg')].find(
+              (s) => s.getBoundingClientRect().width > 0,
+            ) as SVGSVGElement;
+            const view = svg.getBoundingClientRect();
+            const nodes = [...svg.querySelectorAll('.flow-node')].map((n) => ({
+              id: n.getAttribute('data-node') ?? '',
+              box: n.querySelector('rect')!.getBoundingClientRect(),
+              texts: [...n.querySelectorAll('text')].filter((t) => t.getBoundingClientRect().width > 1),
+            }));
+
+            /* (a) every text box inside its own node's box, with padding. */
+            const outside: string[] = [];
+            for (const n of nodes) {
+              for (const t of n.texts) {
+                const r = t.getBoundingClientRect();
+                if (
+                  r.left < n.box.left - 0.5 ||
+                  r.right > n.box.right + 0.5 ||
+                  r.top < n.box.top - 0.5 ||
+                  r.bottom > n.box.bottom + 0.5
+                ) {
+                  outside.push(`${n.id}: "${t.textContent}"`);
+                }
+              }
+            }
+
+            /* (b) no two text boxes intersect — node labels and edge labels
+               together. They are all in the same SVG, so one pass covers both. */
+            const all = [...svg.querySelectorAll('text')].filter((t) => t.getBoundingClientRect().width > 1);
+            const rects = all.map((t) => ({ text: t.textContent ?? '', r: t.getBoundingClientRect() }));
+            const collisions: string[] = [];
+            for (let i = 0; i < rects.length; i++) {
+              for (let j = i + 1; j < rects.length; j++) {
+                const a = rects[i].r;
+                const b = rects[j].r;
+                if (a.left < b.right - 0.5 && b.left < a.right - 0.5 && a.top < b.bottom - 0.5 && b.top < a.bottom - 0.5) {
+                  collisions.push(`${rects[i].text} | ${rects[j].text}`);
+                }
+              }
+            }
+
+            /* (c) no edge path crosses a node's box. Sampled along each path: a
+               path's own bounding box proves nothing, since a loop encloses half
+               the graph. */
+            const boxes = nodes.map((n) => n.box);
+            const ctm = svg.getScreenCTM()!;
+            const toPage = (p: { x: number; y: number }) => ({
+              x: ctm.a * p.x + ctm.c * p.y + ctm.e,
+              y: ctm.b * p.x + ctm.d * p.y + ctm.f,
+            });
+            const crossing: string[] = [];
+            for (const path of svg.querySelectorAll<SVGPathElement>('.flow-edge')) {
+              const len = path.getTotalLength();
+              const steps = Math.max(8, Math.ceil(len / 3));
+              let hit = false;
+              for (let k = 0; k <= steps && !hit; k++) {
+                const q = toPage(path.getPointAtLength((len * k) / steps));
+                for (const b of boxes) {
+                  /* Inset by 1.5px: an edge legitimately touches a border. */
+                  if (q.x > b.left + 1.5 && q.x < b.right - 1.5 && q.y > b.top + 1.5 && q.y < b.bottom - 1.5) {
+                    hit = true;
+                    break;
+                  }
+                }
+              }
+              if (hit) crossing.push(path.getAttribute('data-edge') ?? '?');
+            }
+
+            /* (d) every edge's two ends touch a node's border. */
+            const detached: string[] = [];
+            const near = (x: number, y: number) =>
+              boxes.some(
+                (b) =>
+                  x >= b.left - 6 && x <= b.right + 6 && y >= b.top - 6 && y <= b.bottom + 6 &&
+                  (Math.abs(x - b.left) < 7 || Math.abs(x - b.right) < 7 || Math.abs(y - b.top) < 7 || Math.abs(y - b.bottom) < 7),
+              );
+            for (const path of svg.querySelectorAll<SVGPathElement>('.flow-edge')) {
+              const len = path.getTotalLength();
+              const pa = toPage(path.getPointAtLength(0));
+              const pb = toPage(path.getPointAtLength(len));
+              if (!near(pa.x, pa.y) || !near(pb.x, pb.y)) detached.push(path.getAttribute('data-edge') ?? '?');
+            }
+
+            /* (e) every edge label sits on its own edge: within a few units of the
+               path it names. */
+            const floating: string[] = [];
+            for (const path of svg.querySelectorAll<SVGPathElement>('.flow-edge')) {
+              const id = path.getAttribute('data-edge');
+              const label = svg.querySelector(`[data-edge-label="${id}"]`);
+              if (!label) continue;
+              const lr = label.getBoundingClientRect();
+              const len = path.getTotalLength();
+              let best = Infinity;
+              for (let k = 0; k <= 60; k++) {
+                const q = toPage(path.getPointAtLength((len * k) / 60));
+                const x = q.x;
+                const y = q.y;
+                const dx = Math.max(lr.left - x, 0, x - lr.right);
+                const dy = Math.max(lr.top - y, 0, y - lr.bottom);
+                best = Math.min(best, Math.hypot(dx, dy));
+              }
+              if (best > 26) floating.push(`${id}: ${label.textContent}`);
+            }
+
+            return { outside, collisions, crossing, detached, floating };
+          });
+
+          expect(report.outside, 'text outside its own box').toEqual([]);
+          expect(report.collisions, 'text boxes intersecting').toEqual([]);
+          expect(report.crossing, 'edges crossing a node box').toEqual([]);
+          expect(report.detached, 'edges not touching a node').toEqual([]);
+          expect(report.floating, 'labels not on their edge').toEqual([]);
+        });
+      }
+    }
+
+    test('renders its labels at 12px or more at every width', async ({ page }) => {
+      /* Ruling 9 and 11: the floor applies at 834, 1280 and 1440 as well as on a
+         phone, and it is measured in screen pixels, not viewBox units. */
+      for (const width of WIDTHS) {
+        await page.setViewportSize({ width, height: 900 });
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        await page.goto(d.path);
+        await panel(page, d.slug).scrollIntoViewIfNeeded();
+
+        const sizes = await page.evaluate(() => {
+          const svg = [...document.querySelectorAll('.flow-svg')].find(
+            (s) => s.getBoundingClientRect().width > 0,
+          ) as SVGSVGElement;
+          const scale = svg.getBoundingClientRect().width / svg.viewBox.baseVal.width;
+          const name = svg.querySelector('.flow-node-name') as SVGTextElement;
+          const edge = svg.querySelector('.flow-edge-label') as SVGTextElement | null;
+          return {
+            name: parseFloat(getComputedStyle(name).fontSize) * scale,
+            edge: edge ? parseFloat(getComputedStyle(edge).fontSize) * scale : 0,
+          };
+        });
+        expect(sizes.name, `node name at ${width}px`).toBeGreaterThanOrEqual(11.9);
+        if (sizes.edge) expect(sizes.edge, `edge label at ${width}px`).toBeGreaterThanOrEqual(10.4);
+      }
+    });
+  });
+}

@@ -43,6 +43,7 @@ export type Step = {
    between boxes, never across one (review ruling 10). */
 export type Route =
   | 'right'
+  | 'loop-side-left'
   | 'down'
   | 'down-right'
   | 'down-left'
@@ -142,7 +143,9 @@ function naturalWidth(node: Node, inner: number): number {
 const heightOf = (node: Node, inner: number) => {
   const nameLines = wrapToWidth(node.name, NAME, inner).length;
   const detailLines = node.detail ? wrapToWidth(node.detail, DETAIL, inner).length : 0;
-  return nameLines * LINE + detailLines * (LINE - 2) + PAD * 2;
+  /* Every line gets its own LINE of height, plus the padding. Two name lines and a
+     detail is four lines: a 44-unit box held only two. */
+  return Math.ceil((nameLines + detailLines) * LINE + PAD * 1.8);
 };
 
 const GAP_X = 46;
@@ -163,9 +166,9 @@ function layoutDesktop(spec: DiagramSpec) {
   /* The gap must hold the labels its edges carry, or a label spills into the boxes
      either side and they paint over it. It is measured from the labels themselves,
      in the same font advance the boxes use. */
-  const labels = spec.edges.filter((e) => e.label && e.route === 'right').map((e) => (e.label as string).length);
+  const labels = spec.edges.filter((e) => e.label).map((e) => (e.label as string).length);
   const widestLabel = labels.length ? Math.max(...labels) : 0;
-  const gap = Math.max(GAP_X, Math.ceil(widestLabel * adv(11)) + 14);
+  const gap = Math.max(GAP_X, Math.ceil(widestLabel * adv(11)) + 20);
   const colX: number[] = [];
   let x = 16;
   for (let c = 0; c < cols; c++) {
@@ -245,64 +248,78 @@ const byId = (nodes: Placed[]) => new Map(nodes.map((n) => [n.id, n]));
 /* An edge's path. Every route goes through a gap: a loop leaves the box sideways,
    runs down the reserved bottom margin, and comes back up, so it crosses no box. */
 function edgePath(a: Placed, b: Placed, route: Route, bounds: Bounds): string {
-  const ac = { x: a.x + a.w / 2, y: a.y + a.h / 2 };
-  const bc = { x: b.x + b.w / 2, y: b.y + b.h / 2 };
+  const acx = a.x + a.w / 2;
+  const acy = a.y + a.h / 2;
+  const bcx = b.x + b.w / 2;
+  const bcy = b.y + b.h / 2;
 
-  switch (route) {
-    case 'right':
-      return `M${a.x + a.w} ${ac.y} H${b.x - 2}`;
-    case 'down':
-      return `M${ac.x} ${a.y + a.h} V${b.y - 2}`;
-    case 'down-right': {
-      /* Out of the right side, past the row's boxes, then down and in from the
-         side. Used when the target is lower and off to the side. */
-      const out = Math.max(a.x + a.w, b.x + b.w) + 16;
-      return `M${a.x + a.w} ${ac.y} H${out} V${bc.y} H${b.x + b.w + 2}`;
-    }
-    case 'down-left': {
-      const out = Math.min(a.x, b.x) - 16;
-      return `M${a.x} ${ac.y} H${out} V${bc.y} H${b.x - 2}`;
-    }
-    case 'loop-bottom': {
-      /* Down the reserved margin below every row and back up into the target's
-         bottom, so the loop is outside the graph rather than through it. */
-      const lane = bounds.h - 30;
-      return `M${ac.x} ${a.y + a.h} V${lane} H${bc.x} V${b.y + b.h + 2}`;
-    }
-    case 'branch': {
-      /* Beside the spine, not after it: out of the source's right edge and into the
-         target's left edge at the target's own height. */
-      return `M${a.x + a.w} ${ac.y} H${a.x + a.w + 8} V${bc.y} H${b.x - 2}`;
-    }
-    case 'loop-side': {
-      /* Out of the right edge first, then down the outer margin and back in. Used
-         when a box sits directly below the source, where a straight drop would
-         pass through it. */
-      const lane = bounds.w - 12;
-      const below = bounds.h - 30;
-      return `M${a.x + a.w} ${ac.y} H${lane} V${below} H${bc.x} V${b.y + b.h + 2}`;
-    }
+  /* The two loops are the only shapes that are a decision rather than geometry: they
+     run in a reserved margin so they leave the graph and come back to it. */
+  if (route === 'loop-side') {
+    /* Out to the outer margin, up to the target's own height, and in from the side:
+       the margin is reserved and no box reaches into it. */
+    const lane = bounds.w - 8;
+    if (bcy < acy) return `M${a.x + a.w} ${acy} H${lane} V${bcy} H${b.x + b.w + 2}`;
+    return `M${a.x + a.w} ${acy} H${lane} V${bcy} H${b.x + b.w + 2}`;
   }
+  if (route === 'loop-side-left') {
+    /* The left margin, for a branch that leaves a box whose neighbours are below it. */
+    const lane = 8;
+    return `M${a.x} ${acy} H${lane} V${bcy} H${b.x - 2}`;
+  }
+  if (route === 'loop-bottom') {
+    const lane = Math.min(bounds.h - 10, Math.max(a.y + a.h, b.y + b.h) + 30);
+    return `M${acx} ${a.y + a.h} V${lane} H${bcx} V${b.y + b.h + 2}`;
+  }
+
+  /* Below the source: down through the gap under it, then across to the target. */
+  if (b.y >= a.y + a.h) {
+    const below = a.y + a.h + (b.y - (a.y + a.h)) / 2;
+    if (Math.abs(acx - bcx) < 1) return `M${acx} ${a.y + a.h} V${b.y - 2}`;
+    return `M${acx} ${a.y + a.h} V${below} H${bcx} V${b.y - 2}`;
+  }
+  /* Above the source: up the gap and in from the top. */
+  if (b.y + b.h <= a.y) {
+    const above = b.y + b.h + (a.y - (b.y + b.h)) / 2;
+    if (Math.abs(acx - bcx) < 1) return `M${acx} ${a.y} V${b.y + b.h + 2}`;
+    return `M${acx} ${a.y} V${above} H${bcx} V${b.y + b.h + 2}`;
+  }
+  /* Same band: side to side through the gap between them. */
+  if (b.x >= a.x + a.w) return `M${a.x + a.w} ${acy} H${b.x - 2}`;
+  if (a.x >= b.x + b.w) return `M${a.x} ${acy} H${b.x + b.w + 2}`;
+  /* Overlapping bands: go round the outside rather than through the box. */
+  const lane = b.x >= a.x ? b.x + b.w + 12 : b.x - 12;
+  return `M${a.x + a.w} ${acy} H${lane} V${bcy} H${b.x + b.w + 2}`;
 }
 
 /* A label's anchor: the middle of the gap its edge crosses. */
-function labelPos(a: Placed, b: Placed, route: Route, bounds: Bounds): { x: number; y: number } {
-  switch (route) {
-    case 'right':
-      return { x: (a.x + a.w + b.x) / 2, y: a.y + a.h / 2 - 5 };
-    case 'down':
-      return { x: a.x + a.w / 2 + 5, y: (a.y + a.h + b.y) / 2 };
-    case 'down-right':
-      return { x: Math.max(a.x + a.w, b.x + b.w) + 18, y: (a.y + a.h + b.y) / 2 };
-    case 'down-left':
-      return { x: Math.min(a.x, b.x) - 18, y: (a.y + a.h + b.y) / 2 };
-    case 'loop-bottom':
-      return { x: (a.x + a.w / 2 + (b.x + b.w / 2)) / 2, y: bounds.h - 22 };
-    case 'branch':
-      return { x: b.x + b.w / 2, y: b.y - 6 };
-    case 'loop-side':
-      return { x: bounds.w - 46, y: bounds.h - 16 };
+function labelPos(a: Placed, b: Placed, route: Route, bounds: Bounds, labelW: number): { x: number; y: number } {
+  if (route === 'loop-side') {
+    const mid = (a.y + a.h / 2 + b.y + b.h / 2) / 2;
+    return { x: bounds.w - 10 - labelW / 2, y: mid };
   }
+  if (route === 'loop-side-left') {
+    const mid = (a.y + a.h / 2 + b.y + b.h / 2) / 2;
+    return { x: 10 + labelW / 2, y: mid };
+  }
+  if (route === 'loop-bottom') {
+    return { x: (a.x + a.w / 2 + b.x + b.w / 2) / 2, y: Math.max(a.y + a.h, b.y + b.h) + 24 };
+  }
+  /* Below the source: on its own vertical run, just under the box. */
+  if (b.y >= a.y + a.h) {
+    if (Math.abs(a.x + a.w / 2 - (b.x + b.w / 2)) < 1) {
+      return { x: a.x + a.w / 2 + 6 + labelW / 2, y: (a.y + a.h + b.y) / 2 };
+    }
+    return { x: (a.x + a.w / 2 + b.x + b.w / 2) / 2, y: a.y + a.h + (b.y - (a.y + a.h)) / 2 - 4 };
+  }
+  if (b.y + b.h <= a.y) {
+    return { x: (a.x + a.w / 2 + b.x + b.w / 2) / 2, y: b.y + b.h + (a.y - (b.y + b.h)) / 2 - 4 };
+  }
+  /* Same band: centred in the gap, above the line. */
+  const gapStart = a.x + a.w;
+  const gapEnd = b.x;
+  const mid = (gapStart + gapEnd) / 2;
+  return { x: labelW > gapEnd - gapStart ? gapStart + labelW / 2 : mid, y: a.y + a.h / 2 - 9 };
 }
 
 /* The pill behind an edge label, sized from the label's own advance, so a label
@@ -544,7 +561,11 @@ function Graph({
   const nodes = byId(placed);
   return (
     <>
-      {spec.edges.map((e) => {
+      {(() => {
+        /* Labels are placed once, in edge order, and remembered so a second label
+           on the same band can be pushed clear of the first. */
+        const placedLabels: { x: number; y: number; w: number; h: number }[] = [];
+        return spec.edges.map((e) => {
         const a = nodes.get(e.from);
         const b = nodes.get(e.to);
         if (!a || !b) return null;
@@ -560,8 +581,18 @@ function Graph({
               : 'branch'
           : e.route;
         const d = edgePath(a, b, route, bounds);
-        const lab = labelPos(a, b, route, bounds);
+        const lab = labelPos(a, b, route, bounds, (e.label?.length ?? 0) * adv(11));
         const pill = pillFor(e.label ?? '', lab.x, lab.y);
+        /* Nudge this label clear of any already placed on the same band. */
+        const clash = placedLabels.find(
+          (o) =>
+            lab.x - pill.w / 2 < o.x + o.w / 2 + 4 &&
+            o.x - o.w / 2 < lab.x + pill.w / 2 + 4 &&
+            lab.y - 12 < o.y + o.h &&
+            o.y - 12 < lab.y + 12,
+        );
+        if (clash) lab.y = clash.y + 20;
+        if (e.label) placedLabels.push({ x: lab.x, y: lab.y, w: pill.w, h: pill.h });
         return (
           <g key={e.id}>
             <path
@@ -577,14 +608,15 @@ function Graph({
             {e.label && (
               <>
                 <rect className="flow-edge-pill" x={pill.x} y={pill.y} width={pill.w} height={pill.h} rx="3" />
-                <text className="flow-edge-label" x={lab.x} y={lab.y} textAnchor="middle">
+                <text className="flow-edge-label" data-edge-label={e.id} x={lab.x} y={lab.y} textAnchor="middle">
                   {e.label}
                 </text>
               </>
             )}
           </g>
         );
-      })}
+        });
+      })()}
       {placed.map((n) => (
         <NodeBox
           key={n.id}
@@ -601,8 +633,10 @@ function NodeBox({ node, still, vertical }: { node: Placed; still?: LampState; v
   const inner = node.w - PAD * 2;
   const name = wrapToWidth(node.name, NAME, inner);
   const detail = node.detail ? wrapToWidth(node.detail, DETAIL, inner) : [];
-  const block = name.length * LINE + detail.length * (LINE - 2);
-  const top = node.y + (node.h - block) / 2 + NAME;
+  const block = (name.length + detail.length) * LINE;
+  /* The first baseline sits one LINE below the block's top edge, so the ascender
+     is inside the box and the detail lines stack under it without touching. */
+  const top = node.y + (node.h - block) / 2 + LINE - 3;
   return (
     <g
       /* The still picture's state comes from the spec, at render time, so the
@@ -625,7 +659,7 @@ function NodeBox({ node, still, vertical }: { node: Placed; still?: LampState; v
           key={i}
           className="flow-node-detail"
           x={node.x + node.w / 2}
-          y={top + name.length * LINE + i * (LINE - 2)}
+          y={top + name.length * LINE + i * LINE}
           textAnchor="middle"
         >
           {line}
