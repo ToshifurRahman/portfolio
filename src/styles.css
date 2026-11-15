@@ -697,7 +697,10 @@ textarea {
   font-size: var(--text-xs);
 }
 
-/* The readout row: four figures, then the actions. */
+/* The readout row: the figures, then the actions. The figure count is whatever
+   src/content.ts holds (three since the owner dropped the test-file count), and
+   the row divides the width between them rather than leaving a fourth cell
+   empty at 1280 or a gap at 768. */
 .readout {
   align-items: stretch;
 }
@@ -705,7 +708,8 @@ textarea {
 .proof {
   grid-column: 1 / span 8;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
 }
 
 .proof li {
@@ -1967,17 +1971,29 @@ textarea {
     content: none;
   }
 
+  /* Two figures over one, and the odd one out spans both columns so it is not
+     left with a half-width cell and a stray left border. */
   .proof {
+    grid-auto-flow: row;
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .proof li:nth-child(3) {
+  .proof li:nth-child(2n) {
+    padding-left: var(--space-5);
+    border-left: var(--line) solid var(--rule);
+  }
+
+  .proof li:nth-child(2n + 1) {
     padding-left: 0;
     border-left: 0;
   }
 
   .proof li:nth-child(n + 3) {
     border-top: var(--line) solid var(--rule);
+  }
+
+  .proof li:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
   }
 
   .track-status {

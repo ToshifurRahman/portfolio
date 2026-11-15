@@ -43,7 +43,6 @@ export const proof = [
   { value: '1,600+', label: 'algorithm problems solved' },
   { value: '100+', label: 'programming contests' },
   { value: '2', label: 'open-source case studies' },
-  { value: '120', label: 'test files in one project' },
 ];
 
 export const builds = [
