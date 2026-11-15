@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { builds, caseStudies, contactLede, moreProjects, owner, proof, skills, workLede, type CaseStudy } from './content';
+import { caseStudies, contactLede, owner, proof, skills, type CaseStudy } from './content';
 import { Footer } from './Footer';
 import { Line } from './Line';
 import { Arrow } from './NotFound';
@@ -131,10 +131,6 @@ export function Home() {
         <NowPanel />
 
         <Section id="work" title="Work">
-          <p className="section-lede">
-            <strong>{workLede.lead}</strong>
-            {workLede.rest}
-          </p>
           <ul className="cases">
             {caseStudies.map((c) => {
               const lane = mainLane(c);
@@ -162,35 +158,6 @@ export function Home() {
             })}
           </ul>
 
-          <h3 className="subhead">What I build</h3>
-          <dl className="rows">
-            {builds.map((b) => (
-              <div key={b.title}>
-                <dt>{b.title}</dt>
-                <dd>
-                  {b.text}
-                  {b.proof && (
-                    <>
-                      {' '}
-                      <Link className="inline-link" to={b.proof.to}>
-                        See {b.proof.label}
-                      </Link>
-                    </>
-                  )}
-                </dd>
-              </div>
-            ))}
-          </dl>
-
-          <h3 className="subhead">Other projects</h3>
-          <dl className="rows projects">
-            {moreProjects.map((p) => (
-              <div key={p.title}>
-                <dt>{p.title}</dt>
-                <dd>{p.text}</dd>
-              </div>
-            ))}
-          </dl>
         </Section>
 
         <CvSections />

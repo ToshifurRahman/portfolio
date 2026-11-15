@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { caseStudies, contactLede, sectionOrder, workLede } from '../../src/content';
+import { caseStudies, contactLede, sectionOrder } from '../../src/content';
 
 /* The owner asked for the unconfirmed first-person blocks to come off the site:
    both case studies' Motivation and Future improvements sections are gone, and
@@ -35,15 +35,10 @@ describe('case-study sections', () => {
 
 /* Owner-voice copy lives in src/content.ts, never in a component: two ledes
    were written straight into Home.tsx, which made a hiring claim the owner had
-   not confirmed. The owner confirmed both on 2026-11-15 and they moved here. */
+   not confirmed. The owner confirmed both on 2026-11-15 and they moved here.
+   The Work lede is gone as of 23:03 ("in work, remove subtitle"), so only the
+   Contact lede is left to pin. */
 describe('section ledes', () => {
-  it('keeps the Work lede in content, with its lead sentence split out', () => {
-    expect(workLede.lead).toBe('Two systems, built end to end.');
-    expect(workLede.lead + workLede.rest).toBe(
-      'Two systems, built end to end. Each case study covers the problem, the architecture, the decisions and the results.',
-    );
-  });
-
   it('keeps the Contact lede in content, with its lead sentence split out', () => {
     /* The owner's own words, 2026-11-15: "keep a simple desc, Want to talk?
        email is the fastest way to reach me". This replaces the R1 "Hiring for a
@@ -54,12 +49,13 @@ describe('section ledes', () => {
     expect(contactLede.lead + contactLede.rest).not.toMatch(/Hiring/i);
   });
 
-  it('renders them from content rather than hard-coding them in the page', () => {
+  it('renders the Contact lede from content rather than hard-coding it', () => {
     const home = readFileSync(resolve(process.cwd(), 'src/Home.tsx'), 'utf8');
-    expect(home).toMatch(/\{workLede\.lead\}/);
     expect(home).toMatch(/\{contactLede\.lead\}/);
-    expect(home).not.toContain('Two systems, built end to end.');
     expect(home).not.toContain('Hiring for a backend or full-stack role?');
+    /* And the Work lede the owner asked to remove stays removed. */
+    expect(home).not.toContain('Two systems, built end to end.');
+    expect(home).not.toMatch(/workLede/);
   });
 });
 

@@ -44,24 +44,6 @@ export const proof = [
   { value: '100+', label: 'programming contests' },
 ];
 
-export const builds = [
-  {
-    title: 'Async pipelines',
-    text: 'Queues and workers with retries at each stage, replay from the stage that failed, and an alert to a person when retries run out.',
-    proof: { label: 'Ticket-Pipeline', to: '/work/ticket-pipeline' },
-  },
-  {
-    title: 'Full-stack web apps',
-    text: 'One TypeScript codebase from the database schema to the screen, with typed API routes and role-based access.',
-    proof: { label: 'RannaGhor', to: '/work/rannaghor' },
-  },
-  {
-    title: 'Automation',
-    text: 'Small tools that remove manual work, such as a script that turns a form submission into a ticked attendance record.',
-    proof: null,
-  },
-];
-
 export type SkillGroup = { group: string; items: string[] };
 
 /*
@@ -183,13 +165,6 @@ export const achievements: Achievement[] = [
   { text: '1st Runner-up, IIUC Intra-University Programming Contest (Spring 2023).' },
   { text: 'Best Mentor Award, IIUCCPS Competitive Programming Bootcamps (Autumn 2023 and Spring 2024).' },
 ];
-
-/* The Work section's lede. The first sentence is set in full ink, the rest in
-   the muted tone; the owner confirmed both lines on 2026-11-15. */
-export const workLede = {
-  lead: 'Two systems, built end to end.',
-  rest: ' Each case study covers the problem, the architecture, the decisions and the results.',
-};
 
 /* The Contact lede, shown only when there is an address to write to. The
    owner's own words, 2026-11-15: "Want to talk? email is the fastest way to
@@ -360,26 +335,6 @@ export const certificates: Certificate[] = [
     height: 656,
     alt: 'Certificate of participation in the Bangladesh Botany Olympiad 2018, Divisional Round, Bangladesh Botanical Society.',
   },
-];
-
-export const moreProjects = [
-  {
-    title: 'Dars',
-    text: 'Arabic vocabulary app with quizzes and flashcards, localised in Bengali and English. TanStack Start on Cloudflare Workers.',
-  },
-  {
-    title: 'Attendance Automation',
-    text: 'Google Apps Script that ticks a student’s attendance checkbox from a Google Form submission and touches no other cell.',
-  },
-  {
-    title: 'HTTP Server',
-    text: 'REST API with sign-in and refresh tokens. TypeScript and Drizzle ORM.',
-  },
-  {
-    title: 'Hacker News Clone',
-    text: 'Client-rendered reader with hash routing, written in plain TypeScript without a framework.',
-  },
-  { title: '7GUIs', text: 'The seven classic GUI programming tasks, built in React and TypeScript.' },
 ];
 
 export type Lane = { label: string; nodes: string[]; note?: string; siblings?: boolean };

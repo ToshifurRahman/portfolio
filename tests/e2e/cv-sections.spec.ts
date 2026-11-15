@@ -146,3 +146,23 @@ test('no axe violations with a certificate dialog open', async ({ page }) => {
 
   expect(results.violations).toEqual([]);
 });
+
+test.describe('the Work section after the owner cut it back', () => {
+  /* Owner, 2026-11-15 23:03: "in work, remove subtitle, project chart not
+     looking good, drop what i build, drop other projects". The two case studies
+     are the whole section now. */
+  test('has no lede, no "What I build" and no "Other projects"', async ({ page }) => {
+    await page.goto('/');
+    const work = page.locator('#work');
+    await expect(work.locator('.section-lede')).toHaveCount(0);
+    await expect(work.locator('.subhead')).toHaveCount(0);
+    await expect(work.getByText('What I build')).toHaveCount(0);
+    await expect(work.getByText('Other projects')).toHaveCount(0);
+    /* The five other projects are no longer listed anywhere on the site. */
+    for (const name of ['Hacker News Clone', '7GUIs']) {
+      await expect(page.getByText(name, { exact: false })).toHaveCount(0);
+    }
+    /* And the two case studies are still there, with their cards. */
+    await expect(work.locator('.case')).toHaveCount(2);
+  });
+});
