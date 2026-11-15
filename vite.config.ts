@@ -85,6 +85,17 @@ function prerenderedRoutes(): Plugin {
         const path = url.split('?')[0];
         const rest = url.slice(path.length);
         if (path === '/') return next();
+        /* A request for a document's own file path (/work/x/index.html) is the
+           page at /work/x. It is served as itself either way, but the address
+           it lands on is the route, as a host that redirects duplicate file
+           paths would do, so the canonical URL is the one a crawler records. */
+        const asRoute = path.replace(/(^|\/)index\.html$/, '$1').replace(/(.)\/$/, '$1');
+        if (asRoute !== path) {
+          res.statusCode = 301;
+          res.setHeader('Location', `${asRoute || '/'}${rest}`);
+          res.end();
+          return;
+        }
         /* A real file in dist is served as itself, whatever its name. It has
            to be a file: a route is a directory, and treating that as a file
            sent /work/ticket-pipeline to the SPA fallback (the home page). */

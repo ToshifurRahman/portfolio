@@ -113,6 +113,18 @@ export function Navbar() {
               </Link>
             </li>
           ))}
+          {/* On a phone the bar has no room for the CV button, and the menu is
+              the only place every other action is reachable from, so the CV
+              download rides in the menu. It is hidden from the bar's list on
+              wider screens, where .cv-link already shows it. */}
+          {owner.cv && (
+            <li className="nav-cv">
+              <a href={owner.cv} download>
+                <span className="lamp" aria-hidden="true" />
+                Download CV
+              </a>
+            </li>
+          )}
         </ul>
         <div className="nav-tools">
           {owner.cv && (

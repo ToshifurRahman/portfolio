@@ -19,6 +19,7 @@
  */
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { build } from 'vite';
+import { applyOrigin } from './head-origin.mjs';
 /* The 404 document is written for no particular address; its `data-route` is
    the sentinel the client and the preview server both know. */
 const NOT_FOUND = '/404';
@@ -35,7 +36,7 @@ await build({
 
 const { render } = await import('../dist-server/entry-server.js');
 /* The route metadata comes from the same source the page renders from. */
-const { caseStudies, owner } = await import('../dist-server/entry-server.js');
+const { caseStudies, owner, siteOrigin } = await import('../dist-server/entry-server.js');
 
 /* Every document keeps the template's head unless it is given its own, which
    would ship the home page's title and description on both case studies. The
@@ -92,9 +93,12 @@ if (!template.includes('<div id="root"></div>')) {
 for (const route of ROUTES) {
   const markup = render(route.path);
   if (!markup) throw new Error(`route ${route.path} rendered nothing`);
-  const html = applyHead(
-    template.replace('<div id="root"></div>', `<div id="root" data-route="${route.path}">${markup}</div>`),
-    route.head,
+  const html = applyOrigin(
+    applyHead(
+      template.replace('<div id="root"></div>', `<div id="root" data-route="${route.path}">${markup}</div>`),
+      route.head,
+    ),
+    siteOrigin,
   );
   await mkdir(route.file.slice(0, route.file.lastIndexOf('/')), { recursive: true });
   await writeFile(route.file, html);

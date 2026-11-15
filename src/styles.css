@@ -77,7 +77,6 @@
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
   --text-md: 0.9375rem;
-  --text-base: 1rem;
   --text-body: 1.0625rem;
   --text-lg: 1.1875rem;
   --text-xl: 1.375rem;
@@ -563,6 +562,12 @@ textarea {
   gap: var(--space-2);
 }
 
+/* The menu's CV entry stands in for the bar's button on a phone only: on wider
+   screens the button is showing, so the duplicate row is dropped. */
+.nav-cv {
+  display: none;
+}
+
 .cv-link {
   min-height: 2.25rem;
   padding: 0 var(--space-4);
@@ -909,11 +914,6 @@ textarea {
 .track-svg .buffer {
   stroke: var(--muted);
   stroke-width: 3;
-}
-
-.track-svg .station-tick {
-  stroke: var(--rule-strong);
-  stroke-width: var(--line-track);
 }
 
 .track-svg .station-lamp {
@@ -1944,6 +1944,10 @@ textarea {
 
   .cv-link {
     display: none;
+  }
+
+  .nav-cv {
+    display: block;
   }
 
   .facts {

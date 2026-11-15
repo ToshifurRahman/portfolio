@@ -12,8 +12,10 @@
     />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>Toshifur Rahman, Software Engineer</title>
-    <!-- Share card. og:url and an absolute og:image wait for a real site URL;
-         the deploy host is not decided, so both stay relative. -->
+    <!-- Share card. The canonical link, og:url and the absolute image are added
+         by the pre-render (scripts/head-origin.mjs) from `siteOrigin` in
+         src/content.ts: while that constant is empty none of the three is
+         emitted, so no absolute URL is invented for an undecided host. -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Toshifur Rahman" />
     <meta property="og:title" content="Toshifur Rahman, Software Engineer" />

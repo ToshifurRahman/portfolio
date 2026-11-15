@@ -26,10 +26,15 @@ test.describe('theme', () => {
   test('switches to light, persists it and survives a reload', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'dark' });
     await page.goto('/');
+    const dark = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
     await toggle(page).click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-    const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-    expect(bg).not.toBe('rgb(16, 15, 14)');
+    /* Assert the light token itself, not "anything but the previous design's
+       background": `bg !== 'rgb(16, 15, 14)'` passed for any colour at all. */
+    const light = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+    expect(dark).toBe('rgb(10, 11, 13)');
+    expect(light).toBe('rgb(243, 242, 238)');
+    expect(light).not.toBe(dark);
     await page.reload();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   });

@@ -37,33 +37,51 @@ test.describe('design review 1 regressions', () => {
     });
   }
 
-  test('390 px: the bar still fits one row with the CV link in place', async ({ page }) => {
+  test('390 px: the bar fits one row and the menu carries the CV download', async ({ page }) => {
+    /* This used to inject a .cv-link when one was missing, so it passed while
+       the shipped bar hid the button and the open menu offered no CV, no email
+       and no LinkedIn on a case study. It now asserts what ships. */
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/');
+    await page.goto('/work/ticket-pipeline');
+
     const fit = await page.evaluate(() => {
-      /* The bar renders the CV link once owner.cv is set; add one only while
-         it is not, so the measurement is the same either way. */
-      const tools = document.querySelector('.nav-tools')!;
-      let cv = tools.querySelector<HTMLAnchorElement>('.cv-link');
-      if (!cv) {
-        cv = document.createElement('a');
-        cv.className = 'cv-link';
-        cv.href = '/cv.pdf';
-        cv.textContent = 'CV';
-        tools.prepend(cv);
-      }
       const bar = document.querySelector('.navbar') as HTMLElement;
-      const picker = document.querySelector('.theme-toggle') as HTMLElement;
+      /* No CV button is fabricated: at 390 the bar hides the real one. */
+      const tools = document.querySelector('.nav-tools') as HTMLElement;
+      const button = tools.querySelector<HTMLElement>('.cv-link');
       return {
         height: bar.getBoundingClientRect().height,
-        overlap: cv.getBoundingClientRect().right - picker.getBoundingClientRect().left,
+        buttonShown: !!button && button.getClientRects().length > 0,
         scroll: document.documentElement.scrollWidth,
         client: document.documentElement.clientWidth,
       };
     });
     expect(fit.height).toBeLessThan(70);
-    expect(fit.overlap).toBeLessThanOrEqual(0);
     expect(fit.scroll).toBeLessThanOrEqual(fit.client);
+    /* The bar keeps fitting because the button is not in it on a phone. */
+    expect(fit.buttonShown).toBe(false);
+
+    /* And the CV is reachable: opening the menu offers it, as a download. */
+    await page.getByRole('button', { name: /menu/i }).click();
+    const cv = page.locator('#primary-menu').getByRole('link', { name: /download cv/i });
+    await expect(cv).toBeVisible();
+    await expect(cv).toHaveAttribute('href', /\.pdf$/);
+    await expect(cv).toHaveAttribute('download', /.*/);
+    /* The menu does not push the bar to a second row either. */
+    const afterOpen = await page.evaluate(() => {
+      const bar = document.querySelector('.navbar') as HTMLElement;
+      return { scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth, width: bar.getBoundingClientRect().width };
+    });
+    expect(afterOpen.scroll).toBeLessThanOrEqual(afterOpen.client);
+  });
+
+  test('390 px: no CV row is duplicated on the home page menu', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/');
+    await page.getByRole('button', { name: /menu/i }).click();
+    await expect(page.locator('#primary-menu .nav-cv')).toHaveCount(1);
+    /* The bar's own button stays out of the layout, so the download exists once. */
+    await expect(page.locator('.navbar a[download].button')).toBeHidden();
   });
 
   test('390 px: a contents link clears the sticky contents row', async ({ page }) => {

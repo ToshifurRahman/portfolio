@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { applyOrigin } from '../../scripts/head-origin.mjs';
 
 /* The repository root is the working directory vitest runs from. */
 const root = process.cwd();
@@ -45,6 +46,31 @@ describe('social meta', () => {
     expect(meta('og:image:height')).toBe('630');
     /* No absolute URL may be invented for og:url either. */
     expect(meta('og:url')).toBeUndefined();
+  });
+
+  it('keeps the origin in one place, empty until the owner names it', () => {
+    /* The owner has not decided the host (2026-11-15), so the constant ships
+       empty and no absolute URL is emitted. Setting it must be all it takes. */
+    const source = read('src/content.ts');
+    const origin = source.match(/export const siteOrigin\s*=\s*'([^']*)'/)?.[1];
+    expect(origin, 'src/content.ts has no siteOrigin constant').toBeDefined();
+    expect(origin).toBe('');
+  });
+
+  it('emits canonical, og:url and an absolute image once an origin is set', () => {
+    /* The build reads the constant; these are the two shapes it can take, so a
+       future origin needs no code change. `headLinks` is the single place that
+       decides, and it is exercised here without a host. */
+    const html = applyOrigin(read('index.html'), 'https://example.com');
+    expect(html).toContain('<link rel="canonical" href="https://example.com/" />');
+    expect(html).toContain('<meta property="og:url" content="https://example.com/" />');
+    expect(html).toContain('<meta property="og:image" content="https://example.com/og.png" />');
+    expect(html).toContain('<meta name="twitter:image" content="https://example.com/og.png" />');
+    /* And nothing absolute is invented when there is no origin. */
+    const bare = applyOrigin(read('index.html'), '');
+    expect(bare).not.toContain('rel="canonical"');
+    expect(bare).not.toContain('og:url');
+    expect(bare).toContain('<meta property="og:image" content="/og.png" />');
   });
 
   it('ships a 1200x630 PNG share image', () => {
