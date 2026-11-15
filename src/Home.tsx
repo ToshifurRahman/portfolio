@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { caseStudies, contactLede, owner, proof, skills, type CaseStudy } from './content';
 import { Footer } from './Footer';
-import { Line } from './Line';
+import { NodeDiagram } from './NodeDiagram';
 import { Arrow } from './NotFound';
 import { NowPanel } from './NowPanel';
 import { Section } from './Section';
@@ -42,13 +42,6 @@ function Gridlines() {
 }
 
 const meta = (c: CaseStudy, label: string) => c.meta.find((m) => m.label === label)?.value;
-
-/* The longest lane of a study's architecture: the one that shows the most of
-   the system in a single line. */
-function mainLane(c: CaseStudy) {
-  const lanes = c.sections.flatMap((s) => s.blocks.flatMap((b) => (b.kind === 'diagram' ? b.lanes : [])));
-  return lanes.filter((l) => !l.siblings).sort((a, b) => b.nodes.length - a.nodes.length)[0];
-}
 
 export function Home() {
   useTitle();
@@ -132,10 +125,8 @@ export function Home() {
 
         <Section id="work" title="Work">
           <ul className="cases">
-            {caseStudies.map((c) => {
-              const lane = mainLane(c);
-              return (
-                <li key={c.slug}>
+            {caseStudies.map((c) => (
+              <li key={c.slug}>
                   <article className="case">
                     <div className="case-main">
                       <div className="case-head">
@@ -145,7 +136,7 @@ export function Home() {
                         <span className="case-type">{meta(c, 'Type')}</span>
                       </div>
                       <p className="case-summary">{c.summary}</p>
-                      {lane && <Line label={`${c.title}: ${lane.label}`} nodes={lane.nodes} />}
+                      <NodeDiagram study={c} />
                       <p className="case-stack">{meta(c, 'Stack')}</p>
                       <p className="case-outcome">{c.outcome}</p>
                       <span className="more-link" aria-hidden="true">
@@ -154,8 +145,7 @@ export function Home() {
                     </div>
                   </article>
                 </li>
-              );
-            })}
+            ))}
           </ul>
 
         </Section>

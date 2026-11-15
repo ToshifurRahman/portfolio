@@ -1381,6 +1381,113 @@ textarea {
   display: none;
 }
 
+/* A case card's node diagram: labelled boxes joined by arrows. -----------
+   The same lane the case study lists, drawn for the card. It wraps rather than
+   shrinking: a box's label is real text and never truncated, so at a narrow
+   width the chain folds into more rows and the arrows follow, and at 390 the
+   chain turns vertical so every label stays whole and readable. One arrow may be
+   a branch (a system that forks), drawn dashed and hanging under its parent. */
+.nodes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: var(--space-2) var(--space-5);
+  margin-top: var(--space-5);
+}
+
+.node {
+  position: relative;
+  flex: 0 1 auto;
+  padding: var(--space-2) var(--space-3);
+  border: var(--line) solid var(--rule-strong);
+  border-radius: var(--radius);
+  background: var(--panel);
+  color: var(--ink-2);
+  font-family: var(--mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-mono);
+  text-transform: uppercase;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+/* The arrow from the previous box, drawn in the gap the flex row leaves. */
+.node + .node::before {
+  content: '→';
+  position: absolute;
+  top: 50%;
+  left: calc(var(--space-5) * -1);
+  width: var(--space-5);
+  transform: translateY(-50%);
+  color: var(--muted);
+  text-align: center;
+}
+
+/* The branch hangs below its parent, joined by a dashed rule: the gateway
+   switches to a backup model, so this is a fork, not the next step. */
+/* A zero-height full-width item: it takes the rest of its row and pushes the
+   branch onto the next one. */
+.node-break {
+  flex-basis: 100%;
+  height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.nodes .is-branch {
+  margin-top: calc(var(--space-4) * -1 + var(--space-4));
+  margin-left: var(--space-6);
+  border-style: dashed;
+}
+
+.is-branch::before {
+  content: '';
+  top: calc(var(--space-4) * -1);
+  left: calc(var(--space-6) * -1 + 0.5rem);
+  width: var(--space-4);
+  height: var(--space-4);
+  border: 0;
+  border-left: var(--line) dashed var(--rule-strong);
+  border-bottom: var(--line) dashed var(--rule-strong);
+  transform: none;
+  border-bottom-left-radius: var(--radius);
+}
+
+/* The one accent on the card diagram: the branch is the alternative path, so it
+   is the part drawn in amber rather than the main line. */
+.is-branch {
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+@media (max-width: 48rem) {
+  /* Vertical on a phone: one box per row with the arrow pointing down, so no
+     label is cut and nothing scrolls sideways. */
+  .nodes {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-4);
+  }
+
+  .node + .node::before {
+    content: '↓';
+    top: calc(var(--space-4) * -1);
+    left: var(--space-3);
+    width: auto;
+    transform: none;
+  }
+
+  .nodes .is-branch {
+    margin-left: var(--space-5);
+  }
+
+  .is-branch::before {
+    top: calc(var(--space-4) * -1);
+    left: calc(var(--space-5) * -1 + 0.5rem);
+  }
+}
+
 .line.siblings li::before {
   box-shadow: 0 0 0 var(--line-track) var(--track);
 }
