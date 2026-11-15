@@ -2,7 +2,7 @@ import { render } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 import { Home } from '../../src/Home';
-import { owner, proof } from '../../src/content';
+import { caseStudies, owner, proof } from '../../src/content';
 import { pageSections, sections } from '../../src/nav';
 
 const renderHome = () =>
@@ -90,5 +90,33 @@ describe('introduction', () => {
     renderHome();
     expect(document.querySelector('.statement')?.textContent).toBe(owner.statement);
     expect(document.querySelector('.statement .emphasis')?.textContent).toBe(owner.statementEmphasis);
+  });
+});
+
+/* The Work cards carried a figures block (test files, Lighthouse, API modules,
+   roles) lifted from each study's Results. The owner asked for one outcome
+   line per card instead, and for the state shown there to be accurate rather
+   than "picked randomly": the study's own closing sentence, word for word. */
+describe('work cards', () => {
+  it('ends each card with the study outcome, not a figures block', () => {
+    renderHome();
+    expect(document.querySelectorAll('.case-figures')).toHaveLength(0);
+    const cards = [...document.querySelectorAll('.case')];
+    expect(cards).toHaveLength(caseStudies.length);
+    cards.forEach((card, i) => {
+      const study = caseStudies[i];
+      const outcome = card.querySelector('.case-outcome');
+      expect(outcome, study.slug).not.toBeNull();
+      expect(outcome!.textContent, study.slug).toBe(study.outcome);
+    });
+  });
+
+  it('takes the outcome from the study itself, so the two cannot drift', () => {
+    for (const study of caseStudies) {
+      expect(study.outcome, study.slug).toBeTruthy();
+      /* It is a sentence already on the case-study page. */
+      const page = JSON.stringify(study.sections);
+      expect(page, study.slug).toContain(JSON.stringify(study.outcome).slice(1, -1));
+    }
   });
 });

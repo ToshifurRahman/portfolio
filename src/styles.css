@@ -1053,7 +1053,7 @@ textarea {
 .case {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 14rem);
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-5) var(--col-gap);
   padding-block: var(--space-8);
   border-top: var(--line) solid var(--rule);
@@ -1119,29 +1119,13 @@ textarea {
   line-height: 1.6;
 }
 
-.case-figures {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-}
-
-.case-figures div {
-  display: flex;
-  flex-direction: column-reverse;
-  gap: var(--space-1);
-}
-
-.case-figures dd {
-  font-size: var(--text-figure);
-  font-weight: var(--weight-semibold);
-  line-height: 1;
-  letter-spacing: var(--tracking-tight);
-}
-
-.case-figures dt {
-  color: var(--muted);
-  font-size: var(--text-sm);
-  line-height: 1.35;
+/* The study's own closing result: the one line that says what the work
+   achieved, set a step above the stack line and below the summary. */
+.case-outcome {
+  max-width: var(--measure);
+  padding-left: var(--space-4);
+  border-left: var(--line-track) solid var(--accent);
+  color: var(--ink);
 }
 
 .case .more-link {
@@ -2010,18 +1994,6 @@ textarea {
 
   .rows > div {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .case {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .case-figures {
-    flex-direction: row;
-  }
-
-  .case-figures div {
-    flex: 1 1 0;
   }
 
   .line {

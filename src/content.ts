@@ -337,6 +337,11 @@ export type CaseStudy = {
   slug: string;
   title: string;
   summary: string;
+  /* The study's own closing result, in one sentence, shown on its card in the
+     Work section. It is the same sentence that closes the study's Results, and
+     the test pins the two together, so the card cannot claim something the
+     page does not. */
+  outcome: string;
   meta: { label: string; value: string; href?: string }[];
   sections: Section[];
 };
@@ -357,6 +362,8 @@ const ticketPipeline: CaseStudy = {
   title: 'Ticket-Pipeline',
   summary:
     'A support-ticket pipeline. A customer submits a ticket, a background worker triages it with an LLM and drafts a reply, and the customer watches it happen live.',
+  outcome:
+    'A ticket goes from submission to a drafted reply without a staff member touching it, and the customer watches each step happen live.',
   meta: [
     { label: 'Type', value: 'Backend system with a web app' },
     { label: 'Timeline', value: 'April to November 2026' },
@@ -556,6 +563,8 @@ const rannaghor: CaseStudy = {
   title: 'RannaGhor',
   summary:
     'A multi-vendor e-commerce platform with three roles: customers who shop, vendors who sell, and admins who approve and manage.',
+  outcome:
+    'The platform covers the full path from sign-up to a managed order, with a vendor dashboard and an admin panel.',
   meta: [
     { label: 'Type', value: 'Full-stack web app' },
     { label: 'Timeline', value: 'January to March 2026' },

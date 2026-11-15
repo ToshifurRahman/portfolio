@@ -50,12 +50,6 @@ function mainLane(c: CaseStudy) {
   return lanes.filter((l) => !l.siblings).sort((a, b) => b.nodes.length - a.nodes.length)[0];
 }
 
-/* Two result figures per study. Commit counts stay on the case-study page. */
-function figures(c: CaseStudy) {
-  const facts = c.sections.flatMap((s) => s.blocks.flatMap((b) => (b.kind === 'facts' ? b.items : [])));
-  return facts.filter((f) => !/commit/i.test(f.label)).slice(0, 2);
-}
-
 export function Home() {
   useTitle();
   const { hash } = useLocation();
@@ -157,18 +151,11 @@ export function Home() {
                       <p className="case-summary">{c.summary}</p>
                       {lane && <Line label={`${c.title}: ${lane.label}`} nodes={lane.nodes} />}
                       <p className="case-stack">{meta(c, 'Stack')}</p>
+                      <p className="case-outcome">{c.outcome}</p>
                       <span className="more-link" aria-hidden="true">
                         Read the case study <Arrow />
                       </span>
                     </div>
-                    <dl className="case-figures">
-                      {figures(c).map((f) => (
-                        <div key={f.label}>
-                          <dt>{f.label}</dt>
-                          <dd>{f.value}</dd>
-                        </div>
-                      ))}
-                    </dl>
                   </article>
                 </li>
               );
