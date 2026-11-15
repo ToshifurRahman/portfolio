@@ -41,6 +41,51 @@ test.describe('design review 1 regressions', () => {
     });
   }
 
+  /* R3-ds-3: between 769 and 809px the full bar did not fit — `.nav-tools` ended
+     at 791px in a 769px viewport, so the theme toggle was clipped and the page
+     scrolled 22px sideways. The fix is not to squeeze the bar but to collapse it
+     into the Menu button earlier, at the width where the full bar actually fits.
+     The CV action has to stay reachable either way (Must prove 2). */
+  for (const width of [769, 800, 810, 832, 1024]) {
+    test(`nothing clips or scrolls sideways at ${width} px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto('/');
+      const fit = await page.evaluate(() => {
+        const toggle = document.querySelector<HTMLElement>('.theme-toggle')!;
+        const box = toggle.getBoundingClientRect();
+        return {
+          overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+          toggleRight: Math.round(box.right),
+          toggleShown: toggle.getClientRects().length > 0,
+          client: document.documentElement.clientWidth,
+        };
+      });
+      expect(fit.toggleShown).toBe(true);
+      expect(fit.overflow, `page scrolls sideways at ${width}px`).toBeLessThanOrEqual(0);
+      expect(fit.toggleRight).toBeLessThanOrEqual(fit.client + 1);
+    });
+  }
+
+  /* Whichever layout the bar is in, the CV download exists and is reachable:
+     in the bar where the bar is full, in the menu where it has collapsed. */
+  for (const width of [390, 769, 800, 810, 832, 1024, 1280]) {
+    test(`the CV action is reachable at ${width} px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto('/');
+      const inBar = page.locator('.nav-tools .cv-link');
+      const collapsed = await page.getByRole('button', { name: /menu/i }).isVisible();
+      if (collapsed) {
+        await expect(inBar).toBeHidden();
+        await page.getByRole('button', { name: /menu/i }).click();
+        await expect(page.locator('#primary-menu .nav-cv a')).toBeVisible();
+      } else {
+        await expect(inBar).toBeVisible();
+      }
+      /* And always in the hero, which is Must prove 2. */
+      await expect(page.locator('.readout .button')).toBeVisible();
+    });
+  }
+
   test('390 px: the bar fits one row and the menu carries the CV download', async ({ page }) => {
     /* This used to inject a .cv-link when one was missing, so it passed while
        the shipped bar hid the button and the open menu offered no CV, no email
