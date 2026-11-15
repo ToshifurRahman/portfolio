@@ -7,16 +7,18 @@ import { caseStudies, contactLede, sectionOrder } from '../../src/content';
    both case studies' Motivation and Future improvements sections are gone, and
    the section list every case study follows no longer names them. */
 describe('case-study sections', () => {
-  it('lists the seven confirmed sections in order', () => {
+  it('lists the six confirmed sections in order', () => {
+    /* Six since 2026-11-15: the owner asked for Challenges and Solutions to read
+       as pairs rather than two lists, so they are one section named for both. */
     expect(sectionOrder.map((s) => s.id)).toEqual([
       'overview',
       'problem',
       'architecture',
       'tech-decisions',
       'challenges',
-      'solutions',
       'results',
     ]);
+    expect(sectionOrder.find((s) => s.id === 'challenges')?.title).toBe('Challenges and solutions');
   });
 
   it('gives every case study exactly those sections, in that order', () => {

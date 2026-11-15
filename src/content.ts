@@ -382,7 +382,17 @@ export type Block =
   | { kind: 'list'; items: { lead?: string; text: string }[] }
   | { kind: 'steps'; items: string[] }
   | { kind: 'facts'; items: { value: string; label: string }[] }
-  | { kind: 'diagram'; caption: string; lanes: Lane[] };
+  | { kind: 'diagram'; caption: string; lanes: Lane[] }
+  /* A challenge and the solution that answers it, side by side. The owner asked
+     for the two sections to read as pairs (2026-11-15) because as separate lists
+     the reader had to match five items across two screens. */
+  | { kind: 'pairs'; items: Pair[] }
+  /* A decision as a card: the lead is the card's title and the text sits under
+     it at body size. Same words as a `list`, different shape (owner, 2026-11-15:
+     the section "feels to conjusted with texts"). */
+  | { kind: 'decisions'; items: { lead: string; text: string }[] };
+
+export type Pair = { challenge: { lead: string; text: string }; solution: { lead: string; text: string } };
 
 export type Section = { id: string; title: string; blocks: Block[] };
 
@@ -399,16 +409,20 @@ export type CaseStudy = {
   sections: Section[];
 };
 
-/* The seven sections every case study has, in this order. */
+/* The six sections every case study has, in this order. Challenges and Solutions
+   are one section since 2026-11-15: they read as pairs, not as two lists. */
 export const sectionOrder = [
   { id: 'overview', title: 'Overview' },
   { id: 'problem', title: 'Problem' },
   { id: 'architecture', title: 'Architecture' },
   { id: 'tech-decisions', title: 'Tech decisions' },
-  { id: 'challenges', title: 'Challenges' },
-  { id: 'solutions', title: 'Solutions' },
+  { id: 'challenges', title: 'Challenges and solutions' },
   { id: 'results', title: 'Results' },
 ] as const;
+
+/* The merged section carries both ids, so the sub-navbar and any old link to
+   #solutions still land where they used to. */
+export const solutionsAnchor = 'solutions';
 
 const ticketPipeline: CaseStudy = {
   slug: 'ticket-pipeline',
@@ -490,7 +504,7 @@ const ticketPipeline: CaseStudy = {
       title: 'Tech decisions',
       blocks: [
         {
-          kind: 'list',
+          kind: 'decisions',
           items: [
             {
               lead: 'A queue and a worker, not work inside the request.',
@@ -522,61 +536,60 @@ const ticketPipeline: CaseStudy = {
     },
     {
       id: 'challenges',
-      title: 'Challenges',
+      title: 'Challenges and solutions',
       blocks: [
         {
-          kind: 'list',
+          kind: 'pairs',
           items: [
             {
-              lead: 'Output that cannot be trusted.',
-              text: 'A model can return malformed or incomplete output, and a provider can be slow or down.',
+              challenge: {
+                lead: 'Output that cannot be trusted.',
+                text: 'A model can return malformed or incomplete output, and a provider can be slow or down.',
+              },
+              solution: {
+                lead: 'Treat bad output as a failure.',
+                text: 'Output that fails validation is recorded as an invalid response and retried like any other failure. After three tries the ticket goes to a person, who can replay it from the stage that failed.',
+              },
             },
             {
-              lead: 'Customer content in shared channels.',
-              text: 'Every ops user sees the ops feed, so ticket text and AI output must never reach it, even by accident in an error message.',
+              challenge: {
+                lead: 'Customer content in shared channels.',
+                text: 'Every ops user sees the ops feed, so ticket text and AI output must never reach it, even by accident in an error message.',
+              },
+              solution: {
+                lead: 'Build public data field by field.',
+                text: 'Public views, the ops feed and alerts list their fields explicitly. Alerts carry fixed reason codes, never error text. Guard tests fail if any other file publishes to the ops room.',
+              },
             },
             {
-              lead: 'Bots spending the AI budget.',
-              text: 'A public form that triggers paid LLM calls is an easy target.',
+              challenge: {
+                lead: 'Bots spending the AI budget.',
+                text: 'A public form that triggers paid LLM calls is an easy target.',
+              },
+              solution: {
+                lead: 'Four checks in a fixed order.',
+                text: 'Body validation, a per-address hourly limit, Cloudflare Turnstile, then a daily cap. A refused request creates no row and costs no LLM call.',
+              },
             },
             {
-              lead: 'Two runtimes.',
-              text: 'The app runs on Bun, but module mocking in the test runner does not work under Bun.',
+              challenge: {
+                lead: 'Two runtimes.',
+                text: 'The app runs on Bun, but module mocking in the test runner does not work under Bun.',
+              },
+              solution: {
+                lead: 'Run tests on Node, the app on Bun.',
+                text: 'Vitest runs on Node so mocking works. Playwright tests run against the built app.',
+              },
             },
             {
-              lead: 'Migrations on a pooled database.',
-              text: 'The pooled connection lacks the session features that migration tools rely on.',
-            },
-          ],
-        },
-      ],
-    },
-    {
-      id: 'solutions',
-      title: 'Solutions',
-      blocks: [
-        {
-          kind: 'list',
-          items: [
-            {
-              lead: 'Treat bad output as a failure.',
-              text: 'Output that fails validation is recorded as an invalid response and retried like any other failure. After three tries the ticket goes to a person, who can replay it from the stage that failed.',
-            },
-            {
-              lead: 'Build public data field by field.',
-              text: 'Public views, the ops feed and alerts list their fields explicitly. Alerts carry fixed reason codes, never error text. Guard tests fail if any other file publishes to the ops room.',
-            },
-            {
-              lead: 'Four checks in a fixed order.',
-              text: 'Body validation, a per-address hourly limit, Cloudflare Turnstile, then a daily cap. A refused request creates no row and costs no LLM call.',
-            },
-            {
-              lead: 'Run tests on Node, the app on Bun.',
-              text: 'Vitest runs on Node so mocking works. Playwright tests run against the built app.',
-            },
-            {
-              lead: 'Two connection strings.',
-              text: 'Migrations use the direct database URL. The running app uses the pooled one.',
+              challenge: {
+                lead: 'Migrations on a pooled database.',
+                text: 'The pooled connection lacks the session features that migration tools rely on.',
+              },
+              solution: {
+                lead: 'Two connection strings.',
+                text: 'Migrations use the direct database URL. The running app uses the pooled one.',
+              },
             },
           ],
         },
@@ -685,7 +698,7 @@ const rannaghor: CaseStudy = {
       title: 'Tech decisions',
       blocks: [
         {
-          kind: 'list',
+          kind: 'decisions',
           items: [
             {
               lead: 'A Bun monorepo with shared packages.',
@@ -717,53 +730,50 @@ const rannaghor: CaseStudy = {
     },
     {
       id: 'challenges',
-      title: 'Challenges',
+      title: 'Challenges and solutions',
       blocks: [
         {
-          kind: 'list',
+          kind: 'pairs',
           items: [
             {
-              lead: 'Privilege escalation.',
-              text: 'With three roles, one missing check lets a customer act as a vendor or an admin.',
+              challenge: {
+                lead: 'Privilege escalation.',
+                text: 'With three roles, one missing check lets a customer act as a vendor or an admin.',
+              },
+              solution: {
+                lead: 'Role checks as middleware, proven by tests.',
+                text: 'Separate middleware guards vendor and admin routes. Dedicated test suites cover authorisation, privilege escalation, session security and database row-level policies.',
+              },
             },
             {
-              lead: 'Sign-in abuse.',
-              text: 'Limiting attempts by address alone does not stop an attacker who targets one account from many addresses.',
+              challenge: {
+                lead: 'Sign-in abuse.',
+                text: 'Limiting attempts by address alone does not stop an attacker who targets one account from many addresses.',
+              },
+              solution: {
+                lead: 'Rate limits per account.',
+                text: 'Sign-in and password reset are limited per account as well as per address.',
+              },
             },
             {
-              lead: 'State leaking between users.',
-              text: 'Cart and wishlist contents showed across accounts on a shared browser.',
+              challenge: {
+                lead: 'State leaking between users.',
+                text: 'Cart and wishlist contents showed across accounts on a shared browser.',
+              },
+              solution: {
+                lead: 'Cart and wishlist scoped to the signed-in user.',
+                text: 'The wishlist is stored per user, a guest’s items move to their account at sign-in, and cart and coupon state are cleared at sign-out.',
+              },
             },
             {
-              lead: 'Stock under concurrent orders.',
-              text: 'Two orders for the last item must not both succeed.',
-            },
-          ],
-        },
-      ],
-    },
-    {
-      id: 'solutions',
-      title: 'Solutions',
-      blocks: [
-        {
-          kind: 'list',
-          items: [
-            {
-              lead: 'Role checks as middleware, proven by tests.',
-              text: 'Separate middleware guards vendor and admin routes. Dedicated test suites cover authorisation, privilege escalation, session security and database row-level policies.',
-            },
-            {
-              lead: 'Rate limits per account.',
-              text: 'Sign-in and password reset are limited per account as well as per address.',
-            },
-            {
-              lead: 'Cart and wishlist scoped to the signed-in user.',
-              text: 'The wishlist is stored per user, a guest’s items move to their account at sign-in, and cart and coupon state are cleared at sign-out.',
-            },
-            {
-              lead: 'Stock changes inside transactions.',
-              text: 'An order locks the product rows, checks stock and reduces it in one database transaction, with tests for the concurrent case.',
+              challenge: {
+                lead: 'Stock under concurrent orders.',
+                text: 'Two orders for the last item must not both succeed.',
+              },
+              solution: {
+                lead: 'Stock changes inside transactions.',
+                text: 'An order locks the product rows, checks stock and reduces it in one database transaction, with tests for the concurrent case.',
+              },
             },
           ],
         },

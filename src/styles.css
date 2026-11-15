@@ -1647,7 +1647,7 @@ textarea {
   padding: var(--space-2) var(--space-3);
   border: var(--line) solid var(--rule-strong);
   border-radius: var(--radius);
-  background: var(--panel);
+  background: var(--bg-raised);
   color: var(--ink-2);
   font-family: var(--mono);
   font-size: var(--text-2xs);
@@ -2309,8 +2309,100 @@ textarea {
 
 .prose {
   display: grid;
-  gap: var(--space-6);
+  gap: var(--space-8);
+  max-width: 68ch;
   font-size: var(--text-lg);
+  line-height: 1.65;
+}
+
+/* Challenges and solutions, paired. -------------------------------------
+   Each row is one challenge and the solution that answers it: two columns on a
+   desktop, challenge left and solution right, and stacked on a phone with a
+   visible label so the second half is not read as more of the first. The owner
+   asked for this on 2026-11-15 because as two separate five-item lists the reader
+   had to carry five items across two screens to match them up. */
+.pairs {
+  display: grid;
+  gap: var(--space-8);
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pairs > li {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-6);
+  padding-top: var(--space-6);
+  border-top: var(--line) solid var(--rule);
+}
+
+.pair-challenge,
+.pair-solution {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+/* The label is a screen-reader and phone cue; on a desktop the two columns say
+   it by position, so it is hidden there rather than repeated twice per row. */
+.pair-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-mono);
+  text-transform: uppercase;
+}
+
+.pair-lead {
+  color: var(--ink);
+  font-weight: var(--weight-semibold);
+  line-height: 1.35;
+}
+
+.pair-text {
+  color: var(--ink-2);
+  font-size: var(--text-md);
+  line-height: 1.65;
+}
+
+/* Tech decisions, as cards. --------------------------------------------
+   The lead becomes the card's title and the text sits under it at body size.
+   Two columns on a desktop, one on a phone: the same six decisions, with room
+   to read them instead of six dense bullets (owner, 2026-11-15). */
+.decisions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-5);
+}
+
+.decision {
+  display: grid;
+  align-content: start;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  background: var(--bg-raised);
+  border: var(--line) solid var(--rule);
+  border-radius: var(--radius);
+}
+
+.decision-lead {
+  color: var(--ink);
+  font-weight: var(--weight-semibold);
+  line-height: 1.35;
+}
+
+.decision-text {
+  color: var(--ink-2);
+  font-size: var(--text-md);
   line-height: 1.65;
 }
 
@@ -2567,6 +2659,44 @@ textarea {
 }
 
 @media (max-width: 48rem) {
+  /* The paired rows and the decision cards go to one column. The pair's label
+     becomes visible here: stacked, "Solution" is the only thing that tells the
+     second block apart from more of the first. */
+  .pairs > li,
+  .decisions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pairs > li {
+    gap: var(--space-4);
+  }
+
+  .pair-challenge,
+  .pair-solution {
+    gap: var(--space-1);
+  }
+
+  .pair-solution {
+    padding-top: var(--space-4);
+    border-top: var(--line) solid var(--rule);
+  }
+
+  /* 16px body text on a phone: `--text-md` is 15px, which is a desktop reading
+     size, not a thumb-distance one. */
+  .pair-text,
+  .decision-text {
+    font-size: var(--text-body);
+  }
+
+  .pair-label {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+    white-space: normal;
+  }
+
   /* One vertical timeline, not two lanes squeezed into columns: the year axis
      and both lanes become a single column with the year markers on it. Each
      stop takes its own row, so a label reads in full and nothing overlaps. */

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
-import { caseStudies, type Block } from './content';
+import { caseStudies, solutionsAnchor, type Block } from './content';
 import { diagrams } from './diagrams';
 import { Diagram } from './Diagram';
 import { Footer } from './Footer';
@@ -108,6 +108,10 @@ export function CaseStudyPage() {
             key={s.id}
             aria-labelledby={`${s.id}-h`}
           >
+            {/* The merged section carries both ids: #challenges is the section,
+                and #solutions lands here too, so the sub-navbar and any old link
+                to the former Solutions section still reach the pairs. */}
+            {s.id === 'challenges' && <span id={solutionsAnchor} className="anchor" aria-hidden="true" />}
             <h2 className="section-heading" id={`${s.id}-h`}>
               {s.title}
             </h2>
@@ -167,6 +171,43 @@ function BlockView({ block }: { block: Block }) {
             </li>
           ))}
         </ul>
+      );
+    case 'decisions':
+      /* Each decision as a card: its lead is the title, its text the body. The
+         grid and the padding are the CSS's business; the words are unchanged. */
+      return (
+        <div className="decisions">
+          {block.items.map((it, i) => (
+            <div className="decision" key={i}>
+              <p className="decision-lead">{it.lead}</p>
+              <p className="decision-text">{it.text}</p>
+            </div>
+          ))}
+        </div>
+      );
+    case 'pairs':
+      /* A challenge and the solution that answers it, as one row. On desktop the
+         two halves sit side by side, challenge left, solution right; on a phone
+         they stack with a visible "Solution" label. The row is a single list item
+         so a screen reader reads the pair together rather than meeting five
+         challenges and then five solutions. */
+      return (
+        <ol className="pairs">
+          {block.items.map((pair, i) => (
+            <li key={i}>
+              <div className="pair-challenge">
+                <p className="pair-label">Challenge</p>
+                <p className="pair-lead">{pair.challenge.lead}</p>
+                <p className="pair-text">{pair.challenge.text}</p>
+              </div>
+              <div className="pair-solution">
+                <p className="pair-label">Solution</p>
+                <p className="pair-lead">{pair.solution.lead}</p>
+                <p className="pair-text">{pair.solution.text}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
       );
     case 'steps':
       return (
