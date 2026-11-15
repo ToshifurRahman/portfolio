@@ -26,12 +26,15 @@ test.describe('theme', () => {
   test('switches to light, persists it and survives a reload', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'dark' });
     await page.goto('/');
-    const dark = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+    /* The page colour lives on `html` since R4a-ds-1 (an opaque `body` hid the
+       signature rail), so that is where the visible colour is read from. */
+    const pageColor = () => page.evaluate(() => getComputedStyle(document.documentElement).backgroundColor);
+    const dark = await pageColor();
     await toggle(page).click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
     /* Assert the light token itself, not "anything but the previous design's
        background": `bg !== 'rgb(16, 15, 14)'` passed for any colour at all. */
-    const light = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+    const light = await pageColor();
     expect(dark).toBe('rgb(10, 11, 13)');
     /* The softened light page (owner, 2026-11-15: "Light mode is too bright"): it
        used to be near-white at 243,242,238 and is now a warm grey. */

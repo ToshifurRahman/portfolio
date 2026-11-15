@@ -98,3 +98,45 @@ test.describe('the hero wave travels', () => {
     }
   });
 });
+
+test.describe('the pulse holds its restraint while scrolling', () => {
+  test('pauses during a fast scroll and resumes when the page settles', async ({ page }) => {
+    /* Ruling 4: the rail is fixed to the viewport, so "paused off-screen" is the
+       hero's rule; for the rail it is the hidden tab and this one. */
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto('/');
+    await page.waitForTimeout(300);
+    await expect.poll(() => page.evaluate(() => document.documentElement.dataset.motion)).toBe('on');
+
+    await page.evaluate(() => window.scrollTo(0, 600));
+    /* The scroll event is dispatched asynchronously, so the state lands a frame
+       after the call, not inside it. */
+
+    await expect.poll(() => page.evaluate(() => document.documentElement.dataset.motion)).toBe('scrolling');
+    const play = await page
+      .locator('.site-rail i')
+      .first()
+      .evaluate((el) => getComputedStyle(el).animationPlayState);
+    expect(play).toBe('paused');
+
+    /* And it comes back once the page is still. */
+    await expect.poll(() => page.evaluate(() => document.documentElement.dataset.motion), {
+      timeout: 3000,
+    }).toBe('on');
+  });
+
+  test('the rail pauses on a hidden tab too', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForTimeout(300);
+    await page.evaluate(() => {
+      Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await expect.poll(() => page.evaluate(() => document.documentElement.dataset.motion)).toBe('paused');
+    const play = await page
+      .locator('.site-rail i')
+      .first()
+      .evaluate((el) => getComputedStyle(el).animationPlayState);
+    expect(play).toBe('paused');
+  });
+});

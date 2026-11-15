@@ -215,6 +215,12 @@
 }
 
 html {
+  /* The page colour lives here and NOT on `body`. `body` painting its own opaque
+     background hides any negative-z child of it: the signature rail sits at
+     `z-index: -1` so it can be behind the text, and with an opaque body it painted
+     behind that instead and never appeared at all (R4a-ds-1). One background on
+     the root also means the canvas is painted before anything else, which is what
+     avoids a white flash on the first frame. */
   background: var(--bg);
   scroll-padding-top: calc(var(--header-h) + var(--space-6));
   -webkit-text-size-adjust: 100%;
@@ -224,7 +230,9 @@ html {
 
 body {
   margin: 0;
-  background: var(--bg);
+  /* Transparent on purpose: see the note on `html` above. The colour still shows,
+     because `html`'s background paints the canvas behind everything. */
+  background: transparent;
   color: var(--ink);
   font-family: var(--font);
   font-size: var(--text-body);
@@ -592,7 +600,11 @@ textarea {
     opacity: 0;
   }
   2% {
-    opacity: 0.5;
+    /* Faint: the ray is a 1px line in the column rule, and at 0.5 all twelve
+       strips lit at once read as the grid brightening rather than one line
+       travelling down it. 0.35 keeps the movement legible and the grid quiet, and
+       it is never over body text — the rail sits in the column gaps. */
+    opacity: 0.35;
   }
   12% {
     transform: translate3d(0, 100%, 0);
@@ -604,7 +616,9 @@ textarea {
   }
 }
 
-:root[data-motion='paused'] .site-rail i {
+:root[data-motion='paused'] .site-rail i,
+:root[data-motion='scrolling'] .site-rail i,
+:root[data-motion='scrolling'] .hero-cell {
   animation-play-state: paused;
 }
 

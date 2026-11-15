@@ -36,15 +36,38 @@ export function useSignatureMotion() {
        frame are the same picture. */
     root.dataset.motion = 'on';
 
+    let scrolling = 0;
+
     const sync = () => {
       /* Hidden tab: nothing runs. */
       if (document.hidden) {
         root.dataset.motion = 'paused';
         return;
       }
+      /* A fast scroll is not a moment to animate into: the motion is worth
+         nothing while the page is flying past, and it is one more thing moving
+         under a reader who is looking for where they are. The quiet period is
+         short enough that stopping feels like the page settling rather than a
+         delay. */
+      if (scrolling) {
+        root.dataset.motion = 'scrolling';
+        return;
+      }
       root.dataset.motion = 'on';
     };
     document.addEventListener('visibilitychange', sync);
+
+    const onScroll = () => {
+      scrolling = 1;
+      sync();
+      window.clearTimeout(settle);
+      settle = window.setTimeout(() => {
+        scrolling = 0;
+        sync();
+      }, 220);
+    };
+    let settle = 0;
+    addEventListener('scroll', onScroll, { passive: true });
 
     const element = hero.current;
 
@@ -106,6 +129,8 @@ export function useSignatureMotion() {
 
     return () => {
       document.removeEventListener('visibilitychange', sync);
+      removeEventListener('scroll', onScroll);
+      window.clearTimeout(settle);
       observer?.disconnect();
       if (frame) cancelAnimationFrame(frame);
       element?.removeEventListener('pointermove', onMove);
