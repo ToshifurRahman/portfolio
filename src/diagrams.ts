@@ -65,19 +65,25 @@ const ticketPipeline: DiagramSpec = {
   viewBox: { w: 1600, h: 240 },
   centre: 680,
   showAll: 1380,
-  /* The still picture's framing, per panel width, in track units: each band puts
-   * that coordinate at the panel's left edge. Computed from the measured label
-   * extents so no label is ever cut at either edge and the station the picture
-   * is about stays whole (COMPLETED with its sublabel). The panel width, not the
-   * viewport, is what matters: the diagram is nine columns wide inside a case
-   * study. */
+  /* The still picture's framing, in track units: each band puts that coordinate
+   * at the panel's left edge. Computed from the measured label extents so no
+   * label is ever cut at either edge and the station the picture is about stays
+   * whole (COMPLETED with its sublabel).
+   *
+   * The band thresholds live in styles.css, which is the single source for which
+   * band applies at which panel width: the bands are ordered rules whose cascade
+   * decides the winner, so writing the thresholds here too gave a second copy
+   * that could drift with nothing to catch it (R2: `upTo` was read by nothing).
+   * This array is the offsets only, in the same order as the rules in
+   * styles.css. The panel width, not the viewport, is what matters: the diagram
+   * is nine columns wide inside a case study. */
   framing: [
-    { upTo: 479, left: 1130 },
-    { upTo: 719, left: 870 },
-    { upTo: 1039, left: 630 },
-    { upTo: 1219, left: 310 },
-    { upTo: 1329, left: 130 },
-    { upTo: Infinity, left: 20 },
+    { left: 1130 },
+    { left: 870 },
+    { left: 630 },
+    { left: 310 },
+    { left: 130 },
+    { left: 20 },
   ],
   y: Y,
   segments: TP_SEGMENTS,
@@ -203,17 +209,18 @@ const rannaghor: DiagramSpec = {
   viewBox: { w: 1600, h: 240 },
   centre: 640,
   showAll: 1500,
-  /* The still picture's framing, per panel width, in track units. Computed from
-   * the measured extents like Ticket-Pipeline's; ROLE CHECK and POSTGRESQL stay
+  /* The still picture's framing, in track units. Computed from the measured
+   * extents like Ticket-Pipeline's, and the same way: offsets only, with the band
+   * thresholds in styles.css as the single source. ROLE CHECK and POSTGRESQL stay
    * whole, and the refusal labels on the branch are dropped from the narrowest
    * pictures (they are said in words by the status line and the caption). */
   framing: [
-    { upTo: 499, left: 1287 },
-    { upTo: 729, left: 1015 },
-    { upTo: 909, left: 785 },
-    { upTo: 1209, left: 771 },
-    { upTo: 1409, left: 305 },
-    { upTo: Infinity, left: 105 },
+    { left: 1287 },
+    { left: 1015 },
+    { left: 785 },
+    { left: 771 },
+    { left: 305 },
+    { left: 105 },
   ],
   y: RY,
   segments: RG_SEGMENTS,

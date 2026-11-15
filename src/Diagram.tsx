@@ -62,10 +62,9 @@ export type DiagramSpec = {
   centre: number;
   showAll: number;
   /* The still picture's framing: `left` is the track coordinate put at the
-     panel's left edge while the panel is at most `upTo` px wide. Data rather
-     than CSS, because it is diagram geometry (track units) computed from the
-     labels' measured extents, and a test can check every band. */
-  framing: { upTo: number; left: number }[];
+     panel's left edge. The band thresholds themselves live in styles.css, which
+     is the single source: see the note in src/diagrams.ts. */
+  framing: { left: number }[];
   y: number;
   /* Every segment of track, by name. The run steps travel these. */
   segments: Record<string, string>;
