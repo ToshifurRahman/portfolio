@@ -33,7 +33,7 @@ test.describe('unknown path', () => {
     const problems = collect(page);
     const response = await page.goto('/unknown-404-page');
     await expect(notFound(page)).toBeVisible();
-    await expect(page.locator('main.notfound h1')).toHaveText('No such state');
+    await expect(page.locator('main.notfound h1')).toHaveText('Page not found');
     /* The response says 404, not 200 with the home page. */
     expect(response?.status()).toBe(404);
     await page.waitForTimeout(300);
@@ -78,49 +78,24 @@ test.describe('unknown path without JavaScript', () => {
   test('still shows the not-found page', async ({ page }) => {
     await page.goto('/unknown-404-page');
     await expect(notFound(page)).toBeVisible();
-    await expect(page.locator('main.notfound h1')).toHaveText('No such state');
+    await expect(page.locator('main.notfound h1')).toHaveText('Page not found');
     /* And not the home page's name. */
     await expect(page.locator('.name')).toHaveCount(0);
   });
 });
 
-/* The pre-paint script has already set data-theme from storage before the app
-   runs, so the picker must show the stored choice from that same signal. The
-   pre-rendered markup says dark, and hydration keeps it, so the highlight may
-   not be driven by React state alone. */
-test.describe('theme picker after reload', () => {
+/* The pre-paint script sets data-theme from storage before the app runs, and
+   the toggle's icon is chosen by CSS from that same attribute, so a stored
+   light theme shows the moon (the way back to dark) with no hydration error. */
+test.describe('theme toggle after reload', () => {
   for (const path of ['/', '/work/ticket-pipeline']) {
-    test(`highlights Light on ${path} when light is stored`, async ({ page }) => {
+    test(`shows the light theme's icon on ${path} when light is stored`, async ({ page }) => {
       const problems = collect(page);
       await page.addInitScript(() => localStorage.setItem('theme', 'light'));
       await page.goto(path);
       await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-      await expect(page.getByRole('radio', { name: 'Light' })).toBeChecked();
-      await expect(page.getByRole('radio', { name: 'Dark' })).not.toBeChecked();
-
-      /* The visible highlight, not just the input: the selected cell is the
-         one painted in ink. Compare the two cells' backgrounds. */
-      const paints = await page.locator('.theme-option').evaluateAll((labels) =>
-        labels.map((label) => ({
-          value: (label.querySelector('input') as HTMLInputElement).value,
-          background: getComputedStyle(label).backgroundColor,
-        })),
-      );
-      const dark = paints.find((p) => p.value === 'dark');
-      const light = paints.find((p) => p.value === 'light');
-      expect(light?.background).not.toBe(dark?.background);
-      /* The light cell must be the filled one: its text colour is the ground. */
-      const lightColor = await page
-        .locator('.theme-option', { has: page.locator('input[value="light"]') })
-        .evaluate((label) => {
-          const style = getComputedStyle(label);
-          return { color: style.color, background: style.backgroundColor };
-        });
-      const darkColor = await page
-        .locator('.theme-option', { has: page.locator('input[value="dark"]') })
-        .evaluate((label) => getComputedStyle(label).color);
-      expect(lightColor.background).not.toBe(darkColor);
-
+      await expect(page.locator('.theme-toggle .icon-moon')).toBeVisible();
+      await expect(page.locator('.theme-toggle .icon-sun')).toBeHidden();
       await page.waitForTimeout(300);
       expect(problems).toEqual([]);
     });

@@ -13,10 +13,13 @@ const year = typeof __BUILD_YEAR__ === 'string' ? __BUILD_YEAR__ : String(new Da
 
 export function Footer() {
   return (
-    <footer className="footer">
+    <footer className="frame ruled footer">
       <p>
         © {year} {owner.name}
       </p>
+      <a className="text-button" href="#main">
+        Back to top
+      </a>
     </footer>
   );
 }

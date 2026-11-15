@@ -24,10 +24,10 @@ const whenBuilt = hasBuild ? describe : describe.skip;
 const why = 'dist/index.html is missing: run `bun run build` before the unit suite';
 
 const routes = [
-  { file: 'index.html', route: '/', heading: 'name display' },
-  { file: 'work/ticket-pipeline/index.html', route: '/work/ticket-pipeline', heading: 'display study-title' },
-  { file: 'work/rannaghor/index.html', route: '/work/rannaghor', heading: 'display study-title' },
-  { file: '404.html', route: '/404', heading: 'No such state' },
+  { file: 'index.html', route: '/', heading: 'class="name"' },
+  { file: 'work/ticket-pipeline/index.html', route: '/work/ticket-pipeline', heading: 'class="study-title"' },
+  { file: 'work/rannaghor/index.html', route: '/work/rannaghor', heading: 'class="study-title"' },
+  { file: '404.html', route: '/404', heading: 'Page not found' },
 ];
 
 whenBuilt(`pre-rendered routes (${hasBuild ? 'built output' : why})`, () => {
@@ -52,10 +52,10 @@ whenBuilt(`pre-rendered routes (${hasBuild ? 'built output' : why})`, () => {
   it('gives each route its own heading, not the home page', () => {
     const study = read('work/ticket-pipeline/index.html');
     expect(study).toContain('Ticket-Pipeline');
-    expect(study).not.toContain('class="name display"');
+    expect(study).not.toContain('class="name"');
     const home = read('index.html');
-    expect(home).toContain('class="name display"');
-    expect(home).not.toContain('class="display study-title"');
+    expect(home).toContain('class="name"');
+    expect(home).not.toContain('class="study-title"');
   });
 
   it('lays the markup out before the bundle runs', () => {

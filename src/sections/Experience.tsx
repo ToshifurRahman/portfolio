@@ -1,23 +1,19 @@
-import { experience, owner } from '../content';
+import { experience } from '../content';
 import { Section } from '../Section';
 
 export function Experience() {
   return (
     <Section id="experience" title="Experience">
-      {owner.cv && (
-        <a className="action cv-download" href={owner.cv} download="">
-          Download CV (PDF)
-        </a>
-      )}
-      <ol className="cv-roles">
+      <ol className="entries">
         {experience.map((role) => (
-          <li key={`${role.title}-${role.organization}`} className="cv-role">
-            <h3 className="cv-role-title display">{role.title}</h3>
-            <p className="cv-org">
-              <span>{role.organization}</span>
-              <span className="cv-period">{role.period}</span>
-            </p>
-            <ul className="cv-points">
+          <li key={`${role.title}-${role.organization}`} className="entry">
+            <span className={/present/i.test(role.period) ? 'lamp is-lit' : 'lamp'} aria-hidden="true" />
+            <div className="entry-head">
+              <h3 className="entry-title">{role.title}</h3>
+              <p className="entry-period">{role.period}</p>
+            </div>
+            <p className="entry-org">{role.organization}</p>
+            <ul className="points">
               {role.bullets.map((bullet) => (
                 <li key={bullet}>{bullet}</li>
               ))}

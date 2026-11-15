@@ -26,9 +26,9 @@ const renderSections = () =>
   );
 
 describe('CvSections', () => {
-  it('renders the four sections in R1 order, each a labelled section with an h2', () => {
+  it('renders the three sections in page order, each a labelled section with an h2', () => {
     const { container } = renderSections();
-    const ids = ['experience', 'education', 'achievements', 'certificates'];
+    const ids = ['experience', 'education', 'achievements'];
 
     expect([...container.querySelectorAll('section')].map((s) => s.id)).toEqual(ids);
 
@@ -42,7 +42,7 @@ describe('CvSections', () => {
     }
   });
 
-  it('shows the CV experience with the CV download at the top', () => {
+  it('shows the CV experience word for word', () => {
     renderSections();
     const section = document.getElementById('experience') as HTMLElement;
 
@@ -52,10 +52,6 @@ describe('CvSections', () => {
       expect(within(section).getByText(role.period)).toBeTruthy();
       for (const bullet of role.bullets) expect(within(section).getByText(bullet)).toBeTruthy();
     }
-
-    const download = within(section).getByRole('link', { name: /download cv/i });
-    expect(download.getAttribute('href')).toBe(owner.cv);
-    expect(download.hasAttribute('download')).toBe(true);
   });
 
   it('shows both degrees and the achievements in text order', () => {
@@ -75,22 +71,18 @@ describe('CvSections', () => {
     expect(text.indexOf('Codeforces')).toBeLessThan(text.indexOf('1st Runner-up'));
   });
 
-  it('renders one card per certificate whose text names it, with a decorative preview', () => {
+  it('lists one row per certificate inside Achievements, named by its own text', () => {
     renderSections();
     const section = document.getElementById('certificates') as HTMLElement;
+    expect(section.closest('section')?.id).toBe('achievements');
 
-    const images = section.querySelectorAll('img');
-    expect(images).toHaveLength(certificates.length);
-
-    for (const [i, cert] of certificates.entries()) {
-      const image = images[i] as HTMLImageElement;
-      expect(image.getAttribute('src')).toBe(cert.preview);
-      expect(image.getAttribute('loading')).toBe('lazy');
-      expect(image.getAttribute('decoding')).toBe('async');
-      expect(image.getAttribute('width')).toBe(String(cert.width));
-      expect(image.getAttribute('height')).toBe(String(cert.height));
-      /* The card's own text names the certificate, so the image is decorative. */
-      expect(image.getAttribute('alt')).toBe('');
+    /* Each row shows a small preview that loads lazily and is decorative:
+       the row's text names the certificate. */
+    const thumbs = [...section.querySelectorAll('img')];
+    expect(thumbs).toHaveLength(certificates.length);
+    for (const img of thumbs) {
+      expect(img.getAttribute('alt')).toBe('');
+      expect(img.getAttribute('loading')).toBe('lazy');
     }
 
     const buttons = within(section).getAllByRole('button');

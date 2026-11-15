@@ -18,7 +18,7 @@ describe('navbar', () => {
       </MemoryRouter>,
     );
     const nav = screen.getByRole('navigation', { name: 'Primary' });
-    for (const label of ['About', 'Work', 'Experience', 'Achievements', 'Certificates', 'Skills', 'Contact']) {
+    for (const label of ['Work', 'Experience', 'Achievements', 'Skills', 'Contact']) {
       expect(within(nav).getByRole('link', { name: label })).toHaveAttribute('href', `/#${label.toLowerCase()}`);
     }
   });
@@ -30,7 +30,7 @@ describe('navbar', () => {
       </MemoryRouter>,
     );
     const nav = screen.getByRole('navigation', { name: 'Primary' });
-    expect(within(nav).getByRole('link', { name: 'About' })).toHaveAttribute('href', '/#about');
+    expect(within(nav).getByRole('link', { name: 'Work' })).toHaveAttribute('href', '/#work');
   });
 
   it('is rendered on the not-found page', () => {
@@ -40,7 +40,7 @@ describe('navbar', () => {
       </MemoryRouter>,
     );
     expect(screen.getByRole('navigation', { name: 'Primary' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('No such state');
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Page not found');
   });
 
   it('shows the CV link with the owner file', () => {
@@ -88,8 +88,10 @@ describe('home sections', () => {
       </MemoryRouter>,
     );
     for (const [id, title] of [
-      ['about', 'About'],
       ['work', 'Work'],
+      ['experience', 'Experience'],
+      ['education', 'Education'],
+      ['achievements', 'Achievements'],
       ['skills', 'Skills'],
       ['contact', 'Contact'],
     ] as const) {

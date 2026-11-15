@@ -93,8 +93,8 @@ test.describe('navbar', () => {
   test('every section is reachable by keyboard', async ({ page }) => {
     await page.goto('/');
     const nav = page.getByRole('navigation', { name: 'Primary' });
-    await nav.getByRole('link', { name: 'About' }).focus();
-    for (const name of ['Work', 'Experience', 'Achievements', 'Certificates', 'Skills', 'Contact']) {
+    await nav.getByRole('link', { name: 'Work' }).focus();
+    for (const name of ['Experience', 'Achievements', 'Skills', 'Contact']) {
       await page.keyboard.press('Tab');
       await expect(nav.getByRole('link', { name })).toBeFocused();
     }

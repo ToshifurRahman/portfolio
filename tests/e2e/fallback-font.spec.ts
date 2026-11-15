@@ -17,17 +17,14 @@ const measure = (page: import('@playwright/test').Page) =>
     const doc = document.documentElement;
     const name = document.querySelector('.name') as HTMLElement;
     const bar = document.querySelector('.navbar') as HTMLElement;
-    const chain = document.querySelector('.chain-states') as HTMLElement;
-    const last = document.querySelector('.chain-state:last-child') as HTMLElement;
     return {
       scrollWidth: doc.scrollWidth,
       clientWidth: doc.clientWidth,
       nameClipped: name.scrollWidth - name.clientWidth,
       barHeight: Math.round(bar.getBoundingClientRect().height),
-      /* The chain scrolls by design below 62rem; above it, every box must fit. */
-      chainOverflow: chain.scrollWidth - chain.clientWidth,
-      lastRight: Math.round(last.getBoundingClientRect().right),
-      chainRight: Math.round(chain.getBoundingClientRect().right),
+      /* The name stays on as many lines as with the web face: two at 1280,
+         first name over last name, by design. */
+      nameLines: Math.round(name.getBoundingClientRect().height / parseFloat(getComputedStyle(name).lineHeight)),
     };
   });
 
@@ -46,10 +43,7 @@ for (const theme of ['dark', 'light'] as const) {
       expect(m.scrollWidth, 'the page overflows horizontally').toBeLessThanOrEqual(m.clientWidth);
       expect(m.nameClipped, 'the name is clipped').toBeLessThanOrEqual(0);
       expect(m.barHeight, 'the navbar wrapped to a second row').toBeLessThan(70);
-      if (width === 1280) {
-        expect(m.chainOverflow, 'the chain overflows at 1280').toBeLessThanOrEqual(0);
-        expect(m.lastRight).toBeLessThanOrEqual(m.chainRight + 1);
-      }
+      if (width === 1280) expect(m.nameLines, 'the name wrapped in the fallback face').toBe(2);
     });
   }
 }
@@ -70,10 +64,12 @@ test('fallback font: the case study page does not overflow either', async ({ pag
 
 test('fallback font: the page is still usable', async ({ page }) => {
   await blockFont(page);
+  await page.emulateMedia({ colorScheme: 'dark' });
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto('/');
   /* Hydration and the theme switch do not depend on the face. */
-  await page.getByRole('radio', { name: 'Light' }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await page.getByRole('button', { name: /dark and light theme/i }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   await page.getByRole('link', { name: 'Skills' }).click();
   await expect(page.locator('#skills')).toBeInViewport();

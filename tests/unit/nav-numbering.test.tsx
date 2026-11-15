@@ -2,6 +2,7 @@ import { render } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 import { Home } from '../../src/Home';
+import { pageSections } from '../../src/nav';
 
 const renderHome = () =>
   render(
@@ -10,32 +11,20 @@ const renderHome = () =>
     </MemoryRouter>,
   );
 
-/* The diagram and the section headings below it are the same chain, so a state
-   carries one number in both places. Education has no box of its own: it sits
-   under Experience, which is why the diagram skips 04. */
-describe('state numbering', () => {
-  it('numbers each diagram state the way its section heading is numbered', () => {
+/* The headings follow nav.ts in page order. Section numbers were dropped in
+   the signal-box redesign: the order carries no information a reader needs,
+   so no heading carries a number. Certificates sit inside Achievements. */
+describe('section headings', () => {
+  it('lists the headings in page order, unnumbered', () => {
     renderHome();
-    const boxes = [...document.querySelectorAll('.chain-state')].map((box) => ({
-      id: box.textContent?.trim().toLowerCase(),
-      num: box.querySelector('.state-num')?.textContent,
-    }));
-    expect(boxes.map((box) => box.num)).toEqual(['01', '02', '03', '05', '06', '07', '08']);
-
-    for (const id of ['about', 'work', 'experience', 'achievements', 'certificates', 'skills', 'contact']) {
-      const heading = document.querySelector(`#${id}-title .state-num`)?.textContent;
-      const box = boxes.find((b) => b.id?.endsWith(id));
-      expect(box?.num, `#${id}`).toBe(heading);
-    }
+    const headings = [...document.querySelectorAll('.section .section-heading')];
+    expect(headings.map((h) => h.closest('section')?.id)).toEqual(pageSections.map((s) => s.id));
+    expect(headings.map((h) => h.textContent)).toEqual(pageSections.map((s) => s.label));
+    expect(document.querySelector('.section-num')).toBeNull();
   });
 
-  /* The four CV sections joined the page's own layout, so all eight headings
-     are states now and the whole page reads 01 to 08 with nothing skipped. */
-  it('keeps the section headings in R1 order, 01 to 08', () => {
+  it('keeps certificates inside Achievements', () => {
     renderHome();
-    const numbers = [...document.querySelectorAll('.state-section .section-heading .state-num')].map(
-      (n) => n.textContent,
-    );
-    expect(numbers).toEqual(['01', '02', '03', '04', '05', '06', '07', '08']);
+    expect(document.querySelector('#achievements #certificates')).not.toBeNull();
   });
 });

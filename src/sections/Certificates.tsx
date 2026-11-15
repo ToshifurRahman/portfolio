@@ -1,15 +1,16 @@
 import { useRef, useState } from 'react';
 import { certificates, type Certificate } from '../content';
 import { CertificateDialog } from './CertificateDialog';
-import { Section } from '../Section';
 
+/* A sub-list of Achievements: one row per certificate. Each row opens the
+   certificate's image in a dialog, with a link to the original file. */
 export function Certificates() {
   const [open, setOpen] = useState<Certificate | null>(null);
   const dialog = useRef<HTMLDialogElement | null>(null);
-  const lastCard = useRef<HTMLButtonElement | null>(null);
+  const lastRow = useRef<HTMLButtonElement | null>(null);
 
-  const show = (certificate: Certificate, card: HTMLButtonElement) => {
-    lastCard.current = card;
+  const show = (certificate: Certificate, row: HTMLButtonElement) => {
+    lastRow.current = row;
     setOpen(certificate);
   };
 
@@ -17,27 +18,29 @@ export function Certificates() {
 
   const afterClose = () => {
     setOpen(null);
-    lastCard.current?.focus();
+    lastRow.current?.focus();
   };
 
   const mounted = (el: HTMLDialogElement | null) => {
     dialog.current = el;
     if (!el || el.open) return;
     el.showModal();
-    el.querySelector<HTMLElement>('.cv-dialog-close')?.focus();
+    el.querySelector<HTMLElement>('.dialog-close')?.focus();
   };
 
   return (
-    <Section id="certificates" title="Certificates">
-      <ul className="cv-certificates">
+    <div className="certificates" id="certificates">
+      <h3 className="subhead">Certificates</h3>
+      <ul className="certificate-list">
         {certificates.map((certificate) => (
           <li key={certificate.slug}>
             <button
               type="button"
-              className="cv-card"
+              className="certificate"
+              aria-haspopup="dialog"
               onClick={(event) => show(certificate, event.currentTarget)}
             >
-              <span className="cv-card-image">
+              <span className="certificate-thumb">
                 <img
                   src={certificate.preview}
                   width={certificate.width}
@@ -47,23 +50,18 @@ export function Certificates() {
                   decoding="async"
                 />
               </span>
-              <span className="cv-card-title display">{certificate.title}</span>
-              <span className="cv-card-meta">
-                {certificate.issuer}
-                {certificate.date && <span className="cv-period">{certificate.date}</span>}
+              <span className="certificate-text">
+                <span className="certificate-title">{certificate.title}</span>
+                <span className="certificate-meta">
+                  {certificate.issuer}
+                  {certificate.date && <span className="certificate-date">{certificate.date}</span>}
+                </span>
               </span>
             </button>
           </li>
         ))}
       </ul>
-      {open && (
-        <CertificateDialog
-          certificate={open}
-          onMount={mounted}
-          onClose={afterClose}
-          onDismiss={close}
-        />
-      )}
-    </Section>
+      {open && <CertificateDialog certificate={open} onMount={mounted} onClose={afterClose} onDismiss={close} />}
+    </div>
   );
 }

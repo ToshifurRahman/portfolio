@@ -4,17 +4,14 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { Home } from '../../src/Home';
 import { owner } from '../../src/content';
 
-type Identity = { headline: string; summary: string };
+type Identity = { now: string; location: string };
 const identity = owner as typeof owner & Identity;
 
-/* headline and summary are typed fields of owner; an empty string is the
-   absent state the site paints nothing for. The test sets both on the imported
-   object, so the present and absent renders are both proven. */
-const set = (fields: Identity) => {
-  Object.assign(identity, fields);
-};
-
-const original = { headline: owner.headline, summary: owner.summary };
+/* `now` and `location` are optional facts: an empty string is the absent state
+   the site paints nothing for. The test sets both on the imported object, so
+   the present and absent renders are both proven. */
+const set = (fields: Identity) => Object.assign(identity, fields);
+const original = { now: owner.now, location: owner.location };
 
 const renderHome = () =>
   render(
@@ -23,33 +20,23 @@ const renderHome = () =>
     </MemoryRouter>,
   );
 
-afterEach(() => set({ headline: original.headline, summary: original.summary }));
+afterEach(() => set(original));
 
-describe('about section identity', () => {
-  it('renders the headline and the plain summary once they exist', () => {
-    set({ headline: 'Web Developer at Taibah Academy', summary: 'I build web apps in Chattogram.' });
+const terms = () => [...document.querySelectorAll('.facts dt')].map((dt) => dt.textContent);
+
+describe('introduction identity', () => {
+  it('renders the current role and the place once they exist', () => {
+    set({ now: 'Web Developer at Taibah Academy', location: 'Chattogram, Bangladesh' });
     renderHome();
-    const about = document.getElementById('about')!;
-    expect(about.querySelector('.headline')?.textContent).toBe('Web Developer at Taibah Academy');
-    /* The summary belongs to the mast, above the fold, and is not repeated in
-       the About panel right below it. */
-    expect(document.querySelector('.mast-summary')?.textContent).toBe('I build web apps in Chattogram.');
-    expect(document.querySelectorAll('.mast-summary, .summary')).toHaveLength(1);
+    expect(terms()).toContain('Now');
+    expect(document.querySelector('.role-place')?.textContent).toBe('Chattogram, Bangladesh');
   });
 
   it('renders neither when both are missing, and never a placeholder', () => {
-    set({ headline: '', summary: '' });
+    set({ now: '', location: '' });
     renderHome();
-    const about = document.getElementById('about')!;
-    expect(about.querySelector('.headline')).toBeNull();
-    expect(document.querySelector('.mast-summary')).toBeNull();
-    expect(about.textContent).not.toMatch(/undefined|Not set yet: headline|Not set yet: summary/);
-  });
-
-  it('ignores a blank string the way an empty field is ignored', () => {
-    set({ headline: '   ', summary: '' });
-    renderHome();
-    expect(document.getElementById('about')!.querySelector('.headline')).toBeNull();
-    expect(document.querySelector('.mast-summary')).toBeNull();
+    expect(terms()).not.toContain('Now');
+    expect(document.querySelector('.role-place')).toBeNull();
+    expect(document.querySelector('.intro')?.textContent).not.toMatch(/undefined/);
   });
 });

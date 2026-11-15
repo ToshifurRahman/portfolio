@@ -15,6 +15,10 @@ export const owner = {
   summary:
     'Toshifur Rahman is a software engineer in Chattogram, Bangladesh, who builds backend and full-stack web systems and is completing a master’s in computer science at CUET.',
   statement: 'I build backend and full-stack systems, and I design for the moment they fail.',
+  /* The closing clause of the statement, set in full ink on the home page while
+     the rest of the motto stays in the muted tone. */
+  statementEmphasis: 'and I design for the moment they fail.',
+  now: 'Web Developer at Taibah Academy',
   focus: 'Async backends and full-stack web apps',
   mainStack: 'TypeScript, Bun, PostgreSQL, React',
   location: 'Chattogram, Bangladesh',
@@ -24,6 +28,17 @@ export const owner = {
   cv: '/cv/Toshifur-Rahman-CV.pdf',
   github: 'https://github.com/ToshifurRahman',
 };
+
+/*
+ * The proof row under the statement. Every figure is from the CV or a case
+ * study's own Results; commit counts are deliberately left out here.
+ */
+export const proof = [
+  { value: '1,600+', label: 'algorithm problems solved' },
+  { value: '100+', label: 'programming contests' },
+  { value: '2', label: 'open-source case studies' },
+  { value: '120', label: 'test files in one project' },
+];
 
 export const builds = [
   {

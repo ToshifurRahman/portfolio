@@ -53,7 +53,7 @@ describe('contact CV link', () => {
 describe('contact links break only at their separators', () => {
   it('puts a <wbr> after every "/" and "@" and nowhere else', () => {
     renderHome();
-    const links = [...document.querySelectorAll('.contact a.contact-link')];
+    const links = [...document.querySelectorAll('.contact-email, .contact a')];
     expect(links.length).toBeGreaterThan(0);
 
     let checked = 0;

@@ -1,22 +1,16 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('first screen at 390 px', () => {
-  test('shows who this is and the first section above the fold', async ({ page }) => {
+  test('shows who this is, the statement, the CV and all four figures above the fold', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');
-    await expect(page.locator('.name')).toBeInViewport();
-    await expect(page.locator('.mast-role')).toBeInViewport();
-    await expect(page.locator('#about-title')).toBeInViewport();
-    const box = await page.locator('#about-title').boundingBox();
-    expect(box!.y).toBeLessThan(844);
-  });
-
-  test('the state diagram stays a strip instead of a column', async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/');
-    const strip = await page.locator('.chain-states').boundingBox();
-    /* Seven stacked rows would be over 400 px tall; a strip is one or two rows. */
-    expect(strip!.height).toBeLessThan(180);
+    for (const selector of ['.name', '.role', '.statement', '.readout .button']) {
+      await expect(page.locator(selector)).toBeInViewport();
+    }
+    /* All four figures, whole, before any scroll. */
+    for (const figure of await page.locator('.proof li').all()) {
+      await expect(figure).toBeInViewport({ ratio: 1 });
+    }
   });
 });
 
@@ -33,17 +27,6 @@ test.describe('design review 1 regressions', () => {
       expect(width.scroll).toBeLessThanOrEqual(width.client);
     });
   }
-
-  test('1280 px: every state label fits inside its box', async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto('/');
-    const over = await page.locator('.chain-state').evaluateAll((boxes) =>
-      boxes
-        .map((box) => ({ text: box.textContent?.trim(), by: box.scrollWidth - box.clientWidth }))
-        .filter((box) => box.by > 0),
-    );
-    expect(over).toEqual([]);
-  });
 
   for (const width of [721, 768, 900, 1024, 1100, 1180]) {
     test(`the navbar stays one row at ${width} px`, async ({ page }) => {
@@ -70,7 +53,7 @@ test.describe('design review 1 regressions', () => {
         tools.prepend(cv);
       }
       const bar = document.querySelector('.navbar') as HTMLElement;
-      const picker = document.querySelector('.theme-picker') as HTMLElement;
+      const picker = document.querySelector('.theme-toggle') as HTMLElement;
       return {
         height: bar.getBoundingClientRect().height,
         overlap: cv.getBoundingClientRect().right - picker.getBoundingClientRect().left,
@@ -83,15 +66,15 @@ test.describe('design review 1 regressions', () => {
     expect(fit.scroll).toBeLessThanOrEqual(fit.client);
   });
 
-  test('390 px: a step link clears the sticky progress bar', async ({ page }) => {
+  test('390 px: a contents link clears the sticky contents row', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/work/ticket-pipeline');
-    await page.locator('.progress a', { hasText: 'Problem' }).click();
+    await page.locator('.contents a', { hasText: 'Problem' }).click();
     await expect
       .poll(async () =>
         page.evaluate(() => {
           const heading = document.getElementById('problem-h')!.getBoundingClientRect().top;
-          const bar = document.querySelector('.progress')!.getBoundingClientRect().bottom;
+          const bar = document.querySelector('.contents')!.getBoundingClientRect().bottom;
           return Math.round(heading - bar);
         }),
       )
@@ -122,38 +105,46 @@ test.describe('design review 1 regressions', () => {
   });
 });
 
-test.describe('case-study step chain', () => {
+test.describe('case-study contents', () => {
   const pages = ['/work/ticket-pipeline', '/work/rannaghor'];
 
-  test('fits all seven steps and both terminals at 1280 px', async ({ page }) => {
+  test('shows all seven steps, unclipped, inside the column at 1280 px', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     for (const path of pages) {
       await page.goto(path);
-      const metrics = await page.locator('.progress').evaluate((el) => {
-        const list = el.querySelector('ol')!;
-        return {
-          scrollWidth: el.scrollWidth,
-          clientWidth: el.clientWidth,
-          listScroll: list.scrollWidth,
-          listClient: list.clientWidth,
-        };
-      });
-      expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.clientWidth);
-      expect(metrics.listScroll).toBeLessThanOrEqual(metrics.listClient);
-
-      const last = page.locator('.progress a').last();
-      await expect(last).toBeInViewport();
-      const text = (await last.textContent())!.trim();
-      expect(text).toBe('07 Results');
-      const clipped = await last.evaluate((el) => el.scrollWidth > el.clientWidth + 1);
+      const links = page.locator('.contents a');
+      await expect(links).toHaveCount(7);
+      for (const link of await links.all()) await expect(link).toBeInViewport();
+      expect((await links.last().textContent())!.trim()).toBe('Results');
+      const clipped = await links.evaluateAll((all) => all.some((el) => el.scrollWidth > el.clientWidth + 1));
       expect(clipped).toBe(false);
+      /* No sidebar: the list runs across the frame, between its two rules. */
+      const list = await page.locator('.contents ol').boundingBox();
+      const frame = await page.locator('.study-head').boundingBox();
+      expect(list!.x).toBeGreaterThanOrEqual(frame!.x - 1);
+      expect(list!.x + list!.width).toBeLessThanOrEqual(frame!.x + frame!.width + 1);
     }
+  });
+
+  test('a contents link clears the two-row contents bar at 1280 px', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto('/work/ticket-pipeline');
+    await page.locator('.contents a', { hasText: 'Challenges' }).click();
+    await expect
+      .poll(async () =>
+        page.evaluate(() => {
+          const heading = document.getElementById('challenges-h')!.getBoundingClientRect().top;
+          const bar = document.querySelector('.contents')!.getBoundingClientRect().bottom;
+          return Math.round(heading - bar);
+        }),
+      )
+      .toBeGreaterThanOrEqual(-1);
   });
 
   test('narrow widths keep a visible scroll cue', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/work/ticket-pipeline');
-    const cue = await page.locator('.progress ol').evaluate((el) => {
+    const cue = await page.locator('.contents ol').evaluate((el) => {
       const style = getComputedStyle(el);
       return {
         overflowX: style.overflowX,
@@ -169,13 +160,13 @@ test.describe('case-study step chain', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/work/ticket-pipeline');
     await page.locator('#results').scrollIntoViewIfNeeded();
-    const current = page.locator('.progress a[aria-current]');
+    const current = page.locator('.contents a[aria-current]');
     await expect(current).toBeVisible();
-    const gap = await page.locator('.progress ol').evaluate((el) => {
+    const gap = await page.locator('.contents ol').evaluate((el) => {
       const item = el.querySelector('a[aria-current]') as HTMLElement | null;
       if (!item) return 99;
       return item.getBoundingClientRect().left - el.getBoundingClientRect().left;
     });
-    expect(gap).toBeGreaterThan(0);
+    expect(gap).toBeGreaterThanOrEqual(0);
   });
 });

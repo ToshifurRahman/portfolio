@@ -38,6 +38,6 @@ test('a dotted path is a 404 without JavaScript too', async ({ browser }) => {
   const page = await context.newPage();
   const response = await page.goto('/nope.html');
   expect(response?.status()).toBe(404);
-  await expect(page.locator('main.notfound h1')).toHaveText('No such state');
+  await expect(page.locator('main.notfound h1')).toHaveText('Page not found');
   await context.close();
 });

@@ -9,28 +9,24 @@ related_targets: []
 
 Scope: `src/` of the portfolio; home page `/` and `/work/:slug`. Visitor mode: Experience.
 
-Audience and job: recruiters scanning for thirty seconds, then hiring engineers reading a case study. Action: open a case study or contact the owner. Content: the owner's facts, two nine-section case studies (Ticket-Pipeline, RannaGhor), short entries for other projects. Constraints: dark first, minimal, no profile picture, WCAG 2.2 AA, no invented biography.
+Audience and job: recruiters scanning for thirty seconds, then hiring engineers reading a case study. Action: download the CV, email, or open a case study. Content: the owner's facts, two seven-section case studies (Ticket-Pipeline, RannaGhor), short entries for other projects, CV sections. Constraints: dark first with a light theme and toggle, no profile picture, WCAG 2.2 AA, nothing invented.
 
-Confirmed by the owner: no themed costume; the state diagram is the main thing on screen and describes the owner as a system (Who, Builds, Skills, Projects, Contact); overall feel closest to aathifzahir.vercel.app (bold numbered sections, big uppercase headings).
+Confirmed by the owner (2026-11-15, second redesign): redesign from scratch, inspired by neon.com, commandcode.ai and linear.app. First screen shows a system at work, supporting the core facts and never hiding them. Keep a light theme. Must not look like a SaaS landing page, must not look sparse. Content decisions from the previous round stand: Certificates under Achievements, no commit counts on the home page, no Focus or Studying lines. Section numbers were not kept.
 
-Memorable moment: selecting a state fills it vermilion and the panel under the diagram swaps to that part of the owner.
-
-Unresolved: location, bio details, email, LinkedIn, CV, availability (placeholders).
+Memorable moment: a lit ticket runs Ticket-Pipeline's real track across the full width of the first screen, fails, takes the retry loop, and completes; on another run it exhausts retries, waits on the Needs-attention siding and is replayed.
 
 ## Direction contract
 
-THESIS: The owner is drawn as one state machine. Five large states in a row are the home page; the selected state's details open directly beneath. Refuses the centred-name-two-buttons-card-row portfolio.
+THESIS: The site is a signal-box control panel. One lit track diagram of a real system runs across the first screen; the same lamps mark where you are everywhere else. Refuses the SaaS hero with pill buttons and logo strips, and the sparse single column.
 
-OWN-WORLD: Near-black ground #0E0F11, ink #F2F0EA, muted #8D9198, rule #2A2D31, muted built as #9A9EA5 for contrast. One vermilion #FF5B36 with three roles only: the solid fill of the current state, its panel outline and connector, and transition links (the links that move the visitor to another state or page). Archivo throughout: display in extra-condensed 900 uppercase, two-digit state numbers. Square 2px-outlined state boxes, straight arrows, filled start dot, ringed end dot. No cards, no radius, no shadows, no gradients.
+OWN-WORLD: Near-black panel #0a0b0d, raised band #0f1114, ink #f2f1ec, muted #8b9099, grid hairline #1b1e23, track/rule #2a2e35. One amber lamp #ffb340 for what is active and what you can press; red #ff5b4a only for failure. Mona Sans for text and display (tight, heavy), Martian Mono only for diagram labels, dates and data. Visible frame rules with corner marks, 12-column grid. No cards, no shadows, no gradients, no eyebrows. Light theme: the same panel by day, token swap only.
 
-STORY: The visitor reads the name, sees five states, understands the owner in one row, picks a state to read more, and leaves through Projects to a case study or through Contact.
+STORY: The recruiter reads name, role, motto, Now, Stack, four figures and the CV button without scrolling; watches one ticket survive a failure; scrolls the Work rows with their mini tracks; an engineer opens a case study whose contents bar is itself a track.
 
-FIRST VIEWPORT: Name in huge condensed uppercase across the top (about a quarter of the height). Under it the diagram spans the full width: start dot, WHO, BUILDS, SKILLS, PROJECTS, CONTACT with arrows. WHO is selected. A connector drops from it into an outlined panel, inset to the outer box edges, holding "SOFTWARE ENGINEER" large and one sentence. No label above the heading. Below 62rem the five states stack as a compact list with the panel under them, so all five stay in the first viewport. Primary actions live in the panel of each state.
+FIRST VIEWPORT: Sticky 64px header in the frame (name, lamp-marked links, amber CV, theme toggle). Name at display size over cols 1-7, role, Now and Stack beneath; motto in two tones over cols 8-12. A readout row: four figures, then Download CV (amber), Email, GitHub, LinkedIn. Then a full-bleed track panel, about 300px tall, with its caption, pause control and case-study link.
 
-Signature interaction: states are disclosure buttons (so the same markup works as the narrow-screen list); arrow keys move focus, Enter or a click moves the machine, the change is an instant swap, the URL hash names the state. Case-study pages reuse the same chain as nine states, one per section.
+Signature interaction: the ticket run, with a pause control, paused off-screen and under reduced motion (static final route instead). Motion grammar: lamps switch in 120ms; the token moves at constant speed on the track; nothing else enters or reveals.
 
-Motion grammar: instant state swaps; the only motion is the connector and panel outline redrawing in 160ms; none under reduced motion.
-
-FORM: The Chain, a grounded direction chosen by the owner on the fourth hand (safer register). seed:701d89dff64dba60
+FORM: Signal Box, assigned direction, fourth on the grounded list; raises from the declined hand: one accent as signal and control, light as the only state language, one measured grid, the diagram runs past both screen edges, case-study margin notes tied to diagram lanes. seed:7598c066c15baac6
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance

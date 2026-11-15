@@ -1,8 +1,12 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { owner } from './content';
-import { currentSectionAt, sections } from './nav';
-import { ThemePicker } from './ThemePicker';
+import { currentSectionAt, pageSections, sections } from './nav';
+import { ThemeToggle } from './ThemeToggle';
+
+/* Education has no link of its own: while it is in view, Experience (the
+   section it follows) stays marked. */
+const navFor = (id: string | null) => (id === 'education' ? 'experience' : id);
 
 export function Navbar() {
   const { pathname, hash } = useLocation();
@@ -12,8 +16,7 @@ export function Navbar() {
   const menu = useRef<HTMLButtonElement>(null);
   const header = useRef<HTMLElement>(null);
 
-  /* Publish the bar's real height so section headings clear it when a link
-     jumps to them, at any width. */
+  /* Publish the bar's real height so a heading reached by a link clears it. */
   useEffect(() => {
     const element = header.current;
     if (!element) return;
@@ -31,30 +34,28 @@ export function Navbar() {
   /* A route change or a new hash closes the phone menu. */
   useEffect(() => setOpen(false), [pathname, hash]);
 
-  /* Mark the home section in view; other pages keep no section current. Read
-     from scroll position rather than the observer's slice: Contact is taller
-     than the viewport, so it never crossed a middle band and never went
-     current, and the page bottom is the honest signal for the last one. */
+  /* Mark the section being read. Read from scroll position: Contact is short
+     and sits at the page bottom, so the bottom of the page is its signal. */
   useEffect(() => {
     if (!home) {
       setCurrent(null);
       return;
     }
-    const elements = sections.flatMap((s) => {
+    const elements = pageSections.flatMap((s) => {
       const element = document.getElementById(s.id);
       return element ? [{ id: s.id as string, element }] : [];
     });
     const update = () => {
-      /* A section is current once its top has passed a reading line a quarter
-         of the way down the screen, and never before the bar has cleared. */
-      const line = Math.max(88, (header.current?.getBoundingClientRect().height ?? 0) + 24, innerHeight * 0.25);
+      const line = Math.max(88, (header.current?.getBoundingClientRect().height ?? 0) + 24, innerHeight * 0.3);
       const scrollable = document.documentElement.scrollHeight - innerHeight;
       const atBottom = scrollable > 0 && innerHeight + scrollY >= document.documentElement.scrollHeight - 4;
       setCurrent(
-        currentSectionAt(
-          elements.map((s) => ({ id: s.id, top: s.element.getBoundingClientRect().top })),
-          line,
-          atBottom,
+        navFor(
+          currentSectionAt(
+            elements.map((s) => ({ id: s.id, top: s.element.getBoundingClientRect().top })),
+            line,
+            atBottom,
+          ),
         ),
       );
     };
@@ -84,8 +85,8 @@ export function Navbar() {
 
   return (
     <header className="site-header" ref={header}>
-      <nav className="navbar" aria-label="Primary" onKeyDown={onKeyDown}>
-        <Link className="brand display" to="/">
+      <nav className="frame navbar" aria-label="Primary" onKeyDown={onKeyDown}>
+        <Link className="brand" to="/">
           {owner.name}
         </Link>
         <button
@@ -107,6 +108,7 @@ export function Navbar() {
                 className={home && current === section.id ? 'is-current' : undefined}
                 onClick={() => onSectionClick(section.id)}
               >
+                <span className="lamp" aria-hidden="true" />
                 {section.label}
               </Link>
             </li>
@@ -114,11 +116,11 @@ export function Navbar() {
         </ul>
         <div className="nav-tools">
           {owner.cv && (
-            <a className="cv-link" href={owner.cv} download>
+            <a className="button cv-link" href={owner.cv} download>
               CV
             </a>
           )}
-          <ThemePicker />
+          <ThemeToggle />
         </div>
       </nav>
     </header>

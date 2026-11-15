@@ -6,12 +6,12 @@ export function NotFound() {
   useTitle('Page not found');
   return (
     <>
-      <main id="main" className="page notfound">
-        <h1 className="display">No such state</h1>
-        <p className="lede">This address does not match any page on the site.</p>
+      <main id="main" className="frame grid12 page notfound">
+        <h1 className="study-title">Page not found</h1>
+        <p className="study-lede">This address does not match any page on the site.</p>
         <p>
-          <Link className="action" to="/">
-            Back to the start <Arrow />
+          <Link className="more-link" to="/">
+            Back to the home page <Arrow />
           </Link>
         </p>
       </main>
@@ -22,8 +22,15 @@ export function NotFound() {
 
 export function Arrow() {
   return (
-    <svg className="arrow" viewBox="0 0 24 12" width="24" height="12" aria-hidden="true" focusable="false">
-      <path d="M0 6h21M16 1l6 5-6 5" fill="none" stroke="currentColor" strokeWidth="2" />
+    <svg className="arrow" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
+      <path
+        d="M2.5 8h11M9 3.5 13.5 8 9 12.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }

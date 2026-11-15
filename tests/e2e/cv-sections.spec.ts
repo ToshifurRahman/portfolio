@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { certificates, owner } from '../../src/content';
 
-const sectionIds = ['experience', 'education', 'achievements', 'certificates'] as const;
+const sectionIds = ['experience', 'education', 'achievements'] as const;
 
 const gotoHome = async (page: import('@playwright/test').Page) => {
   await page.goto('/');
@@ -12,7 +12,7 @@ const gotoHome = async (page: import('@playwright/test').Page) => {
 test('the CV downloads as a PDF', async ({ page, request }) => {
   await gotoHome(page);
 
-  const link = page.locator('#experience').getByRole('link', { name: /download cv/i });
+  const link = page.locator('.readout').getByRole('link', { name: /download cv/i });
   await expect(link).toHaveAttribute('href', owner.cv);
   /* An empty download attribute keeps the file's own name; "true" would not. */
   expect(await link.getAttribute('download')).toBe('');
@@ -22,7 +22,7 @@ test('the CV downloads as a PDF', async ({ page, request }) => {
   expect(response.headers()['content-type']).toContain('application/pdf');
 });
 
-test('the four CV sections carry the R1 ids and headings', async ({ page }) => {
+test('the CV sections carry their ids and headings, certificates inside Achievements', async ({ page }) => {
   await gotoHome(page);
 
   for (const id of sectionIds) {
@@ -31,6 +31,7 @@ test('the four CV sections carry the R1 ids and headings', async ({ page }) => {
     await expect(section).toHaveAttribute('aria-labelledby', `${id}-title`);
     await expect(page.locator(`#${id}-title`)).toBeVisible();
   }
+  await expect(page.locator('section#achievements #certificates')).toHaveCount(1);
 });
 
 test('a certificate dialog opens, traps focus, closes on Escape and returns focus', async ({ page }) => {
@@ -43,8 +44,8 @@ test('a certificate dialog opens, traps focus, closes on Escape and returns focu
 
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
-  await expect(dialog).toHaveAttribute('aria-labelledby', 'cv-dialog-title');
-  await expect(page.locator('#cv-dialog-title')).toHaveText(first.title);
+  await expect(dialog).toHaveAttribute('aria-labelledby', 'dialog-title');
+  await expect(page.locator('#dialog-title')).toHaveText(first.title);
   const original = dialog.getByRole('link', { name: /open original/i });
   await expect(original).toHaveAttribute('href', first.file);
 
@@ -85,7 +86,7 @@ test('the close button closes the dialog and returns focus to the card', async (
 });
 
 for (const theme of ['dark', 'light'] as const) {
-  test(`no axe violations in the four CV sections (${theme})`, async ({ page }) => {
+  test(`no axe violations in the CV sections (${theme})`, async ({ page }) => {
     await page.addInitScript((value) => localStorage.setItem('theme', value), theme);
     await gotoHome(page);
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme);

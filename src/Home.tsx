@@ -1,10 +1,11 @@
 import { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { builds, caseStudies, moreProjects, owner, skills } from './content';
+import { builds, caseStudies, moreProjects, owner, proof, skills, type CaseStudy } from './content';
 import { Footer } from './Footer';
+import { Line } from './Line';
 import { Arrow } from './NotFound';
-import { sections } from './nav';
 import { Section } from './Section';
+import { SignalPanel } from './SignalPanel';
 import { CvSections } from './sections';
 import { useTitle } from './useTitle';
 
@@ -14,140 +15,206 @@ function Missing({ what }: { what: string }) {
   return <p className="missing">Not set yet: {what}. Add it in src/content.ts.</p>;
 }
 
-/* One page, read top to bottom: each section is a state on the same chain
-   the case-study pages draw, numbered 01 to 08. Nothing is hidden. */
+/* The motto, its closing clause in full ink and the rest in the muted tone. If
+   the clause is not found word for word, the motto is shown plain. */
+function Statement() {
+  const { statement, statementEmphasis } = owner;
+  const at = statementEmphasis ? statement.indexOf(statementEmphasis) : -1;
+  if (at < 0) return <>{statement}</>;
+  return (
+    <>
+      {statement.slice(0, at)}
+      <em className="emphasis">{statementEmphasis}</em>
+      {statement.slice(at + statementEmphasis.length)}
+    </>
+  );
+}
+
+/* The column lines behind the introduction, one per grid column. */
+function Gridlines() {
+  return (
+    <div className="gridlines grid12" aria-hidden="true">
+      {Array.from({ length: 12 }, (_, i) => (
+        <span key={i} />
+      ))}
+    </div>
+  );
+}
+
+const meta = (c: CaseStudy, label: string) => c.meta.find((m) => m.label === label)?.value;
+
+/* The longest lane of a study's architecture: the one that shows the most of
+   the system in a single line. */
+function mainLane(c: CaseStudy) {
+  const lanes = c.sections.flatMap((s) => s.blocks.flatMap((b) => (b.kind === 'diagram' ? b.lanes : [])));
+  return lanes.filter((l) => !l.siblings).sort((a, b) => b.nodes.length - a.nodes.length)[0];
+}
+
+/* Two result figures per study. Commit counts stay on the case-study page. */
+function figures(c: CaseStudy) {
+  const facts = c.sections.flatMap((s) => s.blocks.flatMap((b) => (b.kind === 'facts' ? b.items : [])));
+  return facts.filter((f) => !/commit/i.test(f.label)).slice(0, 2);
+}
+
 export function Home() {
   useTitle();
   const { hash } = useLocation();
 
   /* A hash link lands on its section without hiding the heading under the
-     sticky navbar (scroll-margin-top does that part). */
+     sticky header (scroll-padding-top does that part). */
   useEffect(() => {
     if (!hash) return;
     const target = document.getElementById(hash.slice(1));
     target?.scrollIntoView?.({ behavior: 'instant', block: 'start' });
   }, [hash]);
 
+  const facts = [
+    owner.now && { label: 'Now', value: owner.now },
+    owner.mainStack && { label: 'Stack', value: owner.mainStack },
+  ].filter(Boolean) as { label: string; value: string }[];
+
   return (
     <>
       <main id="main" className="page home">
-        <div className="mast">
-          <h1 className="name display">
-            <span>{owner.firstName}</span> <span>{owner.lastName}</span>
-          </h1>
-          <p className="mast-role">{owner.role}</p>
-          <p className="lede">{owner.statement}</p>
-          {owner.summary.trim() && <p className="mast-summary">{owner.summary}</p>}
+        <header className="frame grid12 intro">
+          <Gridlines />
+          <div className="intro-id">
+            <h1 className="name">
+              <span className="name-line">{owner.firstName}</span>{' '}
+              <span className="name-line">{owner.lastName}</span>
+            </h1>
+            <p className="role">
+              {owner.role}
+              {owner.location && <span className="role-place">{owner.location}</span>}
+            </p>
+            <dl className="facts">
+              {facts.map((f) => (
+                <div key={f.label}>
+                  <dt>{f.label}</dt>
+                  <dd>{f.value}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+          <p className="statement">
+            <Statement />
+          </p>
+          {!owner.availability && <Missing what="availability" />}
+        </header>
+
+        <div className="frame ruled grid12 readout">
+          <ul className="proof" aria-label="In numbers">
+            {proof.map((p) => (
+              <li key={p.label}>
+                <span className="proof-value">{p.value}</span>
+                <span className="proof-label">{p.label}</span>
+              </li>
+            ))}
+          </ul>
+          <div className="intro-actions">
+            {owner.cv && (
+              <a className="button" href={owner.cv} download>
+                Download CV
+                <DownloadIcon />
+              </a>
+            )}
+            {owner.email && (
+              <a className="ghost" href={`mailto:${owner.email}`}>
+                Email
+              </a>
+            )}
+            <a className="ghost" href={owner.github} rel="noopener noreferrer">
+              GitHub
+            </a>
+            {owner.linkedin && (
+              <a className="ghost" href={owner.linkedin} rel="noopener noreferrer">
+                LinkedIn
+              </a>
+            )}
+          </div>
         </div>
 
-        <figure className="chain-diagram">
-          {/* Narrow widths scroll this strip, so it takes a tab stop of its own
-              and a name: a scrollable region must be reachable by keyboard. */}
-          <ol className="chain-states" tabIndex={0} aria-label="The seven sections, in page order">
-            {sections.map((s) => (
-              <li key={s.id} className="chain-state">
-                {/* The same number the section heading below carries: Education
-                    is 04 but has no box, so the strip runs 03 to 05. */}
-                <span className="state-num">{s.num}</span>
-                <span className="display">{s.label}</span>
-              </li>
-            ))}
-          </ol>
-          <figcaption>
-            The page as one chain: seven states, top to bottom. Experience holds Education (04) under it.
-          </figcaption>
-        </figure>
-
-        <Section id="about" title="About">
-          <h3 className="display panel-title">{owner.role}</h3>
-          {owner.headline.trim() && <p className="headline">{owner.headline}</p>}
-          <dl className="facts-row">
-            <div>
-              <dt>Focus</dt>
-              <dd>{owner.focus}</dd>
-            </div>
-            <div>
-              <dt>Main stack</dt>
-              <dd>{owner.mainStack}</dd>
-            </div>
-            <div>
-              <dt>Proof</dt>
-              <dd>
-                {caseStudies.length} case studies, {moreProjects.length} more projects
-              </dd>
-            </div>
-            {owner.location && (
-              <div>
-                <dt>Based in</dt>
-                <dd>{owner.location}</dd>
-              </div>
-            )}
-            {owner.availability && (
-              <div>
-                <dt>Status</dt>
-                <dd>{owner.availability}</dd>
-              </div>
-            )}
-          </dl>
-          {!owner.location && <Missing what="location" />}
-          {!owner.availability && <Missing what="availability" />}
-        </Section>
+        <SignalPanel />
 
         <Section id="work" title="Work">
-          <h3 className="display panel-title">Systems that recover</h3>
-          <ul className="rows">
-            {builds.map((b) => (
-              <li key={b.title}>
-                <h4 className="display row-title">{b.title}</h4>
-                <p>{b.text}</p>
-                {b.proof ? (
-                  <Link className="action" to={b.proof.to}>
-                    {b.proof.label} <Arrow />
-                  </Link>
-                ) : (
-                  <span />
-                )}
-              </li>
-            ))}
-          </ul>
-
-          <h3 className="display panel-title subhead-title">Two case studies</h3>
+          <p className="section-lede">
+            <strong>Two systems, built end to end.</strong> Each case study covers the problem, the architecture, the
+            decisions and the results.
+          </p>
           <ul className="cases">
-            {caseStudies.map((c) => (
-              <li key={c.slug}>
-                <Link to={`/work/${c.slug}`} className="case">
-                  <span className="display case-title">{c.title}</span>
-                  <span className="case-summary">{c.summary}</span>
-                  <span className="case-stack">{c.meta.find((m) => m.label === 'Stack')?.value}</span>
-                  <span className="action">
-                    Read the case study <Arrow />
-                  </span>
-                </Link>
-              </li>
-            ))}
+            {caseStudies.map((c) => {
+              const lane = mainLane(c);
+              return (
+                <li key={c.slug}>
+                  <article className="case">
+                    <div className="case-main">
+                      <div className="case-head">
+                        <h3 className="case-title">
+                          <Link to={`/work/${c.slug}`}>{c.title}</Link>
+                        </h3>
+                        <span className="case-type">{meta(c, 'Type')}</span>
+                      </div>
+                      <p className="case-summary">{c.summary}</p>
+                      {lane && <Line label={`${c.title}: ${lane.label}`} nodes={lane.nodes} />}
+                      <p className="case-stack">{meta(c, 'Stack')}</p>
+                      <span className="more-link" aria-hidden="true">
+                        Read the case study <Arrow />
+                      </span>
+                    </div>
+                    <dl className="case-figures">
+                      {figures(c).map((f) => (
+                        <div key={f.label}>
+                          <dt>{f.label}</dt>
+                          <dd>{f.value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </article>
+                </li>
+              );
+            })}
           </ul>
 
-          <h4 className="subhead">More projects</h4>
-          <ul className="more">
-            {moreProjects.map((p) => (
-              <li key={p.title}>
-                <strong>{p.title}</strong>
-                <span>{p.text}</span>
-              </li>
+          <h3 className="subhead">What I build</h3>
+          <dl className="rows">
+            {builds.map((b) => (
+              <div key={b.title}>
+                <dt>{b.title}</dt>
+                <dd>
+                  {b.text}
+                  {b.proof && (
+                    <>
+                      {' '}
+                      <Link className="inline-link" to={b.proof.to}>
+                        See {b.proof.label}
+                      </Link>
+                    </>
+                  )}
+                </dd>
+              </div>
             ))}
-          </ul>
+          </dl>
+
+          <h3 className="subhead">Other projects</h3>
+          <dl className="rows projects">
+            {moreProjects.map((p) => (
+              <div key={p.title}>
+                <dt>{p.title}</dt>
+                <dd>{p.text}</dd>
+              </div>
+            ))}
+          </dl>
         </Section>
 
         <CvSections />
 
         <Section id="skills" title="Skills">
-          <h3 className="display panel-title">TypeScript, end to end</h3>
-          <dl className="skills">
+          <dl className="rows skills">
             {skills.map((g) => (
               <div key={g.group}>
                 <dt>{g.group}</dt>
                 <dd>
-                  <ul>
+                  <ul className="skill-list">
                     {g.items.map((it) => (
                       <li key={it}>{it}</li>
                     ))}
@@ -167,9 +234,22 @@ export function Home() {
   );
 }
 
-/* An address may only break at its own separators, never mid-word: the links
-   are set large, and the column is narrower than a full address in a 7fr
-   body. A <wbr> after each separator gives the browser those break points. */
+function DownloadIcon() {
+  return (
+    <svg className="icon" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
+      <path
+        d="M8 2v8.5M4.5 7 8 10.5 11.5 7M3 13.5h10"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+/* An address may only break at its own separators, never mid-word. */
 function BreakableLink({ value }: { value: string }) {
   const parts = value.split(/([/@])/);
   return (
@@ -190,7 +270,6 @@ function BreakableLink({ value }: { value: string }) {
 
 function Contact() {
   const links = [
-    owner.email && { label: 'Email', value: owner.email, href: `mailto:${owner.email}` },
     { label: 'GitHub', value: owner.github.replace('https://', ''), href: owner.github },
     owner.linkedin && { label: 'LinkedIn', value: owner.linkedin.replace('https://', ''), href: owner.linkedin },
     /* The CV is a file, not a page: it downloads instead of opening in the tab. */
@@ -198,18 +277,32 @@ function Contact() {
   ].filter(Boolean) as { label: string; value: string; href: string; download?: boolean }[];
   return (
     <>
-      <h3 className="display panel-title">{owner.email ? 'Get in touch' : 'Read the code'}</h3>
-      <p className="lede">Both case-study projects are public, with their tests and documentation.</p>
-      <ul className="contact">
+      <p className="section-lede">
+        {owner.email ? (
+          <>
+            <strong>Hiring for a backend or full-stack role?</strong> Email is the fastest way to reach me.
+          </>
+        ) : (
+          'Both case-study projects are public, with their tests and documentation.'
+        )}
+      </p>
+      {owner.email && (
+        <a className="contact-email" href={`mailto:${owner.email}`}>
+          <BreakableLink value={owner.email} />
+        </a>
+      )}
+      <dl className="rows contact">
         {links.map((l) => (
-          <li key={l.label}>
-            <span className="contact-label">{l.label}</span>
-            <a className="display contact-link" href={l.href} download={l.download || undefined}>
-              <BreakableLink value={l.value} />
-            </a>
-          </li>
+          <div key={l.label}>
+            <dt>{l.label}</dt>
+            <dd>
+              <a className="inline-link" href={l.href} download={l.download || undefined}>
+                <BreakableLink value={l.value} />
+              </a>
+            </dd>
+          </div>
         ))}
-      </ul>
+      </dl>
       {!owner.email && <Missing what="email address" />}
       {!owner.linkedin && <Missing what="LinkedIn URL" />}
       {!owner.cv && <Missing what="CV file" />}

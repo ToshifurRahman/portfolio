@@ -63,23 +63,33 @@ describe('social meta', () => {
 describe('font loading', () => {
   const css = read('src/styles.css');
 
-  it('declares the shipped face as font-display: optional', () => {
-    const face = css.match(/@font-face\s*\{[^}]*'Archivo Variable'[^}]*\}/s)?.[0];
-    expect(face, 'the Archivo face is not declared in styles.css').toBeTruthy();
-    expect(face).toMatch(/font-display:\s*optional/);
+  const faces = [
+    { name: 'Mona Sans Variable', fallback: 'Mona Fallback', token: '--font' },
+    { name: 'Martian Mono Variable', fallback: 'Martian Fallback', token: '--mono' },
+  ];
+
+  it('declares both shipped faces as font-display: optional', () => {
+    for (const { name } of faces) {
+      const face = css.match(new RegExp(`@font-face\\s*\\{[^}]*'${name}'[^}]*\\}`, 's'))?.[0];
+      expect(face, `the ${name} face is not declared in styles.css`).toBeTruthy();
+      expect(face).toMatch(/font-display:\s*optional/);
+    }
   });
 
   it('falls back to a local metric-matched face before the system stack', () => {
-    const face = css.match(/@font-face\s*\{[^}]*'Archivo Fallback'[^}]*\}/s)?.[0];
-    expect(face, 'no Archivo Fallback face').toBeTruthy();
-    expect(face).toMatch(/src:\s*local\(/);
-    expect(face).toMatch(/size-adjust:/);
-    expect(face).toMatch(/ascent-override:/);
-    expect(face).toMatch(/descent-override:/);
-    /* The stack asks for the real face, then the fallback, then the system. */
-    const stack = css.match(/--font:\s*([^;]+);/)?.[1] ?? '';
-    expect(stack.indexOf("'Archivo Variable'")).toBeLessThan(stack.indexOf("'Archivo Fallback'"));
-    expect(stack.indexOf("'Archivo Fallback'")).toBeLessThan(stack.indexOf('system-ui'));
+    for (const { name, fallback, token } of faces) {
+      const face = css.match(new RegExp(`@font-face\\s*\\{[^}]*'${fallback}'[^}]*\\}`, 's'))?.[0];
+      expect(face, `no ${fallback} face`).toBeTruthy();
+      expect(face).toMatch(/src:\s*local\(/);
+      expect(face).toMatch(/size-adjust:/);
+      expect(face).toMatch(/ascent-override:/);
+      expect(face).toMatch(/descent-override:/);
+      /* The stack asks for the real face, then the fallback, then the system. */
+      const stack = css.match(new RegExp(`${token}:\\s*([^;]+);`))?.[1] ?? '';
+      expect(stack.indexOf(`'${name}'`)).toBeGreaterThanOrEqual(0);
+      expect(stack.indexOf(`'${name}'`)).toBeLessThan(stack.indexOf(`'${fallback}'`));
+      expect(stack.indexOf(`'${fallback}'`)).toBeGreaterThan(0);
+    }
   });
 
   it('keeps the name from being clipped by a wider fallback', () => {
@@ -87,7 +97,7 @@ describe('font loading', () => {
     expect(name).not.toMatch(/white-space:\s*nowrap/);
   });
 
-  it('preloads the face so a cached visit still paints it', async () => {
+  it('preloads both faces so a cached visit still paints them', async () => {
     /* The preload is a build-time tag, so it is proven against the built
        document; `bun run build` runs before this test in the gate order. */
     const built = resolve(root, 'dist/index.html');
@@ -98,10 +108,12 @@ describe('font loading', () => {
       return;
     }
     const html = read('dist/index.html');
-    const preload = html.match(/<link[^>]*rel="preload"[^>]*>/s)?.[0] ?? '';
-    expect(preload).toMatch(/as="font"/);
-    expect(preload).toMatch(/type="font\/woff2"/);
-    expect(preload).toMatch(/\/assets\/archivo-[^"]*\.woff2/);
-    expect(preload).toMatch(/crossorigin/);
+    const preloads = html.match(/<link[^>]*rel="preload"[^>]*>/gs) ?? [];
+    for (const file of ['mona-sans', 'martian-mono']) {
+      const preload = preloads.find((tag) => tag.includes(`/assets/${file}-`)) ?? '';
+      expect(preload, `no preload for ${file}`).toMatch(/as="font"/);
+      expect(preload).toMatch(/type="font\/woff2"/);
+      expect(preload).toMatch(/crossorigin/);
+    }
   });
 });

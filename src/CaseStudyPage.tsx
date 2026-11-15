@@ -2,10 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { caseStudies, type Block } from './content';
 import { Footer } from './Footer';
+import { Line } from './Line';
 import { Arrow, NotFound } from './NotFound';
 import { useTitle } from './useTitle';
-
-const num = (i: number) => String(i + 1).padStart(2, '0');
 
 export function CaseStudyPage() {
   const { slug } = useParams();
@@ -13,7 +12,7 @@ export function CaseStudyPage() {
   const study = caseStudies[index];
   /* No study means <NotFound /> renders below, and it sets its own title. The
      parent's effect runs after the child's, so passing undefined here would
-     reset the tab to the home title while the page says "No such state". */
+     reset the tab to the home title while the page says it was not found. */
   useTitle(study ? `${study.title} case study` : null);
   const { hash, pathname } = useLocation();
   const [current, setCurrent] = useState(0);
@@ -45,6 +44,8 @@ export function CaseStudyPage() {
     };
   }, [study]);
 
+  /* On a narrow screen the contents row scrolls sideways; keep the current
+     section's link in view. */
   useEffect(() => {
     const list = nav.current;
     const item = list?.children[current] as HTMLElement | undefined;
@@ -58,28 +59,41 @@ export function CaseStudyPage() {
   return (
     <>
       <main id="main" className="page study">
-        <p className="back">
-          <Link className="textbutton" to="/#work">
-            <Arrow /> All projects
-          </Link>
-        </p>
-        <h1 className="display study-title">{study.title}</h1>
-        <p className="lede">{study.summary}</p>
-        <dl className="meta">
+        <header className="frame grid12 study-head">
+          <p className="back">
+            <Link className="text-button" to="/#work">
+              <Arrow /> All work
+            </Link>
+          </p>
+          <h1 className="study-title">{study.title}</h1>
+          <p className="study-lede">
+            <Lede text={study.summary} />
+          </p>
+        </header>
+        <dl className="frame ruled meta">
           {study.meta.map((m) => (
             <div key={m.label}>
               <dt>{m.label}</dt>
-              <dd>{m.href ? <a href={m.href}>{m.value}</a> : m.value}</dd>
+              <dd>
+                {m.href ? (
+                  <a className="inline-link" href={m.href} rel="noopener noreferrer">
+                    {m.value}
+                  </a>
+                ) : (
+                  m.value
+                )}
+              </dd>
             </div>
           ))}
         </dl>
 
-        <nav className="progress" aria-label="Case study sections">
-          <ol ref={nav}>
+        <nav className="contents" aria-label="Case study sections">
+          <ol ref={nav} className="frame">
             {study.sections.map((s, i) => (
-              <li key={s.id}>
+              <li key={s.id} className={i < current ? 'is-passed' : undefined}>
                 <a href={`#${s.id}`} aria-current={i === current ? 'location' : undefined}>
-                  <span className="state-num">{num(i)}</span> {s.title}
+                  <span className="lamp" aria-hidden="true" />
+                  {s.title}
                 </a>
               </li>
             ))}
@@ -87,11 +101,16 @@ export function CaseStudyPage() {
         </nav>
 
         {study.sections.map((s, i) => (
-          <section className="section" id={s.id} key={s.id} aria-labelledby={`${s.id}-h`}>
-            <h2 className="display section-title" id={`${s.id}-h`}>
-              <span className="section-num">{num(i)}</span> {s.title}
+          <section
+            className={i === 0 ? 'frame grid12 section' : 'frame ruled grid12 section'}
+            id={s.id}
+            key={s.id}
+            aria-labelledby={`${s.id}-h`}
+          >
+            <h2 className="section-heading" id={`${s.id}-h`}>
+              {s.title}
             </h2>
-            <div className="section-body">
+            <div className="section-body prose">
               {s.blocks.map((b, k) => (
                 <BlockView block={b} key={k} />
               ))}
@@ -99,16 +118,28 @@ export function CaseStudyPage() {
           </section>
         ))}
 
-        <p className="next-study">
-          <Link to={`/work/${next.slug}`} className="case">
-            <span className="display case-title">{next.title}</span>
-            <span className="action">
-              Read the next case study <Arrow />
+        <div className="frame ruled grid12 next-study">
+          <Link to={`/work/${next.slug}`} className="next">
+            <span className="next-lead">Next case study</span>
+            <span className="next-title">
+              {next.title} <Arrow />
             </span>
           </Link>
-        </p>
+        </div>
       </main>
       <Footer />
+    </>
+  );
+}
+
+/* The summary's first sentence in full ink, the rest in the muted tone. */
+function Lede({ text }: { text: string }) {
+  const at = text.indexOf('. ');
+  if (at < 0) return <strong>{text}</strong>;
+  return (
+    <>
+      <strong>{text.slice(0, at + 1)}</strong>
+      {text.slice(at + 1)}
     </>
   );
 }
@@ -142,7 +173,7 @@ function BlockView({ block }: { block: Block }) {
           {block.items.map((it) => (
             <div key={it.label}>
               <dt>{it.label}</dt>
-              <dd className="display">{it.value}</dd>
+              <dd>{it.value}</dd>
             </div>
           ))}
         </dl>
@@ -153,11 +184,7 @@ function BlockView({ block }: { block: Block }) {
           {block.lanes.map((lane) => (
             <div className="lane" key={lane.label}>
               <h3 className="lane-label">{lane.label}</h3>
-              <ol className={lane.siblings ? 'lane-nodes siblings' : 'lane-nodes'} aria-label={lane.siblings ? lane.label : `${lane.label}, in order`}>
-                {lane.nodes.map((n) => (
-                  <li key={n}>{n}</li>
-                ))}
-              </ol>
+              <Line label={lane.label} nodes={lane.nodes} siblings={lane.siblings} />
               {lane.note && <p className="lane-note">{lane.note}</p>}
             </div>
           ))}

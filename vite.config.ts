@@ -3,36 +3,30 @@ import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 
 /*
- * Preload the latin display font. The face is declared with
+ * Preload the two latin faces (Mona Sans, Martian Mono). Both are declared with
  * `font-display: optional`, so the first paint never waits for it; the preload
- * only makes sure the face is there for the paint that follows, and keeps the
+ * only makes sure the faces are there for the paint that follows, and keeps the
  * swap from ever happening (CLS 0.000).
  */
 function preloadFont(): Plugin {
-  let latin = '';
+  let fonts: string[] = [];
   return {
     name: 'preload-latin-font',
     apply: 'build',
     generateBundle(_, bundle) {
-      latin = Object.keys(bundle).find((file) => /archivo-latin-wdth-normal.*\.woff2$/.test(file)) ?? '';
+      fonts = Object.keys(bundle).filter((file) =>
+        /(mona-sans|martian-mono)-latin-wght-normal.*\.woff2$/.test(file),
+      );
     },
     transformIndexHtml(html) {
-      if (!latin) return html;
+      if (!fonts.length) return html;
       return {
         html,
-        tags: [
-          {
-            tag: 'link',
-            attrs: {
-              rel: 'preload',
-              href: `/${latin}`,
-              as: 'font',
-              type: 'font/woff2',
-              crossorigin: '',
-            },
-            injectTo: 'head-prepend',
-          },
-        ],
+        tags: fonts.map((file) => ({
+          tag: 'link',
+          attrs: { rel: 'preload', href: `/${file}`, as: 'font', type: 'font/woff2', crossorigin: '' },
+          injectTo: 'head-prepend' as const,
+        })),
       };
     },
   };

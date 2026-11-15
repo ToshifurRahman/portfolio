@@ -9,54 +9,43 @@ beforeEach(() => {
   document.documentElement.dataset.theme = 'dark';
 });
 
-describe('theme picker', () => {
-  it('offers Dark and Light as a labelled group with Dark selected', () => {
-    render(
-      <MemoryRouter initialEntries={['/']}>
-        <App />
-      </MemoryRouter>,
-    );
-    const group = screen.getByRole('group', { name: /theme/i });
-    expect(group).toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: 'Dark' })).toBeChecked();
-    expect(screen.getByRole('radio', { name: 'Light' })).not.toBeChecked();
+const renderApp = () =>
+  render(
+    <MemoryRouter initialEntries={['/']}>
+      <App />
+    </MemoryRouter>,
+  );
+
+describe('theme toggle', () => {
+  it('is one labelled button in the header', () => {
+    renderApp();
+    expect(screen.getByRole('button', { name: /dark and light theme/i })).toBeInTheDocument();
   });
 
-  it('switches to Light, stores the choice and marks the radios', async () => {
+  it('flips the theme and stores the choice, both ways', async () => {
     const user = userEvent.setup();
-    render(
-      <MemoryRouter initialEntries={['/']}>
-        <App />
-      </MemoryRouter>,
-    );
-    await user.click(screen.getByRole('radio', { name: 'Light' }));
+    renderApp();
+    const toggle = screen.getByRole('button', { name: /dark and light theme/i });
+    await user.click(toggle);
     expect(document.documentElement.dataset.theme).toBe('light');
     expect(localStorage.getItem('theme')).toBe('light');
-    expect(screen.getByRole('radio', { name: 'Light' })).toBeChecked();
-    await user.click(screen.getByRole('radio', { name: 'Dark' }));
+    await user.click(toggle);
     expect(document.documentElement.dataset.theme).toBe('dark');
     expect(localStorage.getItem('theme')).toBe('dark');
   });
 
-  it('starts from the theme the inline script already applied', () => {
-    localStorage.setItem('theme', 'light');
+  it('starts from the theme the inline script already applied', async () => {
+    const user = userEvent.setup();
     document.documentElement.dataset.theme = 'light';
-    render(
-      <MemoryRouter initialEntries={['/']}>
-        <App />
-      </MemoryRouter>,
-    );
-    expect(screen.getByRole('radio', { name: 'Light' })).toBeChecked();
+    renderApp();
+    await user.click(screen.getByRole('button', { name: /dark and light theme/i }));
+    expect(document.documentElement.dataset.theme).toBe('dark');
   });
 });
 
 describe('footer', () => {
-  it('no longer holds a theme toggle of its own', () => {
-    render(
-      <MemoryRouter initialEntries={['/']}>
-        <App />
-      </MemoryRouter>,
-    );
+  it('holds no theme control of its own', () => {
+    renderApp();
     const footer = screen.getByRole('contentinfo');
     expect(footer.textContent).not.toMatch(/theme/i);
   });

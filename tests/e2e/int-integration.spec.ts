@@ -4,7 +4,7 @@ import { certificates } from '../../src/content';
 const navSections = [
   { label: 'Experience', id: 'experience' },
   { label: 'Achievements', id: 'achievements' },
-  { label: 'Certificates', id: 'certificates' },
+  { label: 'Skills', id: 'skills' },
 ] as const;
 
 const nav = (page: import('@playwright/test').Page) =>

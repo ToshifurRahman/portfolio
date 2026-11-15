@@ -1,26 +1,15 @@
 import type { ReactNode } from 'react';
-import { sectionNumbers, type SectionId } from './nav';
+import type { SectionId } from './nav';
 
-/* One section of the home page: a state on the same chain the case-study pages
-   draw, numbered from src/nav.ts so the diagram, the bar and the heading can
-   never disagree. Every section on `/`, the CV's four included, renders
-   through this, so there is one definition of the layout. */
-export function Section({
-  id,
-  title,
-  children,
-}: {
-  id: SectionId;
-  title: string;
-  children: ReactNode;
-}) {
+/* One section of the home page: a ruled band across the frame, the heading in
+   the first three columns and the content in the other nine. */
+export function Section({ id, title, children }: { id: SectionId; title: string; children: ReactNode }) {
   return (
-    <section id={id} className="state-section" aria-labelledby={`${id}-title`}>
-      <h2 id={`${id}-title`} className="display section-heading">
-        <span className="state-num">{sectionNumbers[id]}</span>
-        <span>{title}</span>
+    <section id={id} className="frame ruled grid12 section" aria-labelledby={`${id}-title`}>
+      <h2 id={`${id}-title`} className="section-heading">
+        {title}
       </h2>
-      <div className="state-body">{children}</div>
+      <div className="section-body">{children}</div>
     </section>
   );
 }
