@@ -200,6 +200,54 @@ export const contactLede = {
   rest: ' Email is the fastest way to reach me.',
 };
 
+/* The career path, drawn as the Now panel's static track on the home page.
+ * Owner's own sequence (2026-11-15): "University -> Trainer & Mentor ->
+ * Bootcamp Coordinator -> Finance Secretary -> Passed -> admitted to masters ->
+ * Taibah Academy -> M.engg."
+ *
+ * Every label and date is taken from a fact already in this file, never typed
+ * fresh here: stops 1 and 5 come from `education` (B.Sc. at IIUC, Aug 2021 to
+ * Dec 2025), stops 2-4 from `experience` (Trainer & Mentor, Aug 2023, and its
+ * own bullet "Also served as Bootcamp Coordinator and Finance Secretary"),
+ * stops 7 and 8 from `experience` (Taibah Academy) and `education` (M.Engg.,
+ * CUET). Stop 6 is the admission those dates imply; the owner's words name it.
+ * A fact with no date in the source shows none here.
+ */
+export type PathStop = {
+  label: string;
+  /* Shown under the label. Empty where the source states no date. */
+  date: string;
+  /* The two current stations: their lamps are lit. */
+  current?: boolean;
+};
+
+export const path: PathStop[] = [
+  { label: 'B.Sc. in CSE, IIUC', date: 'Aug 2021' },
+  { label: 'Trainer & Mentor, IIUCCPS', date: 'Aug 2023' },
+  { label: 'Bootcamp Coordinator, IIUCCPS', date: '' },
+  { label: 'Finance Secretary, IIUCCPS', date: '' },
+  { label: 'B.Sc. completed', date: 'Dec 2025' },
+  { label: 'Admitted to M.Engg., CUET', date: '' },
+  { label: 'Web Developer, Taibah Academy', date: 'Aug 2026', current: true },
+  { label: 'M.Engg. in CSE, CUET', date: 'In progress', current: true },
+];
+
+/* The Now panel's second row: two facts already stated in this file, each
+   linking to where it is argued in full. */
+export const nowCells = {
+  system: {
+    title: 'Latest system',
+    name: 'Ticket-Pipeline',
+    detail: 'April to November 2026',
+    to: '/work/ticket-pipeline',
+  },
+  solving: {
+    title: 'Problem solving',
+    facts: ['Codeforces max rating 1290', 'CodeChef max rating 1461'],
+    to: '/#achievements',
+  },
+};
+
 export type Certificate = {
   slug: string;
   title: string;

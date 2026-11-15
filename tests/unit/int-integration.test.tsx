@@ -2,7 +2,7 @@ import { render } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 import { Home } from '../../src/Home';
-import { caseStudies, owner, proof } from '../../src/content';
+import { caseStudies, nowCells, owner, path, proof } from '../../src/content';
 import { pageSections, sections } from '../../src/nav';
 
 const renderHome = () =>
@@ -67,7 +67,9 @@ describe('introduction', () => {
 
   it('shows every proof figure with its label', () => {
     renderHome();
-    const items = [...document.querySelectorAll('.proof li')];
+    /* Scoped to the hero: Achievements now leads with its own figures, which
+       reuse the readout's classes. */
+    const items = [...document.querySelectorAll('.readout .proof li')];
     expect(items).toHaveLength(proof.length);
     proof.forEach((p, i) => {
       expect(items[i].querySelector('.proof-value')?.textContent).toBe(p.value);
@@ -90,6 +92,59 @@ describe('introduction', () => {
     renderHome();
     expect(document.querySelector('.statement')?.textContent).toBe(owner.statement);
     expect(document.querySelector('.statement .emphasis')?.textContent).toBe(owner.statementEmphasis);
+  });
+});
+
+/* The Now panel took the home slot where the track animation was (the owner
+   moved that into the case studies). It is a real ordered list of text, not a
+   picture: readable with no CSS and no script. */
+describe('now panel', () => {
+  it('draws the career path as an ordered list, in the owner’s order', () => {
+    renderHome();
+    const panel = document.getElementById('now');
+    expect(panel, 'the Now panel is missing').not.toBeNull();
+    const stops = [...panel!.querySelectorAll('.path li')];
+    expect(stops.map((li) => li.querySelector('.path-label')?.textContent)).toEqual(path.map((p) => p.label));
+    expect(stops).toHaveLength(8);
+    /* First and last, to pin the direction: university at the start, the
+       master's in progress at the end. */
+    expect(stops[0].textContent).toContain('B.Sc. in CSE, IIUC');
+    expect(stops[7].textContent).toContain('M.Engg. in CSE, CUET');
+    /* The list is inside the panel, which is an ordered list, not a div soup. */
+    expect(panel!.querySelector('ol.path')).not.toBeNull();
+  });
+
+  it('marks the two current stations with a lit lamp and the others not', () => {
+    renderHome();
+    const stops = [...document.querySelectorAll('#now .path li')];
+    const lit = stops.filter((li) => li.querySelector('.lamp.is-lit') !== null);
+    expect(lit).toHaveLength(path.filter((p) => p.current).length);
+    expect(lit.map((li) => li.querySelector('.path-label')?.textContent)).toEqual([
+      'Web Developer, Taibah Academy',
+      'M.Engg. in CSE, CUET',
+    ]);
+  });
+
+  it('shows a date only where the source states one', () => {
+    renderHome();
+    const stops = [...document.querySelectorAll('#now .path li')];
+    path.forEach((p, i) => {
+      const date = stops[i].querySelector('.path-date');
+      if (p.date) expect(date?.textContent, p.label).toBe(p.date);
+      else expect(date, `${p.label} should show no date`).toBeNull();
+    });
+  });
+
+  it('adds the latest system and the problem-solving record, both linked', () => {
+    renderHome();
+    const cells = [...document.querySelectorAll('#now .now-cell')];
+    expect(cells).toHaveLength(2);
+    expect(cells[0].textContent).toContain('Latest system');
+    expect(cells[0].textContent).toContain('Ticket-Pipeline');
+    expect(cells[0].querySelector('a')?.getAttribute('href')).toBe('/work/ticket-pipeline');
+    expect(cells[1].textContent).toContain('Problem solving');
+    for (const fact of nowCells.solving.facts) expect(cells[1].textContent).toContain(fact);
+    expect(cells[1].querySelector('a')?.getAttribute('href')).toBe('/#achievements');
   });
 });
 

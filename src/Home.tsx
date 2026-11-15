@@ -4,8 +4,8 @@ import { builds, caseStudies, contactLede, moreProjects, owner, proof, skills, w
 import { Footer } from './Footer';
 import { Line } from './Line';
 import { Arrow } from './NotFound';
+import { NowPanel } from './NowPanel';
 import { Section } from './Section';
-import { SignalPanel } from './SignalPanel';
 import { CvSections } from './sections';
 import { useTitle } from './useTitle';
 
@@ -128,7 +128,7 @@ export function Home() {
           </div>
         </div>
 
-        <SignalPanel />
+        <NowPanel />
 
         <Section id="work" title="Work">
           <p className="section-lede">
