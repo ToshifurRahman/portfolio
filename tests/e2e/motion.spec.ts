@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 /* The signature motion, and its restraint contract.
  *
- * Owner, 2026-11-15 23:03: a ray runs from the coloured name down the strips to
+ * The owner asked for a ray from the coloured name down the strips to
  * the footer, charging each as it passes; the hero's cells glow in a slow wave
  * and three at a time under the pointer. "Too much animation can break attention
  * to key points", so:

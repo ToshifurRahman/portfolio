@@ -219,12 +219,17 @@ test('the home page no longer carries the animated diagram', async ({ page }) =>
 });
 
 test.describe('mini-track labels', () => {
-  /* The Work rows draw each study's own lane. RannaGhor's first node,
-     "Security and CSRF", wrapped to two lines while its four siblings held
-     one, so the lamps stopped being level; the whole lane wrapped at 1024.
-     Every label now holds one line, at every width, on both pages. */
+  /* The case-study architecture lanes still draw `.line`. RannaGhor's first
+     node, "Security and CSRF", wrapped to two lines while its four siblings held
+     one, so the lamps stopped being level; the whole lane wrapped at 1024. Every
+     label holds one line, at every width.
+
+     `/` is no longer in this list: the owner replaced the Work cards' station
+     rail with a node diagram (2026-11-15), so the home page has no `.line`. The
+     node diagram has its own spec, which checks the same thing — no wrapped,
+     clipped or spilling label — where that diagram actually is. */
   for (const width of [390, 768, 1024, 1100, 1280, 1440]) {
-    for (const path of ['/', '/work/ticket-pipeline', '/work/rannaghor']) {
+    for (const path of ['/work/ticket-pipeline', '/work/rannaghor']) {
       test(`${path} at ${width} px: every node label is one line`, async ({ page }) => {
         await page.setViewportSize({ width, height: 900 });
         await page.goto(path);
@@ -258,4 +263,51 @@ test.describe('mini-track labels', () => {
       });
     }
   }
+});
+
+test.describe('the Work card node diagram', () => {
+  /* Owner, 2026-11-15: the Work card chart becomes a small node diagram. Every
+     box's label is whole at every width: the chain wraps, and turns vertical on
+     a phone, rather than shrinking text below legibility. */
+  for (const width of [360, 390, 430, 768, 1024, 1280, 1440]) {
+    test(`/ at ${width} px: every node box keeps its whole label`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto('/');
+      await page.locator('.cases').scrollIntoViewIfNeeded();
+
+      const lists = await page.evaluate(() =>
+        [...document.querySelectorAll('.nodes')].map((list) => {
+          const box = list.getBoundingClientRect();
+          return {
+            count: list.querySelectorAll('.node').length,
+            bad: [...list.querySelectorAll('.node')]
+              .filter((n) => {
+                const rect = n.getBoundingClientRect();
+                return rect.right > box.right + 1 || n.scrollWidth > n.clientWidth + 1;
+              })
+              .map((n) => (n.textContent ?? '').trim()),
+          };
+        }),
+      );
+      expect(lists.length).toBe(2);
+      for (const list of lists) {
+        expect(list.count).toBeGreaterThan(3);
+        expect(list.bad, `cut labels at ${width}px`).toEqual([]);
+      }
+      /* And nothing on the page scrolls sideways. */
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      );
+      expect(overflow).toBeLessThanOrEqual(0);
+    });
+  }
+
+  test('Ticket-Pipeline forks to the backup model; RannaGhor does not fork', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto('/');
+    await page.locator('.cases').scrollIntoViewIfNeeded();
+    await expect(page.locator('.nodes').first().locator('.is-branch')).toHaveCount(1);
+    await expect(page.locator('.nodes').first().locator('.is-branch')).toHaveText(/Backup model/i);
+    await expect(page.locator('.nodes').nth(1).locator('.is-branch')).toHaveCount(0);
+  });
 });

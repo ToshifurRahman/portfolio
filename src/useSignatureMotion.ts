@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 
 /* The signature motion, in one place.
  *
- * The owner, 2026-11-15 23:03: "a ray from this will go down via strips till
+ * The owner, 2026-11-15: "a ray from this will go down via strips till
  * footer & glow them like, they are taking charge from name, too much animation
  * can break attention to key points", and "In hero, boxes between strips glow up
  * to down, low freq, add hover effect, 3 glow at a time on mouse hover".
@@ -26,7 +26,9 @@ export function useSignatureMotion() {
   useEffect(() => {
     const root = document.documentElement;
     /* Reduced motion: never start. The coloured wordmark and the static strips
-       are the whole design in that mode. */
+       are the whole design in that mode. `matchMedia` is absent in a
+       non-browser environment, which is a reason not to animate, not to throw. */
+    if (typeof matchMedia !== 'function') return;
     const reduced = matchMedia('(prefers-reduced-motion: reduce)');
     if (reduced.matches) return;
 
@@ -84,8 +86,8 @@ export function useSignatureMotion() {
       element?.querySelectorAll('.hero-cell').forEach((cell) => cell.classList.remove('is-hot'));
     };
 
-    const finePointer = matchMedia('(hover: hover) and (pointer: fine)');
-    if (element && finePointer.matches) {
+    const finePointer = typeof matchMedia === 'function' && matchMedia('(hover: hover) and (pointer: fine)');
+    if (element && finePointer && finePointer.matches) {
       element.addEventListener('pointermove', onMove, { passive: true });
       element.addEventListener('pointerleave', onLeave);
     }

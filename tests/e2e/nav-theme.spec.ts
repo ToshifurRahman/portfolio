@@ -33,8 +33,14 @@ test.describe('theme', () => {
        background": `bg !== 'rgb(16, 15, 14)'` passed for any colour at all. */
     const light = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
     expect(dark).toBe('rgb(10, 11, 13)');
-    expect(light).toBe('rgb(243, 242, 238)');
+    /* The softened light page (owner, 2026-11-15: "Light mode is too bright"): it
+       used to be near-white at 243,242,238 and is now a warm grey. */
+    expect(light).toBe('rgb(232, 229, 221)');
     expect(light).not.toBe(dark);
+    /* And it is genuinely darker than it was, not merely different: a page this
+       bright reads as glare on a full screen. */
+    const brightness = light.match(/\d+/g)!.slice(0, 3).map(Number).reduce((a, b) => a + b, 0) / 3;
+    expect(brightness).toBeLessThan(240);
     await page.reload();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   });

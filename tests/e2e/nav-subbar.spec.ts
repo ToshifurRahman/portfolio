@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-/* Owner, 2026-11-15 23:03: "navbar design will be same as works page sub
+/* Owner, 2026-11-15, owner at 23:03: "navbar design will be same as works page sub
    navbar". The top bar now uses the sub-navbar's own language — a lamp per item
    with a rail between them, its type, and its active treatment — and every
    behaviour it had is kept. */

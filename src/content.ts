@@ -146,7 +146,7 @@ export const education: EducationEntry[] = [
 export type RecordFigure = { value: string; label: string };
 
 /* A short title and year for the one-line list, split from `text` word for
-   word: the owner asked for one line per item (2026-11-15 23:03, "feels like
+   word: the owner asked for one line per item (owner, 2026-11-15, "feels like
    too many texts to read") without new wording, so every title is a phrase the
    sentence already contains. `text` stays as the source of record. */
 export type Achievement = {
@@ -227,7 +227,7 @@ export type PathStop = {
 };
 
 /*
- * The Now panel's two lanes, on one shared year axis. Owner, 2026-11-15 23:03:
+ * The Now panel's two lanes, on one shared year axis. Owner, 2026-11-15:
  * "In Now, timeline chart not looking good, research to make it look good. drop
  * latest system & problem solving", and the answer: "the Now timeline becomes
  * two lanes, Study and Work".

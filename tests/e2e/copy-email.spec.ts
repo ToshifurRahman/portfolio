@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-/* Owner, 2026-11-15 23:03: "in contact, put option to copy email". The button is
+/* Owner, 2026-11-15, owner at 23:03: "in contact, put option to copy email". The button is
    a real <button> beside the address, the mailto link stays, and the
    confirmation goes through a polite live region rather than colour alone. */
 

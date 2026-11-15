@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-/* Owner, 2026-11-15 23:03: "Optimize for mobile view". The checks the brief
+/* Owner, 2026-11-15, owner at 23:03: "Optimize for mobile view". The checks the brief
    names, at the three phone widths a real device uses. */
 
 const WIDTHS = [360, 390, 430];

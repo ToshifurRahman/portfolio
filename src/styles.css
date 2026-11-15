@@ -1744,9 +1744,13 @@ textarea {
 }
 
 .nodes .is-branch {
-  margin-top: calc(var(--space-4) * -1 + var(--space-4));
+  /* The branch hangs under the chain at an indent. Its width is bounded rather
+     than `max-content`: at 360 the indent plus a nowrap label pushed the box past
+     the card, so it may shrink and the label wraps inside it instead of spilling. */
+  max-width: 100%;
   margin-left: var(--space-6);
   border-style: dashed;
+  overflow-wrap: anywhere;
 }
 
 .is-branch::before {
@@ -1787,7 +1791,9 @@ textarea {
   }
 
   .nodes .is-branch {
-    margin-left: var(--space-5);
+    margin-left: var(--space-4);
+    max-width: calc(100% - var(--space-4));
+    white-space: normal;
   }
 
   .is-branch::before {

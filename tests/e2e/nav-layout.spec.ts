@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 test.describe('first screen at 390 px', () => {
   test('shows who this is, the statement, the CV and every figure above the fold', async ({ page }) => {
     /* Must-prove 2: the first viewport shows the name, the role and the Download
-       CV action. The readout now carries two figures (owner, 2026-11-15 23:03:
+       CV action. The readout now carries two figures (owner, 2026-11-15, owner at 23:03:
        drop the open-source figure), so the count is read rather than
        hard-coded. */
     await page.setViewportSize({ width: 390, height: 844 });

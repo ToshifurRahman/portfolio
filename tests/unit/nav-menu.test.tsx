@@ -98,15 +98,21 @@ describe('current section', () => {
     Object.defineProperty(document.documentElement, 'scrollHeight', { value: scrolled, configurable: true });
   });
 
-  it('keeps no home link current on another page', () => {
+  it('lights Work on a case study, and no other section', () => {
+    /* Owner, 2026-11-15: the navbar takes the case-study sub-navbar's design, and
+       a study is part of Work. This test used to pin "no home link is current on
+       another page", which is exactly the behaviour the owner changed, so it pins
+       the new rule instead: Work is current, and nothing else is. */
     render(
       <MemoryRouter initialEntries={['/work/ticket-pipeline']}>
         <App />
       </MemoryRouter>,
     );
     const nav = screen.getByRole('navigation', { name: 'Primary' });
-    for (const link of within(nav).getAllByRole('link')) {
-      expect(link).not.toHaveAttribute('aria-current', 'true');
-    }
+    const current = within(nav)
+      .getAllByRole('link')
+      .filter((link) => link.getAttribute('aria-current') === 'true');
+    expect(current).toHaveLength(1);
+    expect(current[0]).toHaveTextContent('Work');
   });
 });

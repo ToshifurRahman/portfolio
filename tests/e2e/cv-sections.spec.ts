@@ -148,7 +148,7 @@ test('no axe violations with a certificate dialog open', async ({ page }) => {
 });
 
 test.describe('the Work section after the owner cut it back', () => {
-  /* Owner, 2026-11-15 23:03: "in work, remove subtitle, project chart not
+  /* Owner, 2026-11-15, owner at 23:03: "in work, remove subtitle, project chart not
      looking good, drop what i build, drop other projects". The two case studies
      are the whole section now. */
   test('has no lede, no "What I build" and no "Other projects"', async ({ page }) => {
