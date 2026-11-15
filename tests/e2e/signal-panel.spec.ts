@@ -166,6 +166,27 @@ for (const d of DIAGRAMS) {
     }
   });
 
+  /* The diagram belongs to the Architecture section, so it has to line up with
+     that section's own heading and prose. It was pinned to `grid-column: 4 /
+     span 9` and never reset on a narrow screen, so at 390 it started 88px right
+     of its heading (234px at 1024), reading as a floating inset rather than the
+     section's first statement (R3-agy-1 / R3-ds-1). */
+  test.describe(`diagram (${d.slug}): aligned with its section`, () => {
+    for (const width of [390, 768, 1024]) {
+      test(`starts where the Architecture heading starts at ${width} px`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        await page.goto(d.path);
+        const edges = await page.evaluate((slug) => {
+          const diagram = document.querySelector(`[data-diagram="${slug}"]`)!.getBoundingClientRect();
+          const heading = document.querySelector('#architecture .section-heading')!.getBoundingClientRect();
+          return { diagram: Math.round(diagram.left), heading: Math.round(heading.left) };
+        }, d.slug);
+        expect(edges.heading).toBeGreaterThan(0);
+        expect(Math.abs(edges.diagram - edges.heading)).toBeLessThanOrEqual(1);
+      });
+    }
+  });
+
   test.describe(`diagram (${d.slug}): the pre-render`, () => {
     test.use({ javaScriptEnabled: false });
 

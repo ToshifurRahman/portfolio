@@ -2074,7 +2074,8 @@ textarea {
   }
 
   .section-heading,
-  .section-body {
+  .section-body,
+  .section-diagram {
     grid-column: 1 / -1;
   }
 
