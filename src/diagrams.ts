@@ -1,3 +1,4 @@
+import { securityCheckLabel } from './content';
 import type { DiagramSpec, Step } from './Diagram';
 
 /*
@@ -223,7 +224,7 @@ const rannaghor: DiagramSpec = {
     lamps: { security: 'done', rate: 'done', session: 'done', role: 'done', handler: 'done', postgres: 'done' },
   },
   stations: [
-    { id: 'security', name: 'Security, CSRF', detail: 'Every API call', x: RX.security },
+    { id: 'security', name: securityCheckLabel, detail: 'Every API call', x: RX.security },
     { id: 'rate', name: 'Rate limit', detail: 'Per account and address', x: RX.rate },
     { id: 'session', name: 'Session', detail: 'Better Auth', x: RX.session },
     { id: 'role', name: 'Role check', detail: 'Vendor, admin, customer', x: RX.role },

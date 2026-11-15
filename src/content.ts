@@ -385,6 +385,12 @@ export const moreProjects = [
 
 export type Lane = { label: string; nodes: string[]; note?: string; siblings?: boolean };
 
+/* The name of RannaGhor's first check, stated once. The architecture lane and
+   the case study's flowchart both show this check on the same page, so both read
+   it from here rather than each spelling it out: two names for one thing on one
+   screen is a defect the page can grow by itself. */
+export const securityCheckLabel = 'Security and CSRF';
+
 export type Block =
   | { kind: 'p'; text: string }
   | { kind: 'list'; items: { lead?: string; text: string }[] }
@@ -672,7 +678,7 @@ const rannaghor: CaseStudy = {
             { label: 'Request', nodes: ['React web app', 'Hono API', 'Drizzle ORM', 'PostgreSQL'] },
             {
               label: 'Every API call',
-              nodes: ['Security and CSRF', 'Rate limit', 'Session', 'Role check', 'Route handler'],
+              nodes: [securityCheckLabel, 'Rate limit', 'Session', 'Role check', 'Route handler'],
             },
             {
               label: 'Shared packages',
