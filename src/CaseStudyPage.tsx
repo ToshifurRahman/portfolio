@@ -4,7 +4,6 @@ import { caseStudies, type Block } from './content';
 import { diagrams } from './diagrams';
 import { Diagram } from './Diagram';
 import { Footer } from './Footer';
-import { Line } from './Line';
 import { Arrow, NotFound } from './NotFound';
 import { useTitle } from './useTitle';
 
@@ -189,17 +188,11 @@ function BlockView({ block }: { block: Block }) {
         </dl>
       );
     case 'diagram':
-      return (
-        <figure className="diagram">
-          {block.lanes.map((lane) => (
-            <div className="lane" key={lane.label}>
-              <h3 className="lane-label">{lane.label}</h3>
-              <Line label={lane.label} nodes={lane.nodes} siblings={lane.siblings} />
-              {lane.note && <p className="lane-note">{lane.note}</p>}
-            </div>
-          ))}
-          <figcaption>{block.caption}</figcaption>
-        </figure>
-      );
+      /* Nothing rendered. The lane lists this block used to draw are now the
+         flowchart's own content — the owner asked for them to go on 2026-11-15,
+         because the diagram above says the same thing and better. The data stays
+         in src/content.ts: it is where the flowchart's facts come from, and the
+         unit tests read it to keep the two from disagreeing. */
+      return null;
   }
 }
