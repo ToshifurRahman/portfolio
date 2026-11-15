@@ -343,8 +343,18 @@ function labelPos(a: Placed, b: Placed, route: Route, bounds: Bounds, labelW: nu
   const gapStart = a.x + a.w;
   const gapEnd = b.x;
   const mid = (gapStart + gapEnd) / 2;
-  const x = labelW > gapEnd - gapStart ? gapStart + labelW / 2 : mid;
-  return { x: clampX(x, labelW, bounds), y: a.y + a.h / 2 - 9 };
+  return { x: labelW > gapEnd - gapStart ? gapStart + labelW / 2 : mid, y: a.y + a.h / 2 - 9 };
+}
+
+/* Does a label's box overlap a node's box? */
+function touchesBox(lab: { x: number; y: number }, pill: { w: number; h: number }, nodes: Placed[]): boolean {
+  return nodes.some(
+    (n) =>
+      lab.x - pill.w / 2 < n.x + n.w - 2 &&
+      lab.x + pill.w / 2 > n.x + 2 &&
+      lab.y - pill.h < n.y + n.h - 2 &&
+      lab.y > n.y + 2,
+  );
 }
 
 /* Keep a label's whole box inside the drawing. A label at the edge of the graph
@@ -627,6 +637,20 @@ function Graph({
         const d = edgePath(a, b, route, bounds, vertical);
         const lab = labelPos(a, b, route, bounds, (e.label?.length ?? 0) * adv(11));
         const pill = pillFor(e.label ?? '', lab.x, lab.y);
+        /* A label placed by geometry can still land on a box, so the final position is
+           checked: text over text is the one thing a label may never do. */
+        if (e.label && touchesBox(lab, pill, placed)) {
+          for (let step = 10; step <= 120; step += 10) {
+            if (!touchesBox({ x: lab.x, y: lab.y - step }, pill, placed)) {
+              lab.y -= step;
+              break;
+            }
+            if (!touchesBox({ x: lab.x, y: lab.y + step }, pill, placed)) {
+              lab.y += step;
+              break;
+            }
+          }
+        }
         /* Nudge this label clear of any already placed on the same band. */
         const clash = placedLabels.find(
           (o) =>
