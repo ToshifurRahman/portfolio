@@ -11,6 +11,10 @@ const navFor = (id: string | null) => (id === 'education' ? 'experience' : id);
 export function Navbar() {
   const { pathname, hash } = useLocation();
   const home = pathname === '/';
+  /* A case study is part of Work, so the Work item stays lit while one is being
+     read: the case-study sub-navbar already lights its own sections, and this
+     says which part of the site those sections belong to (R4b's "glow Work"). */
+  const onStudy = pathname.startsWith('/work/');
   const [current, setCurrent] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const menu = useRef<HTMLButtonElement>(null);
@@ -100,19 +104,22 @@ export function Navbar() {
           Menu
         </button>
         <ul id="primary-menu" className="nav-links" data-open={open}>
-          {sections.map((section) => (
+          {sections.map((section) => {
+            const active = (home && current === section.id) || (onStudy && section.id === 'work');
+            return (
             <li key={section.id}>
               <Link
                 to={`/#${section.id}`}
-                aria-current={home && current === section.id ? 'true' : undefined}
-                className={home && current === section.id ? 'is-current' : undefined}
+                aria-current={active ? 'true' : undefined}
+                className={active ? 'is-current' : undefined}
                 onClick={() => onSectionClick(section.id)}
               >
                 <span className="lamp" aria-hidden="true" />
                 {section.label}
               </Link>
             </li>
-          ))}
+            );
+          })}
           {/* On a phone the bar has no room for the CV button, and the menu is
               the only place every other action is reachable from, so the CV
               download rides in the menu. It is hidden from the bar's list on

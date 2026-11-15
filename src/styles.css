@@ -538,27 +538,67 @@ textarea {
   white-space: nowrap;
 }
 
+/* The bar speaks the case study's own sub-navbar language (owner, 23:03:
+   "navbar design will be same as works page sub navbar"): a lamp per item with a
+   rail running between them, the same type size and weight, and the same active
+   treatment — the current item's lamp lit and its label in full ink, the passed
+   ones in the second tone. The rail is one hairline behind a row of lamps rather
+   than eight separate dots, so the bar reads as a track across the page. */
 .nav-links {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: var(--space-1);
+  gap: 0;
+}
+
+.nav-links li {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+/* The rail between stations, drawn on each item's leading edge so it connects
+   the previous item to this item's lamp. Drawing it on the trailing edge instead
+   left the last item pointing at the phone-only CV entry, which is hidden on a
+   wide bar — a rail running into nothing. With the leading edge, an item that
+   renders gets a connector and a hidden one leaves none. */
+.nav-links li + li::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: var(--space-3);
+  height: var(--line-track);
+  margin-top: -1px;
+  background: var(--track);
 }
 
 .nav-links a {
+  position: relative;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
   min-height: var(--target);
-  padding-inline: var(--space-3);
+  padding-right: var(--space-4);
+  padding-left: var(--space-3);
   color: var(--muted);
-  font-size: var(--text-md);
+  font-size: var(--text-sm);
   font-weight: var(--weight-medium);
+  white-space: nowrap;
   transition: color var(--dur-fast) var(--ease-out);
 }
 
 .nav-links a:hover,
 .nav-links a.is-current {
   color: var(--ink);
+}
+
+/* The active lamp, in the accent: the same mark the sub-navbar uses for the
+   section being read. */
+.nav-links a.is-current .lamp,
+.nav-links a[aria-current='true'] .lamp {
+  background: var(--accent);
+  box-shadow: 0 0 0 var(--line-track) var(--accent);
 }
 
 .nav-tools {
