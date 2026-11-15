@@ -333,11 +333,15 @@ for (const d of DIAGRAMS) {
 
             /* (d) every edge's two ends touch a node's border. */
             const detached: string[] = [];
+            /* An edge stops a short distance short of the border so its arrowhead
+               lands on it rather than over it: the tolerance is the arrowhead's own
+               length, scaled, not an arbitrary 6. */
+            const gap = 12 * (view.width / svg.viewBox.baseVal.width);
             const near = (x: number, y: number) =>
               boxes.some(
                 (b) =>
-                  x >= b.left - 6 && x <= b.right + 6 && y >= b.top - 6 && y <= b.bottom + 6 &&
-                  (Math.abs(x - b.left) < 7 || Math.abs(x - b.right) < 7 || Math.abs(y - b.top) < 7 || Math.abs(y - b.bottom) < 7),
+                  x >= b.left - gap && x <= b.right + gap && y >= b.top - gap && y <= b.bottom + gap &&
+                  (Math.abs(x - b.left) <= gap || Math.abs(x - b.right) <= gap || Math.abs(y - b.top) <= gap || Math.abs(y - b.bottom) <= gap),
               );
             for (const path of svg.querySelectorAll<SVGPathElement>('.flow-edge')) {
               const len = path.getTotalLength();

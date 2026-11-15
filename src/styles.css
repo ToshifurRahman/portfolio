@@ -130,7 +130,7 @@
   /* The flowchart's own type, in the viewBox units its geometry uses. The engine
      lays boxes out with the same numbers, so these are the single source. */
   --flow-label: 12px;
-  --flow-detail: 11px;
+  --flow-detail: 11.7px;
   --target: 2.75rem;
   --target-sm: 2rem;
   --bar-h: 4rem;

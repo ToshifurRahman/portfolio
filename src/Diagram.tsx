@@ -91,7 +91,7 @@ const CHAR = 0.895;
 /* Label sizes in viewBox units. The viewBox is never scaled down, so 12 units are
    12px on screen or more, which is ruling 9's floor at every width. */
 const NAME = 12;
-const DETAIL = 11;
+const DETAIL = 11.7;
 const PAD = 13;
 const LINE = 15;
 
@@ -145,7 +145,7 @@ const heightOf = (node: Node, inner: number) => {
   const detailLines = node.detail ? wrapToWidth(node.detail, DETAIL, inner).length : 0;
   /* Every line gets its own LINE of height, plus the padding. Two name lines and a
      detail is four lines: a 44-unit box held only two. */
-  return Math.ceil((nameLines + detailLines) * LINE + PAD * 1.8);
+  return Math.ceil((nameLines + detailLines) * LINE + PAD * 1.6);
 };
 
 const GAP_X = 46;
@@ -235,9 +235,9 @@ function layoutVertical(spec: DiagramSpec) {
     y += 12;
     const pillW = 168;
     states.forEach((node, i) => {
-      nodes.push({ ...node, x: 8 + (i % 2) * (pillW + 8), y: y + Math.floor(i / 2) * 32, w: pillW, h: 28 });
+      nodes.push({ ...node, x: 8 + (i % 2) * (pillW + 8), y: y + Math.floor(i / 2) * 60, w: pillW, h: 28 });
     });
-    y += Math.ceil(states.length / 2) * 32;
+    y += Math.ceil(states.length / 2) * 60;
   }
 
   return { nodes, w: W, h: y + 40 };
@@ -247,7 +247,28 @@ const byId = (nodes: Placed[]) => new Map(nodes.map((n) => [n.id, n]));
 
 /* An edge's path. Every route goes through a gap: a loop leaves the box sideways,
    runs down the reserved bottom margin, and comes back up, so it crosses no box. */
-function edgePath(a: Placed, b: Placed, route: Route, bounds: Bounds): string {
+function edgePath(a: Placed, b: Placed, route: Route, bounds: Bounds, vertical = false): string {
+  if (vertical) {
+    const acx = a.x + a.w / 2;
+    const bcx = b.x + b.w / 2;
+    /* Straight down the spine. */
+    if (Math.abs(acx - bcx) < 1) return `M${acx} ${a.y + a.h} V${b.y - 2}`;
+    /* The state rail runs across, in one row, so its links are side to side. */
+    if (a.state && b.state) {
+      if (Math.abs(a.y - b.y) < 1) return `M${a.x + a.w} ${a.y + a.h / 2} H${b.x - 2}`;
+      /* Different rail rows: down out of the first, across under it, up into the
+         second's bottom, so the line stays in the gaps between pills. */
+      const upper = Math.min(a.y, b.y);
+      const lower = Math.max(a.y, b.y);
+      const mid = upper + 28 + (lower - upper - 28) / 2;
+      const entry = a.y < b.y ? b.y - 3 : b.y + b.h + 3;
+      return `M${a.x + a.w / 2} ${a.y + a.h} V${mid} H${b.x + b.w / 2} V${entry}`;
+    }
+    /* Out to the side that the target is on, down that margin, and in: the margin
+       between the two tracks is empty for the whole height. */
+    const lane = b.x > a.x ? Math.max(a.x + a.w, b.x) - 6 : Math.min(a.x, b.x + b.w) + 6;
+    return `M${acx} ${a.y + a.h} V${a.y + a.h + 10} H${lane} V${b.y + b.h / 2} H${bcx < lane ? b.x + b.w + 2 : b.x - 2}`;
+  }
   const acx = a.x + a.w / 2;
   const acy = a.y + a.h / 2;
   const bcx = b.x + b.w / 2;
@@ -274,9 +295,12 @@ function edgePath(a: Placed, b: Placed, route: Route, bounds: Bounds): string {
 
   /* Below the source: down through the gap under it, then across to the target. */
   if (b.y >= a.y + a.h) {
-    const below = a.y + a.h + (b.y - (a.y + a.h)) / 2;
     if (Math.abs(acx - bcx) < 1) return `M${acx} ${a.y + a.h} V${b.y - 2}`;
-    return `M${acx} ${a.y + a.h} V${below} H${bcx} V${b.y - 2}`;
+    /* To a box that is not directly below, the gap under the source is crossed at
+       the outer edge of the two, so the horizontal run misses anything between. */
+    const right = b.x > a.x;
+    const lane = right ? Math.max(a.x + a.w, b.x + b.w) + 10 : Math.min(a.x, b.x) - 10;
+    return `M${acx} ${a.y + a.h} V${a.y + a.h + 12} H${lane} V${b.y + b.h / 2} H${b.x - 2}`;
   }
   /* Above the source: up the gap and in from the top. */
   if (b.y + b.h <= a.y) {
@@ -310,7 +334,7 @@ function labelPos(a: Placed, b: Placed, route: Route, bounds: Bounds, labelW: nu
     if (Math.abs(a.x + a.w / 2 - (b.x + b.w / 2)) < 1) {
       return { x: a.x + a.w / 2 + 6 + labelW / 2, y: (a.y + a.h + b.y) / 2 };
     }
-    return { x: (a.x + a.w / 2 + b.x + b.w / 2) / 2, y: a.y + a.h + (b.y - (a.y + a.h)) / 2 - 4 };
+    return { x: b.x - 6 - labelW / 2, y: b.y + b.h / 2 };
   }
   if (b.y + b.h <= a.y) {
     return { x: (a.x + a.w / 2 + b.x + b.w / 2) / 2, y: b.y + b.h + (a.y - (b.y + b.h)) / 2 - 4 };
@@ -580,7 +604,7 @@ function Graph({
                 : 'down'
               : 'branch'
           : e.route;
-        const d = edgePath(a, b, route, bounds);
+        const d = edgePath(a, b, route, bounds, vertical);
         const lab = labelPos(a, b, route, bounds, (e.label?.length ?? 0) * adv(11));
         const pill = pillFor(e.label ?? '', lab.x, lab.y);
         /* Nudge this label clear of any already placed on the same band. */
@@ -633,7 +657,7 @@ function NodeBox({ node, still, vertical }: { node: Placed; still?: LampState; v
   const inner = node.w - PAD * 2;
   const name = wrapToWidth(node.name, NAME, inner);
   const detail = node.detail ? wrapToWidth(node.detail, DETAIL, inner) : [];
-  const block = (name.length + detail.length) * LINE;
+  const block = name.length * LINE + detail.length * LINE;
   /* The first baseline sits one LINE below the block's top edge, so the ascender
      is inside the box and the detail lines stack under it without touching. */
   const top = node.y + (node.h - block) / 2 + LINE - 3;
