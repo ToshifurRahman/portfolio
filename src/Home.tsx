@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { caseStudies, contactLede, owner, proof, skills, type CaseStudy } from './content';
 import { Footer } from './Footer';
+import { CopyEmail } from './CopyEmail';
 import { NodeDiagram } from './NodeDiagram';
 import { Arrow } from './NotFound';
 import { NowPanel } from './NowPanel';
@@ -232,9 +233,12 @@ function Contact() {
         )}
       </p>
       {owner.email && (
-        <a className="contact-email" href={`mailto:${owner.email}`}>
-          <BreakableLink value={owner.email} />
-        </a>
+        <div className="contact-address">
+          <a className="contact-email" id="contact-email-value" href={`mailto:${owner.email}`}>
+            <BreakableLink value={owner.email} />
+          </a>
+          <CopyEmail email={owner.email} targetId="contact-email-value" />
+        </div>
       )}
       <dl className="rows contact">
         {links.map((l) => (

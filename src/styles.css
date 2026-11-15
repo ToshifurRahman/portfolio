@@ -1850,6 +1850,41 @@ textarea {
   transition: color var(--dur-fast) var(--ease-out);
 }
 
+/* The address and its copy button share a row until the address needs the whole
+   width, at which point the button drops below rather than squeezing it. */
+.contact-address {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3) var(--space-5);
+  margin-top: var(--space-6);
+}
+
+.contact-address .contact-email {
+  margin-top: 0;
+}
+
+.copy-button {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--target);
+  padding: 0 var(--space-4);
+  border: var(--line) solid var(--rule-strong);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink-2);
+  font-family: var(--mono);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-mono);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.copy-button:hover {
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
 .contact-email:hover {
   color: var(--accent-text);
 }
