@@ -130,7 +130,7 @@
   /* The flowchart's own type, in the viewBox units its geometry uses. The engine
      lays boxes out with the same numbers, so these are the single source. */
   --flow-label: 12px;
-  --flow-detail: 11.7px;
+  --flow-detail: 12px;
   --target: 2.75rem;
   --target-sm: 2rem;
   --bar-h: 4rem;
@@ -1350,20 +1350,44 @@ textarea {
   margin-inline: auto;
 }
 
+/* The vertical graph is tall, so it takes its natural height and the page scrolls: a
+   phone scrolls the document, never inside the chart. */
 @container (max-width: 56rem) {
-  .flow-h {
-    display: none;
-  }
-
-  .flow-v {
-    display: block;
-  }
-
-  /* The vertical graph is tall, so it takes its natural height and the page
-     scrolls: a phone scrolls the document, never inside the chart. */
   .flow-svg {
     max-height: none;
   }
+}
+
+/* The layout switches where the *desktop* graph stops drawing at 1:1, not at a round
+   breakpoint. The graph is scaled to fit, and scaling it below 1:1 takes every label
+   under the 12px floor: at 1024 RannaGhor rendered 9.6px, at 1100 10.3px. The two
+   studies have different widths (Ticket-Pipeline 1009 units, RannaGhor 1154), so each
+   gets its own threshold — a single breakpoint cannot serve both without shrinking one.
+   These are the measured viewBox widths minus one, in the container's own units. */
+@container (max-width: 1008px) {
+  .flow-panel[data-diagram='ticket-pipeline'] .flow-h {
+    display: none;
+  }
+
+  .flow-panel[data-diagram='ticket-pipeline'] .flow-v {
+    display: block;
+  }
+}
+
+@container (max-width: 1153px) {
+  .flow-panel[data-diagram='rannaghor'] .flow-h {
+    display: none;
+  }
+
+  .flow-panel[data-diagram='rannaghor'] .flow-v {
+    display: block;
+  }
+}
+
+/* Shown this wide, the vertical graph would balloon: at 834 the type reached 28px, and
+   a diagram is not a headline. It is capped near the page's own body size and centred. */
+.flow-v > .flow-svg {
+  max-width: 28rem;
 }
 
 .flow-node rect {

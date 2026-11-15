@@ -110,7 +110,7 @@ const CHAR = 0.895;
 /* Label sizes in viewBox units. The viewBox is never scaled down, so 12 units are
    12px on screen or more, which is ruling 9's floor at every width. */
 const NAME = 12;
-const DETAIL = 11.7;
+const DETAIL = 12;
 const PAD = 13;
 const LINE = 17;
 
@@ -251,9 +251,11 @@ function layoutVertical(spec: DiagramSpec) {
   const inCluster = new Set((spec.clusters ?? []).flatMap((c) => c.nodes));
   const spine = spec.nodes.filter((n) => !n.state && !inCluster.has(n.id));
 
-  /* The phone's own width: at 390 the panel is 390 and the graph is drawn 1:1, so a
-     viewBox unit is a pixel and the 12-unit names stay 12px (ruling 9). */
-  const W = 358;
+  /* The graph's own width, chosen so the narrowest phone we support still draws it at
+     1:1 or larger: the panel's content box at a 360px viewport is ~338px, so the
+     viewBox may not be wider than that or the whole chart scales down and takes every
+     label under the floor with it (F5-2's 11.09px at 360). */
+  const W = 330;
   const MARGIN = 8;
   const boxW = W - MARGIN * 2;
   const labels: Placed[] = [];
