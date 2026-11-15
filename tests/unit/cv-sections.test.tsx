@@ -71,6 +71,27 @@ describe('CvSections', () => {
     expect(text.indexOf('Codeforces')).toBeLessThan(text.indexOf('1st Runner-up'));
   });
 
+  it('gives each achievement one line: title, place, year, no paragraph', () => {
+    /* Owner, 23:03: Achievements "feels like too many texts to read", answered
+       as the readout plus one line per item. Every word of the line is split
+       from the sentence the item already had. */
+    renderSections();
+    const ach = document.getElementById('achievements') as HTMLElement;
+    const lines = [...ach.querySelectorAll('.achievement-line')];
+    expect(lines).toHaveLength(achievements.filter((a) => !a.record).length);
+    for (const line of lines) {
+      expect(line.querySelector('.achievement-title')?.textContent).toBeTruthy();
+      expect(line.querySelector('.achievement-year')?.textContent).toBeTruthy();
+      /* A line, not a paragraph: no sentence-ending full stop of its own. */
+      expect(line.textContent).not.toMatch(/\.$/);
+    }
+    /* The long sentences are gone from the list itself. */
+    const listText = ach.querySelector('.achievements')?.textContent ?? '';
+    for (const entry of achievements.filter((a) => !a.record)) {
+      expect(listText).not.toContain(entry.text);
+    }
+  });
+
   /* Owner: "In achievements, highlight oj rating, problem solving, contests."
      The four figures are the facts already in the first achievement's sentence,
      split into fields; the test pins each one to that sentence, so splitting
@@ -112,10 +133,13 @@ describe('CvSections', () => {
     renderSections();
     const readout = document.querySelector('#achievements .readout-figures')!;
     expect(readout.textContent).toContain(achievements[0].text);
+    /* Since 23:03 each of the rest is one line, not its full sentence, so the
+       test checks the line's own title and year rather than the paragraph. */
     const listed = [...document.querySelectorAll('.achievements li')].map((li) => li.textContent ?? '');
     expect(listed).toHaveLength(achievements.length - 1);
     for (const entry of achievements.slice(1)) {
-      expect(listed.some((t) => t.includes(entry.text)), entry.text).toBe(true);
+      expect(entry.title, `${entry.text} has no short title`).toBeTruthy();
+      expect(listed.some((t) => t.includes(entry.title!)), entry.text).toBe(true);
     }
     /* The record sentence appears once on the page, not twice. */
     const page = document.getElementById('achievements')!.textContent ?? '';

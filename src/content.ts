@@ -145,7 +145,18 @@ export const education: EducationEntry[] = [
    second view of the same sentence, never a new claim. */
 export type RecordFigure = { value: string; label: string };
 
-export type Achievement = { text: string; links?: { label: string; href: string }[]; record?: RecordFigure[] };
+/* A short title and year for the one-line list, split from `text` word for
+   word: the owner asked for one line per item (2026-11-15 23:03, "feels like
+   too many texts to read") without new wording, so every title is a phrase the
+   sentence already contains. `text` stays as the source of record. */
+export type Achievement = {
+  text: string;
+  title?: string;
+  year?: string;
+  place?: string;
+  links?: { label: string; href: string }[];
+  record?: RecordFigure[];
+};
 
 export const achievements: Achievement[] = [
   {
@@ -162,8 +173,17 @@ export const achievements: Achievement[] = [
       { label: 'CodeChef profile', href: 'https://www.codechef.com/users/tasin_021' },
     ],
   },
-  { text: '1st Runner-up, IIUC Intra-University Programming Contest (Spring 2023).' },
-  { text: 'Best Mentor Award, IIUCCPS Competitive Programming Bootcamps (Autumn 2023 and Spring 2024).' },
+  {
+    text: '1st Runner-up, IIUC Intra-University Programming Contest (Spring 2023).',
+    title: 'IIUC Intra-University Programming Contest',
+    place: '1st Runner-up',
+    year: 'Spring 2023',
+  },
+  {
+    text: 'Best Mentor Award, IIUCCPS Competitive Programming Bootcamps (Autumn 2023 and Spring 2024).',
+    title: 'Best Mentor Award, IIUCCPS Competitive Programming Bootcamps',
+    year: 'Autumn 2023 and Spring 2024',
+  },
 ];
 
 /* The Contact lede, shown only when there is an address to write to. The

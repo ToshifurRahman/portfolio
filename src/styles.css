@@ -1618,6 +1618,29 @@ textarea {
   max-width: var(--measure);
 }
 
+/* One line per achievement: the title in ink, the place and year beside it in
+   the muted tone. It wraps only at a phone width, where one line cannot hold
+   all three. */
+.achievement-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-4);
+}
+
+.achievement-title {
+  color: var(--ink);
+}
+
+.achievement-place {
+  color: var(--ink-2);
+}
+
+.achievement-year {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
 /* The problem-solving record, in the hero readout's own figure style: the four
    numbers first, then the sentence they came from and the two profiles. */
 .readout-figures {

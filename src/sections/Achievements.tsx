@@ -36,10 +36,18 @@ export function Achievements() {
           </p>
         </div>
       )}
+      {/* One line per achievement: title, place if the title does not say it,
+          and the year. The paragraphs were the owner's complaint (23:03, "feels
+          like too many texts to read"); every word here is split from the
+          sentence that used to be shown, so nothing is reworded. */}
       <ul className="achievements">
         {rest.map((entry) => (
           <li key={entry.text}>
-            <p>{entry.text}</p>
+            <p className="achievement-line">
+              <span className="achievement-title">{entry.title ?? entry.text}</span>
+              {entry.place && <span className="achievement-place">{entry.place}</span>}
+              {entry.year && <span className="achievement-year mono">{entry.year}</span>}
+            </p>
             {entry.links && (
               <p className="achievement-links">
                 {entry.links.map((link) => (
