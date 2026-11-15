@@ -193,34 +193,46 @@ export type PathStop = {
   date: string;
   /* The two current stations: their lamps are lit. */
   current?: boolean;
+  /* Which of the Now panel's two lanes this stop belongs to. An undated role
+     belongs to `parent`, the dated stop it was held alongside. */
+  lane: 'study' | 'work';
+  parent?: string;
+  /* The year the stop sits at on the shared axis. Absent for a role with no
+     date in the source: it takes no position of its own and is listed under its
+     parent. */
+  year?: number;
+  /* A span the source dates at both ends (B.Sc. Aug 2021 to Dec 2025) may be
+     drawn as a bar from `year` to `yearEnd`. */
+  yearEnd?: number;
 };
 
+/*
+ * The Now panel's two lanes, on one shared year axis. Owner, 2026-11-15 23:03:
+ * "In Now, timeline chart not looking good, research to make it look good. drop
+ * latest system & problem solving", and the answer: "the Now timeline becomes
+ * two lanes, Study and Work".
+ *
+ * Years are read off the dates the stops already carry; no new fact is stated.
+ * B.Sc. runs Aug 2021 to Dec 2025, so it is drawn as a bar; the completion is
+ * its end, not a section of its own. The admission to the master's has no date
+ * in the source, so it sits with the M.Engg. that follows it rather than
+ * claiming a year.
+ */
 export const path: PathStop[] = [
-  { label: 'B.Sc. in CSE, IIUC', date: 'Aug 2021' },
-  { label: 'Trainer & Mentor, IIUCCPS', date: 'Aug 2023' },
-  { label: 'Bootcamp Coordinator, IIUCCPS', date: '' },
-  { label: 'Finance Secretary, IIUCCPS', date: '' },
-  { label: 'B.Sc. completed', date: 'Dec 2025' },
-  { label: 'Admitted to M.Engg., CUET', date: '' },
-  { label: 'Web Developer, Taibah Academy', date: 'Aug 2026', current: true },
-  { label: 'M.Engg. in CSE, CUET', date: 'In progress', current: true },
+  { label: 'B.Sc. in CSE, IIUC', date: 'Aug 2021', lane: 'study', year: 2021, yearEnd: 2025 },
+  { label: 'B.Sc. completed', date: 'Dec 2025', lane: 'study', year: 2025 },
+  { label: 'Admitted to M.Engg., CUET', date: '', lane: 'study' },
+  { label: 'M.Engg. in CSE, CUET', date: 'In progress', lane: 'study', current: true },
+  { label: 'Trainer & Mentor, IIUCCPS', date: 'Aug 2023', lane: 'work', year: 2023 },
+  { label: 'Bootcamp Coordinator, IIUCCPS', date: '', lane: 'work', parent: 'Trainer & Mentor, IIUCCPS' },
+  { label: 'Finance Secretary, IIUCCPS', date: '', lane: 'work', parent: 'Trainer & Mentor, IIUCCPS' },
+  { label: 'Web Developer, Taibah Academy', date: 'Aug 2026', lane: 'work', year: 2026, current: true },
 ];
 
-/* The Now panel's second row: two facts already stated in this file, each
-   linking to where it is argued in full. */
-export const nowCells = {
-  system: {
-    title: 'Latest system',
-    name: 'Ticket-Pipeline',
-    detail: 'April to November 2026',
-    to: '/work/ticket-pipeline',
-  },
-  solving: {
-    title: 'Problem solving',
-    facts: ['Codeforces max rating 1290', 'CodeChef max rating 1461'],
-    to: '/#achievements',
-  },
-};
+/* The year the axis ends at: the latest year any stop names. */
+export const pathYears = Array.from(
+  new Set(path.flatMap((stop) => [stop.year, stop.yearEnd]).filter((y): y is number => typeof y === 'number')),
+).sort((a, b) => a - b);
 
 export type Certificate = {
   slug: string;

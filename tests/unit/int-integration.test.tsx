@@ -2,7 +2,7 @@ import { render } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 import { Home } from '../../src/Home';
-import { caseStudies, nowCells, owner, path, proof } from '../../src/content';
+import { caseStudies, owner, path, proof } from '../../src/content';
 import { pageSections, sections } from '../../src/nav';
 
 const renderHome = () =>
@@ -97,55 +97,77 @@ describe('introduction', () => {
 });
 
 /* The Now panel took the home slot where the track animation was (the owner
-   moved that into the case studies). It is a real ordered list of text, not a
+   moved that into the case studies). Since 23:03 it draws two lanes, Study and
+   Work, on one shared year axis. It is still a real ordered list of text, not a
    picture: readable with no CSS and no script. */
 describe('now panel', () => {
-  it('draws the career path as an ordered list, in the owner’s order', () => {
+  it('is an ordered list of real text, not a picture', () => {
     renderHome();
     const panel = document.getElementById('now');
     expect(panel, 'the Now panel is missing').not.toBeNull();
-    const stops = [...panel!.querySelectorAll('.path li')];
-    expect(stops.map((li) => li.querySelector('.path-label')?.textContent)).toEqual(path.map((p) => p.label));
-    expect(stops).toHaveLength(8);
-    /* First and last, to pin the direction: university at the start, the
-       master's in progress at the end. */
-    expect(stops[0].textContent).toContain('B.Sc. in CSE, IIUC');
-    expect(stops[7].textContent).toContain('M.Engg. in CSE, CUET');
-    /* The list is inside the panel, which is an ordered list, not a div soup. */
-    expect(panel!.querySelector('ol.path')).not.toBeNull();
-  });
-
-  it('marks the two current stations with a lit lamp and the others not', () => {
-    renderHome();
-    const stops = [...document.querySelectorAll('#now .path li')];
-    const lit = stops.filter((li) => li.querySelector('.lamp.is-lit') !== null);
-    expect(lit).toHaveLength(path.filter((p) => p.current).length);
-    expect(lit.map((li) => li.querySelector('.path-label')?.textContent)).toEqual([
-      'Web Developer, Taibah Academy',
-      'M.Engg. in CSE, CUET',
-    ]);
+    expect(panel!.querySelectorAll('ol.tl-stops')).toHaveLength(2);
+    /* Eight stops in total, each the stop's own label as text. */
+    const labels = [...panel!.querySelectorAll('.stop-label')].map((el) => el.textContent);
+    expect(labels).toHaveLength(path.filter((p) => !p.parent).length);
+    for (const label of labels) expect(path.some((p) => p.label === label)).toBe(true);
   });
 
   it('shows a date only where the source states one', () => {
     renderHome();
-    const stops = [...document.querySelectorAll('#now .path li')];
-    path.forEach((p, i) => {
-      const date = stops[i].querySelector('.path-date');
+    const stops = [...document.querySelectorAll('#now .stop')];
+    for (const li of stops) {
+      const label = li.querySelector('.stop-label')?.textContent;
+      const p = path.find((entry) => entry.label === label)!;
+      const date = li.querySelector('.stop-date');
       if (p.date) expect(date?.textContent, p.label).toBe(p.date);
       else expect(date, `${p.label} should show no date`).toBeNull();
-    });
+    }
   });
 
-  it('adds the latest system and the problem-solving record, both linked', () => {
+  it('draws two lanes on one shared year axis, and no cells', () => {
+    /* Owner, 23:03: "In Now, timeline chart not looking good ... drop latest
+       system & problem solving", answered by two lanes, Study and Work. */
     renderHome();
-    const cells = [...document.querySelectorAll('#now .now-cell')];
-    expect(cells).toHaveLength(2);
-    expect(cells[0].textContent).toContain('Latest system');
-    expect(cells[0].textContent).toContain('Ticket-Pipeline');
-    expect(cells[0].querySelector('a')?.getAttribute('href')).toBe('/work/ticket-pipeline');
-    expect(cells[1].textContent).toContain('Problem solving');
-    for (const fact of nowCells.solving.facts) expect(cells[1].textContent).toContain(fact);
-    expect(cells[1].querySelector('a')?.getAttribute('href')).toBe('/#achievements');
+    expect(document.querySelectorAll('#now .now-cell')).toHaveLength(0);
+
+    const lanes = [...document.querySelectorAll('#now .tl-lane-title')].map((h) => h.textContent);
+    expect(lanes).toEqual(['Study', 'Work']);
+
+    /* Every stop is present as real text, in its own lane. */
+    for (const lane of ['study', 'work'] as const) {
+      const text = document.querySelector(`#now .tl-lane-${lane}`)?.textContent ?? '';
+      for (const stop of path.filter((p) => p.lane === lane)) {
+        expect(text, `${stop.label} is missing from the ${lane} lane`).toContain(stop.label);
+      }
+    }
+  });
+
+  it('places a dated stop in its year column and leaves an undated one out of the axis', () => {
+    renderHome();
+    const years = [...document.querySelectorAll('#now .years li')].map((li) => li.textContent);
+    expect(years).toEqual(['2021', '2023', '2025', '2026']);
+
+    /* A dated stop claims a column; an undated role claims none and is listed
+       under its parent instead. */
+    const bsc = [...document.querySelectorAll('#now .stop')].find((li) =>
+      li.textContent?.includes('B.Sc. in CSE'),
+    ) as HTMLElement | undefined;
+    expect(bsc?.style.gridColumn).toBe('1 / 4');
+
+    const coordinator = [...document.querySelectorAll('#now .stop-child')].find((el) =>
+      el.textContent?.includes('Bootcamp Coordinator'),
+    );
+    expect(coordinator, 'the undated role is not listed under its parent').toBeTruthy();
+    const asStop = [...document.querySelectorAll('#now .stop')].find(
+      (li) => li.querySelector('.stop-label')?.textContent === 'Bootcamp Coordinator, IIUCCPS',
+    );
+    expect(asStop, 'an undated role must not claim a year of its own').toBeUndefined();
+  });
+
+  it('lights the two current stops', () => {
+    renderHome();
+    const lit = [...document.querySelectorAll('#now .stop.is-current .stop-label')].map((el) => el.textContent);
+    expect(lit).toEqual(['M.Engg. in CSE, CUET', 'Web Developer, Taibah Academy']);
   });
 });
 

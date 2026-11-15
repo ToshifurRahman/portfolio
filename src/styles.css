@@ -763,9 +763,14 @@ textarea {
 
 /* The Now panel ------------------------------------------------------------ */
 
-/* The home slot the animated track used to hold. Static by design: a career
-   path as a track of stations, then two cells. It is text first, so with no CSS
-   it reads as two lists; the track is only the rail behind the lamps. */
+/* The home slot the animated track used to hold. Since 23:03 it draws two lanes,
+   Study and Work, on one shared year axis: the owner found the single row of
+   stations hard to read, and the two cells below it went too.
+ *
+ * The axis is a grid of year columns shared by both lanes, so a stop sits in its
+ * own year and two labels can never collide — a long label wraps inside its
+ * column. Text first: with no CSS this reads as two ordered lists and a list of
+ * years. */
 .now {
   row-gap: var(--space-6);
   padding-block: var(--space-8);
@@ -780,47 +785,94 @@ textarea {
   letter-spacing: var(--tracking-tight);
 }
 
-.now .path {
+.timeline {
   grid-column: 4 / span 9;
-}
-
-/* Horizontally the stations sit on one rail, like the diagrams; the rail is
-   drawn behind the lamps so no node needs its own line. Eight stations share
-   the nine columns, so a long label wraps onto a second line rather than
-   widening its station: `min-width: max-content` here pushed the whole panel
-   359px past the frame at 1280. */
-.path {
-  position: relative;
   display: flex;
-  gap: var(--space-4);
-  padding-top: var(--space-5);
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
-.path::before {
+/* The year ticks: one cell per year, the same track the lanes below use. */
+.years {
+  display: grid;
+  gap: 0 var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: var(--line) solid var(--rule-strong);
+}
+
+.year {
+  color: var(--muted);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-mono);
+}
+
+.year:last-child {
+  text-align: right;
+}
+
+.tl-lane {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-block: var(--space-5) var(--space-6);
+  border-bottom: var(--line) solid var(--rule);
+}
+
+.tl-lane-title {
+  color: var(--muted);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-mono);
+  text-transform: uppercase;
+}
+
+/* Stops are placed into the same year columns as the ticks; the lane's line is
+   drawn behind them. */
+.tl-stops {
+  position: relative;
+  display: grid;
+  gap: var(--space-4) var(--space-3);
+  padding-top: var(--space-2);
+}
+
+.tl-stops::before {
   content: '';
   position: absolute;
-  top: calc(var(--space-5) + 0.3125rem);
+  top: calc(var(--space-2) + 0.3125rem);
   right: 0;
   left: 0;
   height: var(--line);
   background: var(--rule-strong);
 }
 
-.path li {
+.stop {
   position: relative;
   display: flex;
-  flex: 1 1 0;
   flex-direction: column;
   align-items: flex-start;
-  gap: var(--space-3);
+  gap: var(--space-2);
   min-width: 0;
+  padding-top: var(--space-5);
   font-size: var(--text-xs);
   line-height: 1.45;
   hyphens: none;
 }
 
-.path .lamp {
-  position: relative;
+/* A span the source dates at both ends: a lit bar across its columns. */
+.stop-span {
+  position: absolute;
+  top: calc(var(--space-5) / 2 + 0.125rem);
+  left: 0;
+  width: 100%;
+  height: var(--line);
+  background: var(--accent);
+  opacity: 0.45;
+}
+
+.stop .lamp {
+  position: absolute;
+  top: 0;
+  left: 0;
   display: block;
   width: 0.625rem;
   height: 0.625rem;
@@ -829,66 +881,44 @@ textarea {
   background: var(--bg);
 }
 
-.path .lamp.is-lit {
+.stop .lamp.is-lit {
   border-color: var(--accent);
   background: var(--accent);
 }
 
-.path-body {
+.stop-body {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
 }
 
-.path-label {
+.stop-label {
   color: var(--ink);
 }
 
-.is-current .path-label {
+.is-current .stop-label {
   font-weight: var(--weight-medium);
 }
 
-.path-date {
+.stop-date {
   color: var(--muted);
   font-size: var(--text-2xs);
 }
 
-.now-cells {
-  grid-column: 4 / span 9;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--col-gap);
-}
-
-.now-cell {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  padding-top: var(--space-4);
-  border-top: var(--line) solid var(--rule);
-}
-
-.now-cell-title {
-  color: var(--muted);
-  font-size: var(--text-2xs);
-  font-weight: var(--weight-medium);
-  letter-spacing: var(--tracking-mono);
-  text-transform: uppercase;
-}
-
-.now-cell-main {
-  color: var(--ink);
-}
-
-.now-cell-facts {
+/* A role the source gives no date for: it takes no year of its own, so it hangs
+   under the dated role it was held alongside. */
+.stop-children {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
+  margin-top: var(--space-1);
+  padding-left: var(--space-3);
+  border-left: var(--line) solid var(--rule-strong);
 }
 
-.now-cell-detail {
-  color: var(--muted);
-  font-size: var(--text-sm);
+.stop-child {
+  color: var(--ink-2);
+  font-size: var(--text-2xs);
 }
 
 /* The diagram inside a case study's Architecture section: full width of the
@@ -2213,54 +2243,16 @@ textarea {
     border-top: var(--line) solid var(--rule);
   }
 
-  /* The career path turns vertical here, not at the phone breakpoint. Laid out
-     horizontally, the eight stations divide the panel between them, and between
-     769 and ~819px that left each one 49-53px: "Bootcamp Coordinator, IIUCCPS"
-     ran into "Finance Secretary, IIUCCPS" (a -5px gap at 769) and the last label
-     spilled past the rail, so a reader at 800px saw "CoordinatorSecretary". One
-     station per row with the rail down the left is the same track turned 90deg,
-     so the order still reads top to bottom. */
-  .path {
-    flex-direction: column;
-    gap: var(--space-4);
-    padding-top: 0;
-    padding-left: var(--space-5);
-  }
-
-  .path::before {
-    top: 0;
-    right: auto;
-    bottom: 0;
-    left: 0.3125rem;
-    width: var(--line);
-    height: auto;
-  }
-
-  .path li {
-    flex: 0 0 auto;
-    min-width: 0;
-    flex-direction: row;
-    align-items: baseline;
-    gap: var(--space-4);
-  }
-
-  .path .lamp {
-    position: absolute;
-    left: calc(-1 * var(--space-5) + 0.03125rem);
-    top: 0.3125rem;
-  }
-
-  /* The path goes full-width because its stations stack; the two cells below it
-     stay side by side until the phone breakpoint. Stacking them here gave each a
-     913px row for one short line at 1024 — the phone layout stretched, not a
-     layout for the width. */
+  /* Below 64rem the panel's heading takes the full column, and the timeline gets
+     the room that frees. The two lanes stay side by side on the shared axis down
+     to 48rem; the year columns only get narrower. */
   .now-title,
-  .now .path {
+  .timeline {
     grid-column: 1 / -1;
   }
 
-  .now-cells {
-    grid-column: 1 / -1;
+  .now-title {
+    margin-bottom: var(--space-2);
   }
 
 }
@@ -2335,10 +2327,59 @@ textarea {
 }
 
 @media (max-width: 48rem) {
-  /* The phone layout: the two Now cells need the full width each. Above this
-     they sit side by side. */
-  .now-cells {
-    grid-template-columns: minmax(0, 1fr);
+  /* One vertical timeline, not two lanes squeezed into columns: the year axis
+     and both lanes become a single column with the year markers on it. Each
+     stop takes its own row, so a label reads in full and nothing overlaps. */
+  .timeline {
+    gap: var(--space-4);
+  }
+
+  .years {
+    display: none;
+  }
+
+  .tl-lane {
+    gap: var(--space-3);
+  }
+
+  .tl-stops {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding-left: var(--space-5);
+  }
+
+  /* The rail runs down the left, through every stop's lamp. */
+  .tl-stops::before {
+    top: 0.3125rem;
+    right: auto;
+    bottom: 0.3125rem;
+    left: 0.28125rem;
+    width: var(--line);
+    height: auto;
+  }
+
+  .stop {
+    flex-direction: row;
+    align-items: baseline;
+    gap: var(--space-3);
+    padding-top: 0;
+    padding-bottom: var(--space-4);
+  }
+
+  .stop .lamp {
+    position: absolute;
+    top: 0.3125rem;
+    left: calc(var(--space-5) * -1 + 0.03125rem);
+  }
+
+  /* The span bar has no axis to sit on here, so the date carries that job. */
+  .stop-span {
+    display: none;
+  }
+
+  .stop-child {
+    display: block;
   }
 
   .facts {
