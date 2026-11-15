@@ -237,3 +237,45 @@ test.describe('case-study contents', () => {
     expect(gap).toBeGreaterThanOrEqual(0);
   });
 });
+
+test.describe('the wordmark is never broken to fit', () => {
+  /* Between 833 and 906px the bar used to fit by wrapping `.brand` to two lines:
+     "Toshifur" / "Rahman" in the sticky header, with slack sitting unused beside
+     it. A name broken across lines in the header is not a smaller version of the
+     design, so the bar collapses instead. */
+  for (const width of [833, 850, 880, 906, 907, 1024]) {
+    test(`one-line wordmark, no overflow and the toggle inside at ${width} px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto('/');
+
+      const brand = await page.locator('.brand').evaluate((el) => {
+        /* The anchor carries min-height (the tap target), so its box height says
+           nothing about wrapping. The text's own client rects do: a Range over
+           the contents returns one rect per line box the text occupies. */
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        const lines = Array.from(range.getClientRects()).filter((r) => r.width > 1);
+        return { tops: [...new Set(lines.map((r) => Math.round(r.top)))].length };
+      });
+      expect(brand.tops, 'the wordmark wrapped to more than one line').toBe(1);
+
+      const page_ = await page.evaluate(() => ({
+        scroll: document.documentElement.scrollWidth,
+        client: document.documentElement.clientWidth,
+      }));
+      expect(page_.scroll).toBeLessThanOrEqual(page_.client);
+
+      /* The theme toggle is fully inside the viewport, not clipped by the edge. */
+      const toggle = await page.locator('.nav-tools button').first().boundingBox();
+      expect(toggle).not.toBeNull();
+      expect(toggle!.x + toggle!.width).toBeLessThanOrEqual(page_.client + 0.5);
+
+      /* And the CV action is reachable at this width, in the bar or in the menu. */
+      const inBar = await page.locator('.cv-link').isVisible();
+      if (!inBar) {
+        await page.locator('.menu-button').click();
+        await expect(page.locator('.nav-links a', { hasText: /CV|Download/i }).first()).toBeVisible();
+      }
+    });
+  }
+});

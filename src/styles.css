@@ -531,6 +531,11 @@ textarea {
   font-size: var(--text-md);
   font-weight: var(--weight-semibold);
   letter-spacing: var(--tracking-snug);
+  /* The wordmark is a name, not a line of text: it stays on one line and the bar
+     collapses first (see the 57rem block). Without this, between 833 and 906px
+     the bar fit by breaking it into "Toshifur" / "Rahman" while slack sat unused
+     beside it — the owner's name split across two lines in the sticky header. */
+  white-space: nowrap;
 }
 
 .nav-links {
@@ -2138,30 +2143,33 @@ textarea {
     top: 0.3125rem;
   }
 
-  /* With the path vertical its stations need the full column, and the two cells
-     below stack the same way. */
+  /* The path goes full-width because its stations stack; the two cells below it
+     stay side by side until the phone breakpoint. Stacking them here gave each a
+     913px row for one short line at 1024 — the phone layout stretched, not a
+     layout for the width. */
   .now-title,
-  .now .path,
-  .now-cells {
+  .now .path {
     grid-column: 1 / -1;
   }
 
   .now-cells {
-    grid-template-columns: minmax(0, 1fr);
+    grid-column: 1 / -1;
   }
 
 }
 
 /*
- * The bar collapses into the Menu button at 52rem, not at the phone breakpoint.
- * Laid out in full, the row of links plus the CV button and the theme toggle
- * needs about 793px, so between 769 and 809 the bar did not fit: `.nav-tools`
- * ended at 791px in a 769px viewport, the theme toggle was clipped and the page
- * scrolled 22px sideways. Anything narrower than the width the full bar actually
- * needs gets the Menu button instead. The CV action stays reachable either way —
- * in the bar while the bar is full, and in the menu once it collapses.
+ * The bar collapses into the Menu button at 57rem, not at the phone breakpoint.
+ * Laid out in full, the wordmark, the row of links, the CV button and the theme
+ * toggle need about 907px (56.7rem), so it only collapses where the full bar
+ * genuinely fits. Below that it has to give somewhere, and it used to give in the
+ * worst place: with `.brand` free to wrap, a 833-906px bar fit by breaking the
+ * owner's name into "Toshifur" / "Rahman" across two lines of the sticky header
+ * while slack sat unused beside it. The name now stays on one line (see `.brand`
+ * above) and the bar collapses instead, so the CV action stays reachable either
+ * way — in the bar while the bar is full, in the menu once it collapses.
  */
-@media (max-width: 52rem) {
+@media (max-width: 57rem) {
   .navbar {
     flex-wrap: wrap;
     gap: 0 var(--space-2);
@@ -2220,6 +2228,12 @@ textarea {
 }
 
 @media (max-width: 48rem) {
+  /* The phone layout: the two Now cells need the full width each. Above this
+     they sit side by side. */
+  .now-cells {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .facts {
     grid-template-columns: minmax(0, 1fr);
     gap: 0;
