@@ -155,7 +155,9 @@ test.describe('signature motion', () => {
             )})`
           : accentHex,
       );
-      const bg = parse(getComputedStyle(document.body).backgroundColor);
+      /* The page colour lives on `html` since R4a-ds-1: an opaque `body` hid the
+         signature rail, and the canvas is painted from the root. */
+      const bg = parse(getComputedStyle(document.documentElement).backgroundColor);
       /* Worst case in the hero: the statement, which is the faintest large text,
          over a cell at the hover opacity. */
       const statement = document.querySelector('.statement')!;

@@ -52,7 +52,7 @@ describe('the case studies’ Architecture section', () => {
   it('still renders the flowchart that replaced them', () => {
     for (const slug of ['ticket-pipeline', 'rannaghor']) {
       const container = renderAt(`/work/${slug}`);
-      const figure = container.querySelector('#architecture .track-panel');
+      const figure = container.querySelector('#architecture .flow-panel');
       expect(figure, `${slug} has no flowchart`).not.toBeNull();
       expect(figure!.getAttribute('data-diagram')).toBe(slug);
     }

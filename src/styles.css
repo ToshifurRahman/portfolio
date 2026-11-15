@@ -1303,7 +1303,9 @@ textarea {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  min-height: var(--target-sm);
+  /* The full tap target, not `--target-sm`: this is the one control on the chart
+     and on a phone it is pressed with a thumb. */
+  min-height: var(--target);
   padding-inline: var(--space-3);
   border: var(--line) solid var(--rule-strong);
   border-radius: var(--radius-sm);

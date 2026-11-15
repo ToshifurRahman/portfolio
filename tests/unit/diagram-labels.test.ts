@@ -18,8 +18,8 @@ const laneNodes = (slug: string, lane: string) => {
 describe('the security check has one name', () => {
   it('names it the same way in the lane and in the flowchart', () => {
     expect(laneNodes('rannaghor', 'Every API call')).toContain(securityCheckLabel);
-    const station = diagrams['rannaghor'].stations.find((s) => s.id === 'security');
-    expect(station?.name).toBe(securityCheckLabel);
+    const node = diagrams['rannaghor'].nodes.find((s) => s.id === 'security');
+    expect(node?.name).toBe(securityCheckLabel);
   });
 
   it('is stated once, and is the wording the lane already used', () => {
@@ -32,8 +32,8 @@ describe('the security check has one name', () => {
   it('shows the same wording in both places, whatever the constant holds', () => {
     /* Guards the guard: comparing two blanks would pass, so the values compared
        must be non-empty as well as equal. */
-    const station = diagrams['rannaghor'].stations.find((s) => s.id === 'security');
-    expect(station?.name).toBeTruthy();
-    expect(laneNodes('rannaghor', 'Every API call')[0]).toBe(station?.name);
+    const node = diagrams['rannaghor'].nodes.find((s) => s.id === 'security');
+    expect(node?.name).toBeTruthy();
+    expect(laneNodes('rannaghor', 'Every API call')[0]).toBe(node?.name);
   });
 });

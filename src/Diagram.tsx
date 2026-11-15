@@ -465,7 +465,12 @@ function Graph({
         return (
           <g
             key={n.id}
-            className={`flow-node${n.state ? ' is-state' : ''}`}
+            /* The still picture's state comes from the spec, at render time, so the
+               pre-render and reduced motion show a finished run rather than an
+               unlit graph. Once the animation runs it takes these over. */
+            className={`flow-node${n.state ? ' is-state' : ''}${
+              !animated && spec.still.nodes[n.id] === 'done' ? ' is-done' : ''
+            }${!animated && spec.still.nodes[n.id] === 'fail' ? ' is-fail' : ''}`}
             data-node={n.id}
             data-vertical={vertical ? 'true' : undefined}
           >
