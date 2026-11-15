@@ -1,203 +1,198 @@
 import { securityCheckLabel } from './content';
-import type { DiagramSpec, Step } from './Diagram';
+import type { DiagramSpec, Edge, Node, Step } from './Diagram';
 
 /*
- * The two case studies' architecture diagrams, as data.
+ * The two case studies' flowcharts, as data.
  *
  * The engine (src/Diagram.tsx) draws them; nothing here states a new fact. The
- * station names, the retry and replay behaviour and the refusal paths are all
- * from src/content.ts: Ticket-Pipeline's four ticket states, its retry-up-to-3
- * and its replay-by-staff siding, and RannaGhor's request lane with its separate
- * vendor and admin role checks and its stock transaction.
+ * parts, the states a ticket can be in, the retry-up-to-3, the replay by staff,
+ * the gateway's switch to a backup model and RannaGhor's request lane with its
+ * stack transaction are all from src/content.ts.
+ *
+ * Layout is data too, but as a *grid position* rather than a pixel: a node says
+ * which row and column it sits in, for the desktop layout and for the vertical
+ * one, and the engine turns that into geometry. Hand-placed coordinates were the
+ * first attempt and they collided — a box's label spilled past its own border and
+ * edges ran through boxes — because every position also had to agree with every
+ * label's width. A grid cannot disagree with itself.
  */
 
-const Y = 120;
-const X = { queued: 180, triaging: 450, drafting: 740, completed: 1240, attention: 1116 } as const;
+type Pos = { row: number; col: number };
 
-const TP_SEGMENTS = {
-  enter: `M-80 ${Y} H180`,
-  qt: `M180 ${Y} H450`,
-  td: `M450 ${Y} H740`,
-  dl: `M740 ${Y} H800`,
-  loop: `M800,${Y} C832,${Y} 840,104 840,88 V72 C840,54 828,44 810,44 H670 C652,44 640,54 640,72 V88 C640,104 648,${Y} 680,${Y} H740`,
-  dj: `M800 ${Y} H880`,
-  jc: `M880 ${Y} H1240`,
-  siding: `M880,${Y} C912,${Y} 922,140 930,160 C938,180 952,192 980,192 H1130`,
-  sidingBack: `M1130,192 H980 C952,192 938,180 930,160 C922,140 912,${Y} 880,${Y}`,
-  jdBack: `M880 ${Y} H740`,
-};
+const n = (id: string, name: string, detail: string | undefined, at: Pos, vat: Pos, extra: Partial<Node> = {}): Node => ({
+  id,
+  name,
+  detail,
+  at,
+  vat,
+  ...extra,
+});
 
-const attempt = (n: number): Step[] => [
-  { seg: 'dl' },
-  { seg: 'loop', status: `Retry ${n} of 3`, tone: 'run', lamps: { drafting: 'off' } },
+/* ---------------------------------------------------------------- Ticket-Pipeline
+ *
+ * Desktop reads left to right in three bands: the request and work flow on row 0,
+ * the ticket's own states on the right of it at the same height (a state is a
+ * different kind of thing, so it gets its own rail below), and the failure path on
+ * row 1.
+ *
+ * The vertical layout is the same graph read top to bottom, in one column, which
+ * is what a phone can hold.
+ */
+
+const TP_NODES: Node[] = [
+  n('react', 'React app', 'The ticket page', { row: 0, col: 0 }, { row: 0, col: 0 }),
+  n('api', 'Hono API', 'Stores the ticket', { row: 0, col: 1 }, { row: 1, col: 0 }),
+  n('queue', 'SQS queue', undefined, { row: 0, col: 2 }, { row: 2, col: 0 }),
+  n('worker', 'Worker', 'Triage, then draft', { row: 0, col: 3 }, { row: 3, col: 0 }),
+  n('gateway', 'LLM gateway', 'Portkey', { row: 0, col: 4 }, { row: 4, col: 0 }),
+  n('primary', 'Primary model', 'Gemini', { row: 0, col: 5 }, { row: 5, col: 0 }),
+  /* The branch: it hangs under the gateway it leaves from. */
+  n('backup', 'Backup model', 'Groq, after a timeout', { row: 1, col: 5 }, { row: 6, col: 0, }, { span: 2 }),
+
+  /* The ticket's states, on their own rail under the work flow. */
+  n('queued', 'Queued', undefined, { row: 2, col: 0 }, { row: 7, col: 0 }, { state: true }),
+  n('triaging', 'Triaging', undefined, { row: 2, col: 1 }, { row: 8, col: 0 }, { state: true }),
+  n('drafting', 'Drafting', undefined, { row: 2, col: 2 }, { row: 9, col: 0 }, { state: true }),
+  n('completed', 'Completed', undefined, { row: 2, col: 3 }, { row: 10, col: 0 }, { state: true }),
+
+  /* The failure path, on its own band so it never crosses the happy path. */
+  n('attention', 'Needs attention', 'Ops alerted', { row: 3, col: 3 }, { row: 11, col: 0 }, { span: 2 }),
+  n('replay', 'Replay by staff', 'From the failed stage', { row: 3, col: 5 }, { row: 12, col: 0 }, { span: 2 }),
 ];
 
-const startRun: Step[] = [
-  { seg: 'enter', status: 'New ticket submitted', tone: 'run' },
-  { dur: 700, status: 'Queued in SQS', lamps: { queued: 'lit' } },
-  { seg: 'qt', lamps: { queued: 'done' } },
-  { dur: 900, status: 'Triaging: category, priority, sentiment', lamps: { triaging: 'lit' } },
-  { seg: 'td', lamps: { triaging: 'done' } },
-  { dur: 800, status: 'Drafting the reply', lamps: { drafting: 'lit' } },
-  { dur: 900, status: 'Draft failed: invalid response', tone: 'fail', lamps: { drafting: 'fail' } },
+const TP_EDGES: Edge[] = [
+  { id: 'submit', from: 'react', to: 'api', label: 'submit' },
+  { id: 'enqueue', from: 'api', to: 'queue', label: 'enqueue' },
+  { id: 'consume', from: 'queue', to: 'worker', label: 'pick up' },
+  { id: 'call', from: 'worker', to: 'gateway', label: 'one call per stage' },
+  { id: 'toPrimary', from: 'gateway', to: 'primary' },
+  { id: 'toBackup', from: 'gateway', to: 'backup', branch: true, label: 'fails or times out' },
+  { id: 'retry', from: 'primary', to: 'attention', branch: true, label: 'fails 3 times' },
+  { id: 'escalate', from: 'attention', to: 'replay', label: 'staff' },
+  { id: 'replayToQueue', from: 'replay', to: 'queue', branch: true, label: 'to the failed stage' },
+  { id: 'q2t', from: 'queued', to: 'triaging' },
+  { id: 't2d', from: 'triaging', to: 'drafting' },
+  { id: 'd2c', from: 'drafting', to: 'completed' },
 ];
 
-const finish: Step[] = [
-  { seg: 'dl', lamps: { drafting: 'done' } },
-  { seg: 'dj' },
-  { seg: 'jc' },
-  { dur: 2400, status: 'Completed: the customer sees it live', tone: 'done', lamps: { completed: 'done' } },
+const tpRuns: Step[][] = [
+  /* One: a ticket all the way to Completed. */
+  [
+    { edge: 'submit', status: 'New ticket submitted', nodes: { react: 'lit' } },
+    { edge: 'enqueue', status: 'Stored as queued, a message on SQS', nodes: { react: 'done', api: 'done', queue: 'lit', queued: 'lit' } },
+    { edge: 'consume', status: 'The worker picks it up', nodes: { queue: 'done' } },
+    { edge: 'call', status: 'Triaging: category, priority, sentiment', nodes: { worker: 'done', triaging: 'lit' } },
+    { edge: 'toPrimary', status: 'Drafting the reply', nodes: { gateway: 'done', primary: 'done', triaging: 'done', drafting: 'lit' } },
+    { dur: 1500, status: 'Completed: the customer sees it live', tone: 'done', nodes: { drafting: 'done', completed: 'done' } },
+  ],
+  /* Two: the primary fails or times out and the gateway switches. */
+  [
+    { edge: 'submit', status: 'New ticket submitted', nodes: { react: 'lit' } },
+    { edge: 'enqueue', status: 'Stored as queued, a message on SQS', nodes: { react: 'done', api: 'done', queue: 'done', queued: 'done', triaging: 'lit' } },
+    { edge: 'consume', status: 'The worker picks it up', nodes: { queue: 'done' } },
+    { edge: 'call', status: 'Triaging with the primary model', nodes: { worker: 'done' } },
+    { edge: 'toPrimary', status: 'The primary model times out', tone: 'fail', failEdge: true, nodes: { primary: 'fail' } },
+    { edge: 'toBackup', status: 'The gateway switches to the backup model', nodes: { primary: 'off', backup: 'lit', drafting: 'lit' } },
+    { dur: 1500, status: 'Completed on the backup model', tone: 'done', nodes: { backup: 'done', drafting: 'done', completed: 'done' } },
+  ],
+  /* Three: a stage fails three times, the ticket needs attention, staff replay it
+     from the stage that failed. */
+  [
+    { edge: 'submit', status: 'New ticket submitted', nodes: { react: 'lit' } },
+    { edge: 'enqueue', status: 'Stored as queued', nodes: { react: 'done', api: 'done', queue: 'done', queued: 'done', triaging: 'lit' } },
+    { edge: 'consume', status: 'The worker picks it up', nodes: { queue: 'done' } },
+    { edge: 'call', status: 'Drafting the reply', nodes: { worker: 'done', triaging: 'done', drafting: 'lit' } },
+    { edge: 'toPrimary', status: 'Retry 1 of 3', tone: 'fail', failEdge: true, nodes: { primary: 'fail' } },
+    { dur: 700, status: 'Retry 2 of 3', tone: 'fail', nodes: { primary: 'fail' } },
+    { dur: 700, status: 'Retry 3 of 3', tone: 'fail', nodes: { primary: 'fail' } },
+    { edge: 'retry', status: 'The retries are used up', tone: 'fail', nodes: { attention: 'fail', drafting: 'off' } },
+    { dur: 1300, status: 'Needs attention: ops alerted', tone: 'fail' },
+    { edge: 'escalate', status: 'Staff replay the ticket', tone: 'run', nodes: { attention: 'lit' } },
+    { edge: 'replayToQueue', status: 'Back to the queue at the stage that failed', nodes: { attention: 'off', queue: 'lit' } },
+    { dur: 1300, status: 'Drafting: replayed from the failed stage', tone: 'done', nodes: { queue: 'done', drafting: 'done', completed: 'done' } },
+  ],
 ];
 
-const failAgain = (n: number): Step[] => [
-  ...attempt(n),
-  { dur: 500, status: `Drafting: retry ${n} of 3`, tone: 'run', lamps: { drafting: 'lit' } },
-  { dur: 600, status: `Retry ${n} failed`, tone: 'fail', lamps: { drafting: 'fail' } },
-];
-
-/* Run one fails once and recovers on the first retry; run two uses every retry,
- * waits on the siding and is replayed by staff from the stage that failed. */
 const ticketPipeline: DiagramSpec = {
   id: 'ticket-pipeline',
   title: 'Ticket-Pipeline',
   href: '/work/ticket-pipeline',
   note: 'A demo ticket through the system’s real states',
-  viewBox: { w: 1600, h: 240 },
-  centre: 680,
-  showAll: 1380,
-  /* The still picture's framing, in track units: each band puts that coordinate
-   * at the panel's left edge. Computed from the measured label extents so no
-   * label is ever cut at either edge and the station the picture is about stays
-   * whole (COMPLETED with its sublabel).
-   *
-   * The band thresholds live in styles.css, which is the single source for which
-   * band applies at which panel width: the bands are ordered rules whose cascade
-   * decides the winner, so writing the thresholds here too gave a second copy
-   * that could drift with nothing to catch it (R2: `upTo` was read by nothing).
-   * This array is the offsets only, in the same order as the rules in
-   * styles.css. The panel width, not the viewport, is what matters: the diagram
-   * is nine columns wide inside a case study. */
-  framing: [
-    { left: 1130 },
-    { left: 870 },
-    { left: 630 },
-    { left: 310 },
-    { left: 130 },
-    { left: 20 },
-  ],
-  y: Y,
-  segments: TP_SEGMENTS,
-  rails: [`M-1400 ${Y} H3000`, TP_SEGMENTS.loop, TP_SEGMENTS.siding],
-  buffers: ['M1130 180 V204'],
-  runs: [
-    [...startRun, ...attempt(1), { dur: 900, status: 'Drafting: retry 1 of 3', tone: 'run', lamps: { drafting: 'lit' } }, ...finish],
-    [
-      ...startRun,
-      ...failAgain(1),
-      ...failAgain(2),
-      ...failAgain(3),
-      { seg: 'dl', status: 'Retries used up', tone: 'fail' },
-      { seg: 'dj' },
-      { seg: 'siding', failSeg: true },
-      { dur: 2000, status: 'Needs attention: ops alerted', tone: 'fail', lamps: { attention: 'fail', drafting: 'off' } },
-      { dur: 900, status: 'Replay by staff', tone: 'run', lamps: { attention: 'lit' } },
-      { seg: 'sidingBack', lamps: { attention: 'off' } },
-      { seg: 'jdBack' },
-      { dur: 900, status: 'Drafting: replayed from the failed stage', tone: 'run', lamps: { drafting: 'lit' } },
-      ...finish,
-    ],
-  ],
+  /* Columns are counted from the nodes themselves, so the viewBox is derived. */
+  rows: 4,
+  cols: 6,
+  nodes: TP_NODES,
+  edges: TP_EDGES,
+  runs: tpRuns,
   still: {
-    lit: ['enter', 'qt', 'td', 'dl', 'dj', 'jc'],
-    lamps: { queued: 'done', triaging: 'done', drafting: 'done', completed: 'done', attention: 'off' },
+    edges: ['submit', 'enqueue', 'consume', 'call', 'toPrimary', 'q2t', 't2d', 'd2c'],
+    nodes: {
+      react: 'done', api: 'done', queue: 'done', worker: 'done', gateway: 'done', primary: 'done',
+      queued: 'done', triaging: 'done', drafting: 'done', completed: 'done',
+    },
   },
-  stations: [
-    { id: 'queued', name: 'Queued', detail: 'SQS queue', x: X.queued },
-    { id: 'triaging', name: 'Triaging', detail: 'Category, priority, sentiment', x: X.triaging },
-    { id: 'drafting', name: 'Drafting', detail: 'Reply, note, next steps', x: X.drafting },
-    { id: 'completed', name: 'Completed', detail: 'Live on the ticket page', x: X.completed },
-  ],
-  extraLamps: [{ id: 'attention', x: X.attention, y: 192 }],
-  asides: [
-    { x: 30, y: 158, text: 'API' },
-    { x: 740, y: 30, text: 'RETRY, UP TO 3', anchor: 'middle' },
-    { x: 972, y: 180, text: 'REPLAY BY STAFF' },
-    { x: 1130, y: 224, text: 'NEEDS ATTENTION, OPS ALERTED', anchor: 'end' },
-  ],
-  token: { x: X.completed, y: Y },
   caption:
-    'Diagram of Ticket-Pipeline’s states. A new ticket is queued in SQS, then a worker triages it by category, priority and sentiment, then drafts a reply, an internal note and next steps, and the ticket is completed and shown live on its page. A stage that fails is retried up to three times. After that the ticket waits on the needs-attention siding, ops is alerted, and staff can replay it from the stage that failed.',
+    'Flowchart of Ticket-Pipeline. A React app submits a ticket to the Hono API, which stores it as queued and puts a message on SQS. A worker picks it up and makes one schema-checked call per stage through the LLM gateway: triage, then draft. The gateway uses Gemini and switches to Groq, the backup model, when the primary fails or times out. A stage that fails is retried up to three times; after that the ticket needs attention, ops is alerted, and staff can replay it from the stage that failed. The ticket moves queued, triaging, drafting, completed, and each step is pushed live to the customer’s page and the ops feed.',
 };
 
-/* RannaGhor. The request lane is the one src/content.ts draws: security and
- * CSRF, a rate limit, the session, a role check, then the route handler. Three
- * scripted runs use only what the case study states — an order committing its
- * stock transaction, a customer refused at the vendor role check, and two
- * orders for the last item where the second is refused at that same check.
+/* ---------------------------------------------------------------- RannaGhor
  *
- * The two refusal points sit on a branch below the main line: the vendor
- * refusal rejoins the lane at the role-check station, and the stock refusal
- * comes off the transaction. Both are red only while the token is on them.
+ * One row of checks, the transaction at the end, and the two refusals hanging
+ * below the point they are refused at.
  */
 
-const RY = 120;
-const RX = {
-  security: 180,
-  rate: 420,
-  session: 660,
-  role: 900,
-  handler: 1140,
-  postgres: 1400,
-} as const;
-const REFUSE_Y = 200;
-
-const RG_SEGMENTS = {
-  enter: `M-80 ${RY} H180`,
-  sec: `M180 ${RY} H420`,
-  rate: `M420 ${RY} H660`,
-  sess: `M660 ${RY} H900`,
-  role: `M900 ${RY} H1140`,
-  handler: `M1140 ${RY} H1400`,
-  commit: `M1400 ${RY} H1560`,
-  /* A customer calling a vendor route: stopped at the role check, refused, and
-     the refusal marked below the lane. */
-  refuse: `M900,${RY} C940,${RY} 956,${REFUSE_Y - 20} 960,${REFUSE_Y} H1080`,
-  /* Two orders for the last item: the second is refused at the stock check,
-     which is the transaction at the end of the lane. */
-  stock: `M1400,${RY} C1440,${RY} 1456,${REFUSE_Y - 20} 1460,${REFUSE_Y} H1560`,
-} as const;
-
-const rgEnter: Step[] = [
-  { seg: 'enter', status: 'A request arrives', tone: 'run' },
-  { seg: 'sec', status: 'Security and CSRF checks pass', tone: 'run', lamps: { security: 'lit' } },
-  { seg: 'rate', status: 'Within the rate limit', lamps: { security: 'done', rate: 'lit' } },
-  { seg: 'sess', status: 'Session read', lamps: { rate: 'done', session: 'lit' } },
+const RG_NODES: Node[] = [
+  n('security', securityCheckLabel, 'Every API call', { row: 0, col: 0 }, { row: 0, col: 0 }),
+  n('rate', 'Rate limit', 'Per account', { row: 0, col: 1 }, { row: 1, col: 0 }),
+  n('session', 'Session', 'Better Auth', { row: 0, col: 2 }, { row: 2, col: 0 }),
+  n('role', 'Role check', 'Vendor, admin, customer', { row: 0, col: 3 }, { row: 3, col: 0 }),
+  n('handler', 'Route handler', '21 route modules', { row: 0, col: 4 }, { row: 4, col: 0 }),
+  n('postgres', 'PostgreSQL', 'Drizzle', { row: 0, col: 5 }, { row: 5, col: 0 }),
+  n('tx', 'One transaction', 'Lock, check, reduce', { row: 0, col: 6 }, { row: 6, col: 0 }),
+  n('refuseRole', '403: refused', 'At the role check', { row: 1, col: 3 }, { row: 7, col: 0 }, { span: 2 }),
+  n('refuseStock', 'Stock refused', 'The second order', { row: 1, col: 5 }, { row: 8, col: 0 }, { span: 2 }),
 ];
 
-const RG_RUNS: Step[][] = [
+const RG_EDGES: Edge[] = [
+  { id: 'sec', from: 'security', to: 'rate', label: 'pass' },
+  { id: 'lim', from: 'rate', to: 'session' },
+  { id: 'sess', from: 'session', to: 'role' },
+  { id: 'authorise', from: 'role', to: 'handler', label: 'allowed' },
+  { id: 'query', from: 'handler', to: 'postgres' },
+  { id: 'commit', from: 'postgres', to: 'tx', label: 'an order' },
+  { id: 'refuse', from: 'role', to: 'refuseRole', branch: true, label: 'vendor route' },
+  { id: 'stockOut', from: 'tx', to: 'refuseStock', branch: true, label: 'stock gone' },
+];
+
+const rgEnter: Step[] = [
+  { edge: 'sec', status: 'A request arrives', nodes: { security: 'lit' } },
+  { edge: 'lim', status: 'Security and CSRF checks pass', nodes: { security: 'done', rate: 'lit' } },
+  { edge: 'sess', status: 'Within the rate limit, session read', nodes: { rate: 'done', session: 'lit' } },
+];
+
+const rgRuns: Step[][] = [
   [
     ...rgEnter,
-    { seg: 'role', status: 'Role check: customer', lamps: { session: 'done', role: 'lit' } },
-    { seg: 'handler', status: 'An order is placed', lamps: { role: 'done', handler: 'lit' } },
-    { seg: 'commit', status: 'Stock checked and reduced in one transaction', lamps: { handler: 'done', postgres: 'done' } },
-    { dur: 2200, status: 'Order committed', tone: 'done', lamps: { postgres: 'done' } },
+    { edge: 'authorise', status: 'Role check: customer', nodes: { session: 'done', role: 'lit' } },
+    { edge: 'query', status: 'An order is placed', nodes: { role: 'done', handler: 'lit' } },
+    { edge: 'commit', status: 'Stock locked, checked and reduced in one transaction', nodes: { handler: 'done', postgres: 'lit', tx: 'lit' } },
+    { dur: 1700, status: 'Order committed', tone: 'done', nodes: { postgres: 'done', tx: 'done' } },
   ],
   [
     ...rgEnter,
-    { seg: 'role', status: 'Role check: a customer calls a vendor route', lamps: { session: 'done', role: 'lit' } },
-    { dur: 700, status: 'Role check fails', tone: 'fail', lamps: { role: 'fail' } },
-    { seg: 'refuse', status: 'Refused by the vendor route’s own middleware', tone: 'fail' },
-    { dur: 2000, status: '403: request refused at the role check', tone: 'fail', lamps: { role: 'fail' } },
+    { edge: 'authorise', status: 'Role check: a customer calls a vendor route', nodes: { session: 'done', role: 'done' } },
+    { dur: 400, status: 'Role check fails', tone: 'fail', nodes: { role: 'fail' } },
+    { edge: 'refuse', status: 'Refused by the vendor route’s own middleware', tone: 'fail', failEdge: true, nodes: { refuseRole: 'fail' } },
+    { dur: 1700, status: '403: request refused at the role check', tone: 'fail' },
   ],
   [
     ...rgEnter,
-    { seg: 'role', status: 'Role check: customer', lamps: { session: 'done', role: 'lit' } },
-    { seg: 'handler', status: 'An order is placed', lamps: { role: 'done', handler: 'lit' } },
-    { dur: 600, status: 'One order commits', tone: 'run', lamps: { handler: 'done' } },
-    { seg: 'commit', status: 'The next order locks the product rows', lamps: { postgres: 'lit' } },
-    { dur: 700, status: 'Stock is gone: the transaction is refused', tone: 'fail', lamps: { postgres: 'fail' } },
-    { seg: 'stock', status: 'The second order is refused at the stock check', tone: 'fail' },
-    { dur: 2000, status: 'Only one order for the last item succeeds', tone: 'fail' },
+    { edge: 'authorise', status: 'Role check: customer', nodes: { session: 'done', role: 'lit' } },
+    { edge: 'query', status: 'An order is placed', nodes: { role: 'done', handler: 'lit' } },
+    { edge: 'commit', status: 'The next order locks the product rows', nodes: { handler: 'done', postgres: 'lit', tx: 'lit' } },
+    { dur: 700, status: 'Stock is gone: the transaction is refused', tone: 'fail', nodes: { tx: 'fail' } },
+    { edge: 'stockOut', status: 'The second order is refused at the stock check', tone: 'fail', failEdge: true, nodes: { postgres: 'fail', refuseStock: 'fail' } },
+    { dur: 1700, status: 'Only one order for the last item succeeds', tone: 'fail' },
   ],
 ];
 
@@ -206,45 +201,19 @@ const rannaghor: DiagramSpec = {
   title: 'RannaGhor',
   href: '/work/rannaghor',
   note: 'A customer’s request through every check it meets',
-  viewBox: { w: 1600, h: 240 },
-  centre: 640,
-  showAll: 1500,
-  /* The still picture's framing, in track units. Computed from the measured
-   * extents like Ticket-Pipeline's, and the same way: offsets only, with the band
-   * thresholds in styles.css as the single source. ROLE CHECK and POSTGRESQL stay
-   * whole, and the refusal labels on the branch are dropped from the narrowest
-   * pictures (they are said in words by the status line and the caption). */
-  framing: [
-    { left: 1287 },
-    { left: 1015 },
-    { left: 785 },
-    { left: 771 },
-    { left: 305 },
-    { left: 105 },
-  ],
-  y: RY,
-  segments: RG_SEGMENTS,
-  rails: [`M-1400 ${RY} H3000`],
-  runs: RG_RUNS,
+  rows: 2,
+  cols: 7,
+  nodes: RG_NODES,
+  edges: RG_EDGES,
+  runs: rgRuns,
   still: {
-    lit: ['enter', 'sec', 'rate', 'sess', 'role', 'handler', 'commit'],
-    lamps: { security: 'done', rate: 'done', session: 'done', role: 'done', handler: 'done', postgres: 'done' },
+    edges: ['sec', 'lim', 'sess', 'authorise', 'query', 'commit'],
+    nodes: {
+      security: 'done', rate: 'done', session: 'done', role: 'done', handler: 'done', postgres: 'done', tx: 'done',
+    },
   },
-  stations: [
-    { id: 'security', name: securityCheckLabel, detail: 'Every API call', x: RX.security },
-    { id: 'rate', name: 'Rate limit', detail: 'Per account and address', x: RX.rate },
-    { id: 'session', name: 'Session', detail: 'Better Auth', x: RX.session },
-    { id: 'role', name: 'Role check', detail: 'Vendor, admin, customer', x: RX.role },
-    { id: 'handler', name: 'Route handler', detail: '21 route modules', x: RX.handler },
-    { id: 'postgres', name: 'PostgreSQL', detail: 'Drizzle, one transaction', x: RX.postgres },
-  ],
-  asides: [
-    { x: 1080, y: 224, text: 'REFUSED', anchor: 'end', branch: true },
-    { x: 1560, y: 224, text: 'STOCK REFUSED', anchor: 'end', branch: true },
-  ],
-  token: { x: RX.postgres, y: RY },
   caption:
-    'Diagram of how a RannaGhor request moves. Every API call passes a security and CSRF check, a rate limit, the session and a role check before it reaches a route handler and the database. A customer calling a vendor route is refused at the role check by middleware that guards vendor and admin routes separately. When two orders reach the last item, the first commits its stock transaction and the second is refused at the stock check.',
+    'Flowchart of how a RannaGhor request moves. Every API call passes a security and CSRF check, a rate limit, the session and a role check before it reaches a route handler and PostgreSQL. A customer calling a vendor route is refused at the role check by middleware that guards vendor and admin routes separately. An order locks the product rows, checks stock and reduces it in one database transaction; when two orders reach the last item, the first commits and the second is refused at the stock check.',
 };
 
 export const diagrams: Record<string, DiagramSpec> = { 'ticket-pipeline': ticketPipeline, rannaghor };

@@ -1,102 +1,196 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 /*
- * One animated architecture diagram, driven by a spec.
+ * One animated flowchart, driven by a spec.
  *
- * The visual language is the signal box: a track with stations and lamps, one
- * amber token that is the request being traced, red only for a refusal, and a
+ * The visual language is the signal box: boxes joined by directed edges, one
+ * amber token travelling the edges, red only for a refusal or a failure, and a
  * status line that says in words what the token is doing. The same engine draws
- * both case studies' diagrams; a spec cannot invent behaviour, only geometry,
- * stations and scripted runs.
+ * both case studies' charts. A spec supplies nodes, edges and scripted runs; it
+ * cannot invent behaviour.
  *
- * The markup is static and complete — it is what the pre-render and reduced
- * motion show — and the animation writes attributes straight onto the SVG
- * through refs, so React never re-renders per frame and hydration never
- * disagrees. Nothing here pauses on scroll or on a hidden tab by accident: an
- * IntersectionObserver and a `document.hidden` check stop the clock, and the
- * pause button stops it on request.
+ * Geometry is computed from a grid position, not hand-placed. Every node names a
+ * row and a column for the desktop layout and for the vertical one, and the engine
+ * turns that into boxes and edges. A node cannot then overlap its neighbour or
+ * spill its label past its own border, which is what happened when positions were
+ * pixels: every position also had to agree with every label's width.
+ *
+ * Two layouts, both in the markup: the desktop graph and a vertical one, with a
+ * container query on the panel's own width choosing between them. So the
+ * pre-render and reduced motion get the right one at any width, with no
+ * JavaScript — neither can measure anything.
+ *
+ * The animation writes attributes straight onto the SVG through refs, so React
+ * never re-renders per frame and hydration never disagrees.
  */
 
 export type LampState = 'off' | 'lit' | 'done' | 'fail';
 export type Tone = 'run' | 'fail' | 'done';
 
-/* One step of a scripted run: a segment to travel, or a dwell with a status. */
+/* One step of a scripted run: travel an edge, or dwell with a status. */
 export type Step = {
-  seg?: string;
+  edge?: string;
   dur?: number;
   status?: string;
   tone?: Tone;
-  lamps?: Record<string, LampState>;
-  failSeg?: boolean;
+  nodes?: Record<string, LampState>;
+  failEdge?: boolean;
 };
 
-export type Station = { id: string; name: string; detail: string; x: number };
+type Pos = { row: number; col: number };
 
-/* A lamp drawn off the main line, such as the refusal siding. */
-export type ExtraLamp = { id: string; x: number; y: number };
+/* A box on the chart: where it sits in each layout, and what it says. */
+export type Node = {
+  id: string;
+  name: string;
+  detail?: string;
+  at: Pos;
+  vat: Pos;
+  /* A state box reads as a state, not a service: a dashed pill. */
+  state?: boolean;
+  /* How many columns the box spans. */
+  span?: number;
+};
 
-/* A `branch` aside names a refusal point. It is the one label that can be
-   dropped from a very narrow still picture: it sits beside the last stations
-   and would otherwise force a station off-screen. The refusal is still said in
-   words by the status line and the caption. */
-export type Aside = {
-  x: number;
-  y: number;
-  text: string;
-  anchor?: 'start' | 'middle' | 'end';
+/* A directed edge. `from`/`to` name the boxes, so a run is described in nodes
+   rather than in geometry, and the path is derived from where they are. */
+export type Edge = {
+  id: string;
+  from: string;
+  to: string;
+  label?: string;
+  /* A branch is dashed: taken only when something fails or is refused. */
   branch?: boolean;
 };
 
 export type DiagramSpec = {
-  /* Used for the still picture's framing: styles.css keys its per-width bands
-     on this, because each diagram's labels sit at different coordinates. */
   id: string;
   title: string;
   href: string;
   note: string;
-  /* The viewed area; the drawing is in these units, so 1 unit is 1px only when
-     the panel is the same height as the viewBox (see the still-height rule). */
-  viewBox: { w: number; h: number };
-  /* Where the camera centres when the panel is wide enough for every station. */
-  centre: number;
-  showAll: number;
-  /* The still picture's framing: `left` is the track coordinate put at the
-     panel's left edge. The band thresholds themselves live in styles.css, which
-     is the single source: see the note in src/diagrams.ts. */
-  framing: { left: number }[];
-  y: number;
-  /* Every segment of track, by name. The run steps travel these. */
-  segments: Record<string, string>;
-  /* Rails that are always drawn, under the lit route. */
-  rails: string[];
-  buffers?: string[];
+  rows: number;
+  cols: number;
+  nodes: Node[];
+  edges: Edge[];
   runs: Step[][];
-  still: { lit: string[]; lamps: Record<string, LampState> };
-  stations: Station[];
-  extraLamps?: ExtraLamp[];
-  asides?: Aside[];
-  token: { x: number; y: number };
+  still: { edges: string[]; nodes: Record<string, LampState> };
   caption: string;
 };
 
-const SPEED = 0.3; // px per ms
+const SPEED = 0.34;
+
+/* Box metrics in viewBox units. A column is a box plus the gap its arrow and its
+   label need, so nothing is drawn on top of anything else. */
+const BOX = { w: 126, h: 46, gapX: 78, gapY: 68, pad: 22 };
+const VBOX = { w: 250, h: 44, gapY: 30, pad: 16 };
+const FONT = 12;
+const DETAIL = 10;
 
 const reduceMotion = () =>
   typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-/* The still picture's framing, handed to CSS as custom properties. The values
-   are diagram geometry in track units and live in the spec; styles.css picks a
-   band with a container query on the panel's own width, so the picture is framed
-   correctly in the pre-render and with no JavaScript at all — neither of which
-   can measure a panel. */
-function framingVars(spec: DiagramSpec): CSSProperties {
-  const vars: Record<string, string> = {};
-  spec.framing.forEach((band, i) => {
-    vars[`--frame-${i}`] = `${band.left}px`;
+type Placed = Node & { x: number; y: number; w: number; h: number };
+
+/* Grid to geometry. */
+function layout(spec: DiagramSpec, vertical: boolean): { nodes: Placed[]; w: number; h: number } {
+  if (vertical) {
+    const rows = Math.max(...spec.nodes.map((n) => n.vat.row)) + 1;
+    const nodes = spec.nodes.map((n) => ({
+      ...n,
+      x: VBOX.pad,
+      y: VBOX.pad + n.vat.row * (VBOX.h + VBOX.gapY),
+      w: VBOX.w,
+      h: VBOX.h,
+    }));
+    return { nodes, w: VBOX.pad * 2 + VBOX.w, h: VBOX.pad * 2 + rows * VBOX.h + (rows - 1) * VBOX.gapY };
+  }
+
+  const spanOf = (n: Node) => n.span ?? 1;
+  const colW = (n: Node) => BOX.w * spanOf(n) + BOX.gapX * (spanOf(n) - 1);
+  /* A column is as wide as the widest box that starts in it, so a two-column box
+     pushes the pitch out rather than overflowing its neighbour. */
+  const colWidths: number[] = Array.from({ length: spec.cols }, (_, c) => {
+    const widest = Math.max(0, ...spec.nodes.filter((n) => n.at.col === c).map(colW));
+    return (widest || BOX.w) + BOX.gapX;
   });
-  return vars as CSSProperties;
+  const colX = (c: number) => BOX.pad + colWidths.slice(0, c).reduce((a, b) => a + b, 0);
+
+  const nodes = spec.nodes.map((n) => ({
+    ...n,
+    x: colX(n.at.col),
+    y: BOX.pad + n.at.row * (BOX.h + BOX.gapY),
+    w: colW(n),
+    h: BOX.h,
+  }));
+
+  return {
+    nodes,
+    w: colX(spec.cols) + BOX.pad,
+    h: BOX.pad * 2 + spec.rows * BOX.h + (spec.rows - 1) * BOX.gapY,
+  };
 }
+
+const byId = (nodes: Placed[]) => new Map(nodes.map((n) => [n.id, n]));
+
+/* An edge's path, chosen from where its two boxes actually are, so a graph that
+   forks draws the fork instead of a line through a box. */
+function edgePath(a: Placed, b: Placed, vertical: boolean): string {
+  const ac = { x: a.x + a.w / 2, y: a.y + a.h / 2 };
+  const bc = { x: b.x + b.w / 2, y: b.y + b.h / 2 };
+
+  if (vertical) {
+    if (Math.abs(ac.x - bc.x) < 1) return `M${ac.x} ${a.y + a.h} V${b.y - 7}`;
+    const mid = (a.y + a.h + b.y) / 2;
+    return `M${ac.x} ${a.y + a.h} V${mid} H${bc.x} V${b.y - 7}`;
+  }
+
+  if (a.at.row === b.at.row && b.at.col > a.at.col) return `M${a.x + a.w} ${ac.y} H${b.x - 7}`;
+  if (Math.abs(ac.x - bc.x) < 1) return `M${ac.x} ${a.y + a.h} V${b.y - 7}`;
+  /* Otherwise: out of the bottom, across under the flow, and up into the target's
+     bottom edge, so a branch hangs beneath what it leaves from. */
+  const drop = Math.max(a.y + a.h, b.y + b.h) + 18;
+  return `M${ac.x} ${a.y + a.h} V${drop} H${bc.x} V${b.y + b.h}`;
+}
+
+/* Where a label goes, taken from the two boxes rather than from the path: the
+   middle of the gap the edge crosses. A drop edge's label sits on its horizontal
+   run below both boxes, which is the one stretch of it with room. */
+function labelAt(a: Placed, b: Placed, vertical: boolean): { x: number; y: number } {
+  if (vertical) {
+    return { x: (a.x + a.w + b.x) / 2 + 4, y: (a.y + a.h + b.y) / 2 + 4 };
+  }
+  if (a.at.row === b.at.row) {
+    return { x: (a.x + a.w + b.x) / 2, y: a.y + a.h / 2 - 7 };
+  }
+  if (Math.abs(a.x + a.w / 2 - (b.x + b.w / 2)) < 1) {
+    return { x: a.x + a.w / 2 + 6, y: (a.y + a.h + b.y) / 2 };
+  }
+  const drop = Math.max(a.y + a.h, b.y + b.h) + 18;
+  /* Two long edges can share that drop line — one going down to the failure band,
+     one looping back up — so the label sits above the run when the edge goes down
+     and below it when it comes back up. Without that the two labels collide. */
+  const up = b.at.row < a.at.row;
+  return { x: (a.x + a.w / 2 + (b.x + b.w / 2)) / 2, y: up ? drop + 12 : drop - 5 };
+}
+
+/* Break a label into lines that fit its box, on word boundaries. A label is never
+   truncated and never shrinks: it wraps. */
+const wrap = (text: string, max: number) => {
+  const words = text.split(' ');
+  const lines: string[] = [];
+  let line = '';
+  for (const word of words) {
+    if (line && (line + ' ' + word).length > max) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = line ? `${line} ${word}` : word;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+};
 
 export function Diagram({ spec }: { spec: DiagramSpec }) {
   const svg = useRef<SVGSVGElement>(null);
@@ -107,6 +201,9 @@ export function Diagram({ spec }: { spec: DiagramSpec }) {
   const [animated, setAnimated] = useState(false);
   const playingRef = useRef(true);
 
+  const desktop = layout(spec, false);
+  const vertical = layout(spec, true);
+
   useEffect(() => {
     playingRef.current = playing;
   }, [playing]);
@@ -114,21 +211,26 @@ export function Diagram({ spec }: { spec: DiagramSpec }) {
   useEffect(() => {
     const root = svg.current;
     const tok = token.current;
-    /* Without SVG geometry (an old engine, a test DOM) the still picture stays. */
-    const canMeasure = typeof root?.querySelector<SVGPathElement>('[data-seg]')?.getTotalLength === 'function';
+    const canMeasure = typeof root?.querySelector<SVGPathElement>('[data-edge]')?.getTotalLength === 'function';
     if (!root || !tok || !canMeasure || reduceMotion()) return;
     setAnimated(true);
 
     const lit = new Map<string, SVGPathElement>();
     const len = new Map<string, number>();
-    root.querySelectorAll<SVGPathElement>('[data-seg]').forEach((p) => {
-      const seg = p.dataset.seg as string;
-      lit.set(seg, p);
-      len.set(seg, p.getTotalLength());
+    root.querySelectorAll<SVGPathElement>('[data-edge]').forEach((p) => {
+      const id = p.dataset.edge as string;
+      /* Both layouts are in the DOM, so an edge id appears twice; the first is the
+         desktop one and the only one the clock drives. */
+      if (!lit.has(id)) {
+        lit.set(id, p);
+        len.set(id, p.getTotalLength());
+      }
     });
-    const lamps = new Map<string, Element>();
-    root.querySelectorAll('[data-lamp]').forEach((el) => lamps.set(el.getAttribute('data-lamp') as string, el));
-    const view = root.parentElement as HTMLElement;
+    const nodes = new Map<string, Element[]>();
+    root.querySelectorAll('[data-node]').forEach((el) => {
+      const id = el.getAttribute('data-node') as string;
+      nodes.set(id, [...(nodes.get(id) ?? []), el]);
+    });
 
     let run = 0;
     let step = 0;
@@ -136,15 +238,15 @@ export function Diagram({ spec }: { spec: DiagramSpec }) {
     let last = 0;
     let frame = 0;
     let visible = true;
-    let camera = spec.centre;
-    let tokenX = -80;
 
-    const setLamp = (id: string, state: LampState) => {
-      const el = lamps.get(id);
-      if (!el) return;
-      el.classList.toggle('is-lit', state === 'lit');
-      el.classList.toggle('is-done', state === 'done');
-      el.classList.toggle('is-fail', state === 'fail');
+    const setNode = (id: string, state: LampState) => {
+      /* Both layouts carry the same box, so the state goes to both: whichever is
+         on screen is always right. */
+      for (const el of nodes.get(id) ?? []) {
+        el.classList.toggle('is-lit', state === 'lit');
+        el.classList.toggle('is-done', state === 'done');
+        el.classList.toggle('is-fail', state === 'fail');
+      }
     };
 
     const setTone = (tone: Tone) => {
@@ -152,57 +254,39 @@ export function Diagram({ spec }: { spec: DiagramSpec }) {
       if (status.current) status.current.dataset.tone = tone;
     };
 
-    const setStatus = (text: string) => {
-      if (statusText.current) statusText.current.textContent = text;
-    };
-
     const reset = () => {
-      lit.forEach((p, seg) => {
-        const l = len.get(seg) ?? 0;
+      lit.forEach((p, id) => {
+        const l = len.get(id) ?? 0;
         p.style.strokeDasharray = `${l} ${l}`;
         p.style.strokeDashoffset = `${l}`;
         p.classList.remove('is-fail');
       });
-      for (const id of Object.keys(spec.still.lamps)) setLamp(id, 'off');
-      for (const l of spec.extraLamps ?? []) setLamp(l.id, 'off');
-      for (const s of spec.stations) setLamp(s.id, 'off');
+      for (const n of spec.nodes) setNode(n.id, 'off');
       setTone('run');
     };
 
-    const place = (seg: string, t: number) => {
-      const p = lit.get(seg);
-      const l = len.get(seg) ?? 0;
+    const place = (edge: string, t: number) => {
+      const p = lit.get(edge);
+      const l = len.get(edge) ?? 0;
       if (!p) return;
       const at = p.getPointAtLength(l * t);
       const ahead = p.getPointAtLength(Math.min(l, l * t + 1));
       const behind = p.getPointAtLength(Math.max(0, l * t - 1));
       let angle = (Math.atan2(ahead.y - behind.y, ahead.x - behind.x) * 180) / Math.PI;
-      /* A request reversing out of a siding keeps facing forward. */
       if (angle > 90) angle -= 180;
       if (angle < -90) angle += 180;
       tok.setAttribute('transform', `translate(${at.x} ${at.y}) rotate(${angle})`);
       p.style.strokeDashoffset = `${l * (1 - t)}`;
-      tokenX = at.x;
     };
 
     const enter = (s: Step) => {
-      if (s.status) setStatus(s.status);
+      if (s.status && statusText.current) statusText.current.textContent = s.status;
       if (s.tone) setTone(s.tone);
-      if (s.lamps) for (const [id, v] of Object.entries(s.lamps)) setLamp(id, v);
-      if (s.seg && s.failSeg) lit.get(s.seg)?.classList.add('is-fail');
+      if (s.nodes) for (const [id, state] of Object.entries(s.nodes)) setNode(id, state);
+      if (s.edge && s.failEdge) lit.get(s.edge)?.classList.add('is-fail');
     };
 
-    const duration = (s: Step) => (s.seg ? (len.get(s.seg) ?? 0) / SPEED : (s.dur ?? 0));
-
-    const steer = () => {
-      const width = view.clientWidth;
-      const target =
-        width >= spec.showAll
-          ? spec.centre
-          : Math.min(Math.max(tokenX, width / 2 - 20), spec.showAll - width / 2);
-      camera += (target - camera) * 0.08;
-      root.style.transform = `translateX(${(-camera).toFixed(1)}px)`;
-    };
+    const duration = (s: Step) => (s.edge ? (len.get(s.edge) ?? 0) / SPEED : (s.dur ?? 0));
 
     const tick = (now: number) => {
       frame = requestAnimationFrame(tick);
@@ -213,7 +297,7 @@ export function Diagram({ spec }: { spec: DiagramSpec }) {
       elapsed += dt;
       let s = steps[step];
       while (elapsed >= duration(s)) {
-        if (s.seg) place(s.seg, 1);
+        if (s.edge) place(s.edge, 1);
         elapsed -= duration(s);
         step += 1;
         if (step >= steps.length) {
@@ -224,14 +308,13 @@ export function Diagram({ spec }: { spec: DiagramSpec }) {
         s = spec.runs[run][step];
         enter(s);
       }
-      if (s.seg) place(s.seg, elapsed / duration(s));
-      steer();
+      if (s.edge) place(s.edge, elapsed / duration(s));
     };
 
     reset();
     enter(spec.runs[0][0]);
     const first = spec.runs[0][0];
-    if (first.seg) place(first.seg, 0);
+    if (first.edge) place(first.edge, 0);
 
     const io =
       typeof IntersectionObserver === 'function'
@@ -239,7 +322,7 @@ export function Diagram({ spec }: { spec: DiagramSpec }) {
             visible = entry.isIntersecting;
           })
         : null;
-    io?.observe(view);
+    io?.observe(root.parentElement as HTMLElement);
     frame = requestAnimationFrame(tick);
     return () => {
       cancelAnimationFrame(frame);
@@ -249,116 +332,164 @@ export function Diagram({ spec }: { spec: DiagramSpec }) {
 
   return (
     <figure
-      className="track-panel"
+      className="flow-panel"
       data-diagram={spec.id}
       data-still={!animated ? 'true' : undefined}
-      style={framingVars(spec)}
       aria-labelledby={`${spec.id}-title`}
     >
-      <div className="frame track-caption">
-        <p className="track-title" id={`${spec.id}-title`}>
+      <div className="flow-head">
+        <p className="flow-title" id={`${spec.id}-title`}>
           <Link className="inline-link" to={spec.href}>
             {spec.title}
           </Link>
-          <span className="track-note">{spec.note}</span>
+          <span className="flow-note">{spec.note}</span>
         </p>
-        <span className="track-status mono" ref={status} data-tone="done" aria-hidden="true">
-          <span className="lamp is-lit" />
-          {/* The still picture is a finished run, so the status names the state
-              the picture shows (the last one the first run reaches), not the
-              first step of that run. */}
-          <span ref={statusText}>
-            {[...spec.runs[0]].reverse().find((s) => s.status)?.status ?? ''}
-          </span>
+        <span className="flow-status mono" ref={status} data-tone="done" aria-hidden="true">
+          <span className="flow-lamp is-lit" />
+          <span ref={statusText}>{[...spec.runs[0]].reverse().find((s) => s.status)?.status ?? ''}</span>
         </span>
         {animated && (
-          <button type="button" className="track-pause" onClick={() => setPlaying(!playing)}>
+          <button type="button" className="flow-pause" onClick={() => setPlaying(!playing)}>
             <PlayPauseIcon playing={playing} />
             {playing ? 'Pause' : 'Play'}
             <span className="visually-hidden"> the diagram</span>
           </button>
         )}
       </div>
-      <div className="track-window">
-        <svg
-          ref={svg}
-          className="track-svg"
-          viewBox={`0 0 ${spec.viewBox.w} ${spec.viewBox.h}`}
-          /* The still picture is framed from the spec for the panel's width, so
-             no station label is cut at the panel's edge; the animated run is
-             steered by script, which overwrites this every frame. */
-          style={animated ? { transform: `translateX(-${spec.centre}px)` } : undefined}
-          aria-hidden="true"
-          focusable="false"
-        >
-          {spec.rails.map((d, i) => (
-            <path className="rail" d={d} key={`rail-${i}`} />
-          ))}
-          {spec.buffers?.map((d, i) => (
-            <path className="buffer" d={d} key={`buf-${i}`} />
-          ))}
-
-          {Object.entries(spec.segments).map(([seg, d]) => (
-            <path
-              key={seg}
-              className="rail-lit"
-              d={d}
-              data-seg={seg}
-              /* The still picture hides what the first run never lights; once
-                 animating, every segment is driven by its dash offset. */
-              style={!animated && !spec.still.lit.includes(seg) ? { opacity: 0 } : undefined}
-            />
-          ))}
-
-          {(spec.asides ?? []).map((a) => (
-            <text
-              key={a.text}
-              x={a.x}
-              y={a.y}
-              data-aside={a.branch ? 'branch' : undefined}
-              textAnchor={a.anchor ?? 'start'}
-              className={/^[A-Z0-9 ,']+$/.test(a.text) && a.text.length < 12 ? 'station-aside' : 'station-name station-aside'}
-            >
-              {a.text}
-            </text>
-          ))}
-
-          {spec.stations.map((s) => (
-            <g key={s.id} data-station={s.id}>
-              <text x={s.x} y="158" textAnchor="middle" className="station-name station-label">
-                {s.name.toUpperCase()}
-              </text>
-              <text x={s.x} y="176" textAnchor="middle" className="station-sublabel">
-                {s.detail.toUpperCase()}
-              </text>
-              <circle
-                className={`station-lamp is-${spec.still.lamps[s.id] ?? 'off'}`}
-                data-lamp={s.id}
-                cx={s.x}
-                cy={spec.y}
-                r="7"
-              />
+      <div className="flow-window">
+        {/* Two SVGs, not one with two groups: each layout has its own viewBox, so
+            the vertical graph is drawn at its own proportions rather than being
+            squeezed into the desktop canvas. A container query shows one. The
+            pre-render holds a complete picture either way, with no measuring and no
+            JavaScript. The clock drives the desktop one; the phone layout shares its
+            node and edge ids, and the state classes are written to both. */}
+        <div className="flow-h">
+          <svg
+            ref={svg}
+            className="flow-svg"
+            viewBox={`0 0 ${desktop.w} ${desktop.h}`}
+            preserveAspectRatio="xMidYMid meet"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <Marker id={`arrow-${spec.id}`} />
+            <Graph spec={spec} placed={desktop.nodes} vertical={false} animated={animated} marker={`arrow-${spec.id}`} />
+            <g className="flow-token" ref={token} data-tone="done">
+              <circle r="5.5" />
             </g>
-          ))}
-
-          {(spec.extraLamps ?? []).map((l) => (
-            <circle
-              key={l.id}
-              className={`station-lamp is-${spec.still.lamps[l.id] ?? 'off'}`}
-              data-lamp={l.id}
-              cx={l.x}
-              cy={l.y}
-              r="7"
-            />
-          ))}
-
-          <g className="token" ref={token} data-tone="done" transform={`translate(${spec.token.x} ${spec.token.y})`}>
-            <rect className="token-body" x="-20" y="-6" width="40" height="12" rx="3" />
-          </g>
-        </svg>
+          </svg>
+        </div>
+        <div className="flow-v">
+          <svg
+            className="flow-svg"
+            viewBox={`0 0 ${vertical.w} ${vertical.h}`}
+            preserveAspectRatio="xMidYMid meet"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <Marker id={`arrow-${spec.id}-v`} />
+            <Graph spec={spec} placed={vertical.nodes} vertical animated={animated} marker={`arrow-${spec.id}-v`} />
+            <g className="flow-token" data-tone="done">
+              <circle r="5.5" />
+            </g>
+          </svg>
+        </div>
       </div>
       <figcaption className="visually-hidden">{spec.caption}</figcaption>
     </figure>
+  );
+}
+
+/* One arrowhead per SVG, inherited by every edge in it, so direction is part of
+   the drawing rather than a triangle copied onto every path. */
+function Marker({ id }: { id: string }) {
+  return (
+    <defs>
+      <marker id={id} viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+        <path d="M0 0 L8 4 L0 8 z" className="flow-arrowhead" />
+      </marker>
+    </defs>
+  );
+}
+
+function Graph({
+  spec,
+  placed,
+  vertical,
+  animated,
+  marker,
+}: {
+  spec: DiagramSpec;
+  placed: Placed[];
+  vertical: boolean;
+  animated: boolean;
+  marker: string;
+}) {
+  const nodes = byId(placed);
+  return (
+    <>
+      {spec.edges.map((e) => {
+        const a = nodes.get(e.from);
+        const b = nodes.get(e.to);
+        if (!a || !b) return null;
+        const d = edgePath(a, b, vertical);
+        const lab = labelAt(a, b, vertical);
+        return (
+          <g key={e.id}>
+            <path
+              className={`flow-edge${e.branch ? ' is-branch' : ''}`}
+              d={d}
+              data-edge={e.id}
+              /* The still picture is the whole chart: every edge is drawn, so a
+                 branch box never looks unattached. Edges the first run lights are
+                 marked as drawn already; the rest sit at the muted rail colour. */
+              style={
+                !animated && !spec.still.edges.includes(e.id) ? { opacity: 0.45 } : undefined
+              }
+              markerEnd={`url(#${marker})`}
+            />
+            {e.label && (
+              <text className="flow-edge-label" x={lab.x} y={lab.y} textAnchor="middle">
+                {e.label}
+              </text>
+            )}
+          </g>
+        );
+      })}
+      {placed.map((n) => {
+        const name = wrap(n.name, vertical ? 26 : 17);
+        const detail = n.detail ? wrap(n.detail, vertical ? 32 : 21) : [];
+        /* Centre the whole label block in the box: the name, then the detail. */
+        const block = name.length * (FONT + 2) + detail.length * (DETAIL + 2);
+        const top = n.y + (n.h - block) / 2 + FONT;
+        return (
+          <g
+            key={n.id}
+            className={`flow-node${n.state ? ' is-state' : ''}`}
+            data-node={n.id}
+            data-vertical={vertical ? 'true' : undefined}
+          >
+            <rect x={n.x} y={n.y} width={n.w} height={n.h} rx={n.state ? n.h / 2 : 5} />
+            {name.map((line, i) => (
+              <text key={i} className="flow-node-name" x={n.x + n.w / 2} y={top + i * (FONT + 2)} textAnchor="middle">
+                {line}
+              </text>
+            ))}
+            {detail.map((line, i) => (
+              <text
+                key={i}
+                className="flow-node-detail"
+                x={n.x + n.w / 2}
+                y={top + name.length * (FONT + 2) + i * (DETAIL + 2)}
+                textAnchor="middle"
+              >
+                {line}
+              </text>
+            ))}
+          </g>
+        );
+      })}
+    </>
   );
 }
 
