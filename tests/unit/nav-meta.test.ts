@@ -66,11 +66,13 @@ describe('social meta', () => {
     expect(html).toContain('<meta property="og:url" content="https://example.com/" />');
     expect(html).toContain('<meta property="og:image" content="https://example.com/og.png" />');
     expect(html).toContain('<meta name="twitter:image" content="https://example.com/og.png" />');
-    /* And nothing absolute is invented when there is no origin. */
+    /* And nothing absolute is invented when there is no origin. Checked on the
+       tags, not the prose: the head carries a comment explaining why. */
     const bare = applyOrigin(read('index.html'), '');
     expect(bare).not.toContain('rel="canonical"');
-    expect(bare).not.toContain('og:url');
+    expect(bare).not.toContain('property="og:url"');
     expect(bare).toContain('<meta property="og:image" content="/og.png" />');
+    expect(bare).toContain('<meta name="twitter:image" content="/og.png" />');
   });
 
   it('ships a 1200x630 PNG share image', () => {

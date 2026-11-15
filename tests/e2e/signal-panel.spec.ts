@@ -132,15 +132,24 @@ test.describe('signal panel: the pre-render', () => {
     await expect(page.locator('.track-panel')).toBeVisible();
     await expect(page.locator('.track-svg .station-label').first()).toBeVisible();
     await expect(page.locator('.track-pause')).toHaveCount(0);
-    /* Nothing is cropped: the same rule as the reduced-motion still. */
-    const cropped = await page.evaluate(() => {
+    /* Nothing is cropped: the same rule as the reduced-motion still. A label
+       the framing leaves off-screen is absent, not cut, so only labels that
+       overlap the panel are measured. */
+    const framing = await page.evaluate(() => {
       const box = document.querySelector('.track-window')!.getBoundingClientRect();
-      return [...document.querySelectorAll('.track-svg .station-label')].filter((el) => {
+      const cut = [...document.querySelectorAll('.track-svg .station-label')].filter((el) => {
         const b = el.getBoundingClientRect();
-        return b.left < box.left - 1 || b.right > box.right + 1;
-      }).length;
+        const shown = b.right > box.left && b.left < box.right;
+        return shown && (b.left < box.left - 1 || b.right > box.right + 1);
+      });
+      const completed = [...document.querySelectorAll('.track-svg .station-label')]
+        .map((el) => el.textContent?.trim())
+        .filter((t) => t === 'COMPLETED');
+      return { cropped: cut.map((el) => el.textContent?.trim()), completed: completed.length };
     });
-    expect(cropped).toBe(0);
+    expect(framing.cropped).toEqual([]);
+    /* The station the status line names is in the picture before script runs. */
+    expect(framing.completed).toBeGreaterThan(0);
   });
 });
 

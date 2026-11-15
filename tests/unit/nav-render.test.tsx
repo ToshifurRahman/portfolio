@@ -49,12 +49,21 @@ describe('navbar', () => {
         <App />
       </MemoryRouter>,
     );
-    /* Scoped to the bar: the CV section below it carries a download link of
-       its own. The empty case is the mocked-content test under it. */
+    /* Scoped to the bar: the CV section below it carries a download link of its
+       own, and the phone menu now carries one too, so the bar's button is the
+       .cv-link in .nav-tools. The empty case is the mocked-content test under
+       this one. */
     const nav = screen.getByRole('navigation', { name: 'Primary' });
-    const link = within(nav).getByRole('link', { name: /CV/i });
+    const link = nav.querySelector('.nav-tools a.cv-link') as HTMLAnchorElement;
+    expect(link).not.toBeNull();
     expect(link).toHaveAttribute('href', owner.cv);
     expect(link).toHaveAttribute('download');
+
+    /* The menu's entry is the same file, for the widths where the button hides. */
+    const menuCv = nav.querySelector('#primary-menu .nav-cv a') as HTMLAnchorElement;
+    expect(menuCv).not.toBeNull();
+    expect(menuCv).toHaveAttribute('href', owner.cv);
+    expect(menuCv).toHaveAttribute('download');
   });
 });
 
