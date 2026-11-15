@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { caseStudies, type Block } from './content';
+import { diagrams } from './diagrams';
+import { Diagram } from './Diagram';
 import { Footer } from './Footer';
 import { Line } from './Line';
 import { Arrow, NotFound } from './NotFound';
@@ -110,6 +112,14 @@ export function CaseStudyPage() {
             <h2 className="section-heading" id={`${s.id}-h`}>
               {s.title}
             </h2>
+            {/* The animated architecture diagram, at the top of the study's
+                Architecture section. It is one shared engine driven by this
+                study's spec, and the still picture is what pre-renders. */}
+            {s.id === 'architecture' && diagrams[study.slug] && (
+              <div className="section-diagram">
+                <Diagram spec={diagrams[study.slug]} />
+              </div>
+            )}
             <div className="section-body prose">
               {s.blocks.map((b, k) => (
                 <BlockView block={b} key={k} />
