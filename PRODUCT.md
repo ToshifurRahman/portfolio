@@ -25,7 +25,7 @@ The owner builds asynchronous, stateful systems and cares about what happens whe
 ## Operating Context
 
 - Single site: a home page and one page per case study.
-- Each case study follows nine fixed sections: Overview, Problem, Motivation, Architecture, Tech decisions, Challenges, Solutions, Results, Future improvements.
+- Each case study follows seven fixed sections, in this order: Overview, Problem, Architecture, Tech decisions, Challenges, Solutions, Results. (The owner confirmed seven on 2026-11-15; the earlier list also named Motivation and Future improvements, which no case study has.)
 - Visitors arrive from a CV link or a LinkedIn / GitHub profile, on desktop or phone.
 
 ## Capabilities and Constraints

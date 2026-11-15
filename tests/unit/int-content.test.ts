@@ -1,5 +1,7 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { caseStudies, sectionOrder } from '../../src/content';
+import { caseStudies, contactLede, sectionOrder, workLede } from '../../src/content';
 
 /* The owner asked for the unconfirmed first-person blocks to come off the site:
    both case studies' Motivation and Future improvements sections are gone, and
@@ -28,6 +30,33 @@ describe('case-study sections', () => {
     const text = JSON.stringify(caseStudies);
     expect(text).not.toMatch(/DRAFT/);
     expect(text).not.toMatch(/I wanted to (build|a project)/);
+  });
+});
+
+/* Owner-voice copy lives in src/content.ts, never in a component: two ledes
+   were written straight into Home.tsx, which made a hiring claim the owner had
+   not confirmed. The owner confirmed both on 2026-11-15 and they moved here. */
+describe('section ledes', () => {
+  it('keeps the Work lede in content, with its lead sentence split out', () => {
+    expect(workLede.lead).toBe('Two systems, built end to end.');
+    expect(workLede.lead + workLede.rest).toBe(
+      'Two systems, built end to end. Each case study covers the problem, the architecture, the decisions and the results.',
+    );
+  });
+
+  it('keeps the Contact lede in content, with its lead sentence split out', () => {
+    expect(contactLede.lead).toBe('Hiring for a backend or full-stack role?');
+    expect(contactLede.lead + contactLede.rest).toBe(
+      'Hiring for a backend or full-stack role? Email is the fastest way to reach me.',
+    );
+  });
+
+  it('renders them from content rather than hard-coding them in the page', () => {
+    const home = readFileSync(resolve(process.cwd(), 'src/Home.tsx'), 'utf8');
+    expect(home).toMatch(/\{workLede\.lead\}/);
+    expect(home).toMatch(/\{contactLede\.lead\}/);
+    expect(home).not.toContain('Two systems, built end to end.');
+    expect(home).not.toContain('Hiring for a backend or full-stack role?');
   });
 });
 

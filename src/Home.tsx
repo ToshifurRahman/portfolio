@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { builds, caseStudies, moreProjects, owner, proof, skills, type CaseStudy } from './content';
+import { builds, caseStudies, contactLede, moreProjects, owner, proof, skills, workLede, type CaseStudy } from './content';
 import { Footer } from './Footer';
 import { Line } from './Line';
 import { Arrow } from './NotFound';
@@ -138,8 +138,8 @@ export function Home() {
 
         <Section id="work" title="Work">
           <p className="section-lede">
-            <strong>Two systems, built end to end.</strong> Each case study covers the problem, the architecture, the
-            decisions and the results.
+            <strong>{workLede.lead}</strong>
+            {workLede.rest}
           </p>
           <ul className="cases">
             {caseStudies.map((c) => {
@@ -280,7 +280,8 @@ function Contact() {
       <p className="section-lede">
         {owner.email ? (
           <>
-            <strong>Hiring for a backend or full-stack role?</strong> Email is the fastest way to reach me.
+            <strong>{contactLede.lead}</strong>
+            {contactLede.rest}
           </>
         ) : (
           'Both case-study projects are public, with their tests and documentation.'
