@@ -332,9 +332,9 @@ function labelPos(a: Placed, b: Placed, route: Route, bounds: Bounds, labelW: nu
   /* Below the source: on its own vertical run, just under the box. */
   if (b.y >= a.y + a.h) {
     if (Math.abs(a.x + a.w / 2 - (b.x + b.w / 2)) < 1) {
-      return { x: a.x + a.w / 2 + 6 + labelW / 2, y: (a.y + a.h + b.y) / 2 };
+      return { x: clampX(a.x + a.w / 2 + 6 + labelW / 2, labelW, bounds), y: (a.y + a.h + b.y) / 2 };
     }
-    return { x: b.x - 6 - labelW / 2, y: b.y + b.h / 2 };
+    return { x: clampX(b.x - 6 - labelW / 2, labelW, bounds), y: b.y + b.h / 2 };
   }
   if (b.y + b.h <= a.y) {
     return { x: (a.x + a.w / 2 + b.x + b.w / 2) / 2, y: b.y + b.h + (a.y - (b.y + b.h)) / 2 - 4 };
@@ -343,7 +343,14 @@ function labelPos(a: Placed, b: Placed, route: Route, bounds: Bounds, labelW: nu
   const gapStart = a.x + a.w;
   const gapEnd = b.x;
   const mid = (gapStart + gapEnd) / 2;
-  return { x: labelW > gapEnd - gapStart ? gapStart + labelW / 2 : mid, y: a.y + a.h / 2 - 9 };
+  const x = labelW > gapEnd - gapStart ? gapStart + labelW / 2 : mid;
+  return { x: clampX(x, labelW, bounds), y: a.y + a.h / 2 - 9 };
+}
+
+/* Keep a label's whole box inside the drawing. A label at the edge of the graph
+   would otherwise be cut by the panel, which a visitor reads as a broken word. */
+function clampX(x: number, labelW: number, bounds: Bounds): number {
+  return Math.min(Math.max(x, labelW / 2 + 2), bounds.w - labelW / 2 - 2);
 }
 
 /* The pill behind an edge label, sized from the label's own advance, so a label

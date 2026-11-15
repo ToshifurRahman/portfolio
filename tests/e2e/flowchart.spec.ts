@@ -410,3 +410,69 @@ for (const d of DIAGRAMS) {
     });
   });
 }
+
+/* ---------------------------------------------------------------- fix pass 2
+ *
+ * F2-1: a label may not be cut by the panel's edge. The geometry suite checked
+ * labels against the SVG, which overflows visibly, so a label could sit outside
+ * the visible panel and still pass. This checks against the panel's client rect.
+ * F2-2: no token may be drawn outside the graph.
+ */
+
+for (const d of DIAGRAMS) {
+  test.describe(`${d.slug}: fix pass 2`, () => {
+    for (const width of [390, 834, 1280, 1440]) {
+      test(`${width}px: no label is cut by the panel's edge`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        await page.goto(d.path);
+        const figure = panel(page, d.slug);
+        await figure.scrollIntoViewIfNeeded();
+
+        const cut = await figure.evaluate((el) => {
+          const panelBox = el.getBoundingClientRect();
+          const svg = [...el.querySelectorAll('.flow-svg')].find(
+            (s) => s.getBoundingClientRect().width > 0,
+          ) as SVGSVGElement;
+          return [...svg.querySelectorAll('text')]
+            .filter((t) => t.getBoundingClientRect().width > 1)
+            .filter((t) => {
+              const r = t.getBoundingClientRect();
+              /* A visible panel edge cuts a label the way a visitor sees it. */
+              return r.left < panelBox.left - 0.5 || r.right > panelBox.right + 0.5;
+            })
+            .map((t) => {
+              const r = t.getBoundingClientRect();
+              return `${t.textContent} [${Math.round(r.left - panelBox.left)}..${Math.round(r.right - panelBox.left)} of ${Math.round(panelBox.width)}]`;
+            });
+        });
+        expect(cut, 'labels cut by the panel edge').toEqual([]);
+      });
+    }
+
+    test('draws no token outside the graph in the still', async ({ page }) => {
+      await page.setViewportSize({ width: 1280, height: 900 });
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.goto(d.path);
+      const figure = panel(page, d.slug);
+      await figure.scrollIntoViewIfNeeded();
+
+      const stray = await figure.evaluate((el) => {
+        const svg = [...el.querySelectorAll('.flow-svg')].find(
+          (s) => s.getBoundingClientRect().width > 0,
+        ) as SVGSVGElement;
+        const box = svg.getBoundingClientRect();
+        return [...svg.querySelectorAll('.flow-token')]
+          .filter((t) => {
+            const r = t.getBoundingClientRect();
+            if (r.width === 0 && r.height === 0) return false;
+            const cx = r.left + r.width / 2;
+            const cy = r.top + r.height / 2;
+            return cx < box.left || cx > box.right || cy < box.top || cy > box.bottom;
+          })
+          .map((t) => t.getAttribute('transform') ?? '?');
+      });
+      expect(stray, 'tokens drawn outside the graph').toEqual([]);
+    });
+  });
+}
