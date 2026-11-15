@@ -271,7 +271,7 @@ export function SignalPanel() {
   }, []);
 
   return (
-    <figure className="track-panel" aria-labelledby="track-title">
+    <figure className="track-panel" data-still={!animated ? 'true' : undefined} aria-labelledby="track-title">
       <div className="frame track-caption">
         <p className="track-title" id="track-title">
           <Link className="inline-link" to="/work/ticket-pipeline">
@@ -284,7 +284,7 @@ export function SignalPanel() {
           <span ref={statusText}>Completed: the customer sees it live</span>
         </span>
         {animated && (
-          <button type="button" className="track-pause" aria-pressed={!playing} onClick={() => setPlaying(!playing)}>
+          <button type="button" className="track-pause" onClick={() => setPlaying(!playing)}>
             <PlayPauseIcon playing={playing} />
             {playing ? 'Pause' : 'Play'}
             <span className="visually-hidden"> the demo</span>
@@ -296,7 +296,10 @@ export function SignalPanel() {
           ref={svg}
           className="track-svg"
           viewBox="0 0 1600 240"
-          style={{ transform: `translateX(-${CENTRE}px)` }}
+          /* The still picture takes its framing from CSS, per width, so no
+             station label is cut at the panel's edge; the animated run is
+             steered by script, which overwrites this transform every frame. */
+          style={animated ? { transform: `translateX(-${CENTRE}px)` } : undefined}
           aria-hidden="true"
           focusable="false"
         >
@@ -319,24 +322,24 @@ export function SignalPanel() {
             />
           ))}
 
-          <text x="30" y="158">
+          <text x="30" y="158" className="station-aside">
             API
           </text>
-          <text x="740" y="30" textAnchor="middle">
+          <text x="740" y="30" textAnchor="middle" className="station-aside">
             RETRY, UP TO 3
           </text>
-          <text x="972" y="180">
+          <text x="972" y="180" className="station-aside">
             REPLAY BY STAFF
           </text>
-          <text x="1130" y="224" textAnchor="end" className="station-name">
+          <text x="1130" y="224" textAnchor="end" className="station-name station-aside">
             NEEDS ATTENTION, OPS ALERTED
           </text>
           {stations.map((s) => (
-            <g key={s.id}>
-              <text x={s.x} y="158" textAnchor="middle" className="station-name">
+            <g key={s.id} data-station={s.id}>
+              <text x={s.x} y="158" textAnchor="middle" className="station-name station-label">
                 {s.name.toUpperCase()}
               </text>
-              <text x={s.x} y="176" textAnchor="middle">
+              <text x={s.x} y="176" textAnchor="middle" className="station-sublabel">
                 {s.detail.toUpperCase()}
               </text>
               <circle

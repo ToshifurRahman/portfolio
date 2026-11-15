@@ -836,6 +836,59 @@ textarea {
   will-change: transform;
 }
 
+/*
+ * The still picture (reduced motion, no JavaScript, the pre-render) is the one
+ * view that has to stand alone as a picture, so it is framed per width instead
+ * of centred on the diagram: the animated run keeps `left: 50%` and is steered
+ * by script, while the still view puts a chosen track coordinate at the panel's
+ * left edge and lets the window crop the rest. Each band below starts just
+ * after a label pair ends and is wide enough to clear the panel's right edge,
+ * so the labels in view are whole and the completed station always is. The
+ * coordinates are the drawn positions: COMPLETED 1200-1280, its sublabel
+ * 1137-1342, NEEDS ATTENTION 881-1130, REPLAY 972-1105, DRAFTING 704-842,
+ * TRIAGING 321-579, QUEUED 140-220, API 30-57, RETRY 678-802.
+ */
+.track-panel {
+  --still-left: 22px;
+}
+
+/* The still picture keeps the diagram's own 1:1 height at every width, so the
+   framing below is exact: the mobile window is shorter, which would scale the
+   240-unit viewBox down and shift every label with it. */
+.track-panel[data-still='true'] .track-window,
+.track-panel[data-still='true'] .track-svg {
+  height: 15rem;
+}
+
+.track-panel[data-still='true'] .track-svg {
+  left: 0;
+  transform: translateX(calc(var(--still-left) * -1));
+}
+
+/* Under 1336 the panel cannot hold the queued station and the completed one;
+   frame the run from triaging, which is the first station the ticket lights. */
+@media (max-width: 83.5rem) {
+  .track-panel {
+    --still-left: 310px;
+  }
+}
+
+/* Under 1040 the completed sublabel would leave the panel, so the picture
+   starts at the siding: the alerts, the replay and the completed station. */
+@media (max-width: 65rem) {
+  .track-panel {
+    --still-left: 852px;
+  }
+}
+
+/* Under 500 only the completed station fits whole. It is the station the
+   status line names, and the lit route runs in from the panel's left edge. */
+@media (max-width: 31.25rem) {
+  .track-panel {
+    --still-left: 1134px;
+  }
+}
+
 .track-svg .rail {
   fill: none;
   stroke: var(--track);
@@ -1097,7 +1150,7 @@ textarea {
   position: relative;
   display: flex;
   justify-content: space-between;
-  gap: var(--space-2);
+  gap: var(--space-1);
   padding-top: var(--space-5);
 }
 
@@ -1111,15 +1164,20 @@ textarea {
   background: var(--track);
 }
 
+/* Equal shares while every label fits on one line; below that the label keeps
+   its own width and the row overrides the even spacing. A label never wraps:
+   "SECURITY AND CSRF" broke over two lines at 1024 through 1440 while its
+   siblings held one, and the row is a diagram, so the lamps must stay level. */
 .line li {
   position: relative;
   flex: 1 1 0;
-  min-width: 0;
+  min-width: max-content;
   font-family: var(--mono);
   font-size: var(--text-2xs);
   letter-spacing: var(--tracking-mono);
   text-transform: uppercase;
   line-height: 1.4;
+  white-space: nowrap;
   color: var(--ink-2);
 }
 
