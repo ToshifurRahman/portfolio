@@ -83,7 +83,7 @@ body {
 .role span { color: var(--muted); font-weight: 430; }
 .statement { font-size: 34px; font-weight: 520; line-height: 1.18; letter-spacing: -0.03em; color: var(--muted); }
 .statement em { font-style: normal; color: var(--ink); }
-ul { position: absolute; left: 88px; right: 88px; top: 342px; list-style: none; display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--rule); }
+ul { position: absolute; left: 88px; right: 88px; top: 342px; list-style: none; display: grid; grid-template-columns: repeat(${proof.length}, 1fr); border-top: 1px solid var(--rule); }
 li { display: flex; flex-direction: column; gap: 8px; padding: 18px 0 0; }
 li + li { padding-left: 20px; border-left: 1px solid var(--rule); }
 .value { font-size: 40px; font-weight: 600; line-height: 1; letter-spacing: -0.03em; }
