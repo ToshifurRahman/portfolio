@@ -364,23 +364,35 @@ for (const d of DIAGRAMS) {
               if (hit) crossing.push(path.getAttribute('data-edge') ?? '?');
             }
 
-            /* (d) every edge's two ends touch a node's border. */
+            /* (d) every edge joins two things: its target end touches a node's border,
+               and its source end touches a node — or, on the vertical layout, the cluster
+               heading that stands where that group's entry point is. F3-1 draws the edge
+               that enters a cluster as a short arrow under its heading, so the group keeps
+               its heading *and* the route reaching it keeps its label; before F3-1 that
+               edge was not drawn at all, which is what this check used to assume. The
+               target end is still required to touch a node. */
             const detached: string[] = [];
             /* An edge stops a short distance short of the border so its arrowhead
                lands on it rather than over it: the tolerance is the arrowhead's own
                length, scaled, not an arbitrary 6. */
             const gap = 12 * (view.width / svg.viewBox.baseVal.width);
-            const near = (x: number, y: number) =>
-              boxes.some(
-                (b) =>
-                  x >= b.left - gap && x <= b.right + gap && y >= b.top - gap && y <= b.bottom + gap &&
-                  (Math.abs(x - b.left) <= gap || Math.abs(x - b.right) <= gap || Math.abs(y - b.top) <= gap || Math.abs(y - b.bottom) <= gap),
-              );
+            const headings = [...svg.querySelectorAll('.flow-cluster-heading')].map((h) => h.getBoundingClientRect());
+            const nearBox = (x: number, y: number, b: DOMRect) =>
+              x >= b.left - gap && x <= b.right + gap && y >= b.top - gap && y <= b.bottom + gap &&
+              (Math.abs(x - b.left) <= gap || Math.abs(x - b.right) <= gap || Math.abs(y - b.top) <= gap || Math.abs(y - b.bottom) <= gap);
+            const nearNode = (x: number, y: number) => boxes.some((b) => nearBox(x, y, b));
+            /* A heading is a short left-aligned word, while the entry arrow descends from
+               that word's row into the middle of the column. So the anchor is the row the
+               heading starts on, across the drawing's width: the edge begins on the
+               heading's line and ends on the node below it. */
+            const nearHeading = (x: number, y: number) =>
+              headings.some((h) => y >= h.top - gap && y <= h.bottom + gap && x >= h.left - gap && x <= svg.getBoundingClientRect().right + gap);
             for (const path of svg.querySelectorAll<SVGPathElement>('.flow-edge')) {
               const len = path.getTotalLength();
               const pa = toPage(path.getPointAtLength(0));
               const pb = toPage(path.getPointAtLength(len));
-              if (!near(pa.x, pa.y) || !near(pb.x, pb.y)) detached.push(path.getAttribute('data-edge') ?? '?');
+              const startOk = nearNode(pa.x, pa.y) || nearHeading(pa.x, pa.y);
+              if (!startOk || !nearNode(pb.x, pb.y)) detached.push(path.getAttribute('data-edge') ?? '?');
             }
 
             /* (e) every edge label sits on its own edge: within a few units of the

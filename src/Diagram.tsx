@@ -271,6 +271,11 @@ function layoutDesktop(spec: DiagramSpec) {
  * the class of defect is gone, not its instances.
  */
 const HEADING = 11;
+/* Room under a cluster's heading for the edge that enters the group. The heading
+   names the group; the edge says which route or failure reaches it, and that label
+   is the reason the edge exists. The arrow needs a straight run at least one marker
+   long, or its head sits on the elbow and reads as a kink (P2b-8). */
+const ENTRY = 30;
 
 function layoutVertical(spec: DiagramSpec) {
   const states = spec.nodes.filter((n) => n.state);
@@ -305,11 +310,14 @@ function layoutVertical(spec: DiagramSpec) {
   }
 
   /* The clusters, stacked in the order the data gives. A gap and a heading separate
-     one from the next; no line crosses either. */
+     one from the next; no line crosses either. Under the heading, the edge that
+     enters the group is drawn as a short arrow into its first box, so the route or
+     failure that reaches the group keeps its label (F3-1). The heading names the
+     group; the arrow says how you get in. */
   for (const cluster of spec.clusters ?? []) {
     y += 16;
     headings.push({ x: MARGIN, y: y + HEADING, text: cluster.heading, cluster: cluster.id });
-    y += HEADING + 16;
+    y += HEADING + ENTRY;
     for (const id of cluster.nodes) {
       const node = spec.nodes.find((n) => n.id === id);
       if (!node) continue;
@@ -890,6 +898,14 @@ function Graph({
            reads as that edge's label: that is how STAGE FAILS ended up touching the solid
            `log` run while belonging to the dashed `fails` one. */
         const pathOf = new Map<string, string>();
+        /* The edge that enters a cluster is not drawn from its source box: that box may
+           sit far up the spine, and a line from it would cross every group in between.
+           It is drawn as a short arrow in the gap under the heading instead, so the
+           group keeps its heading *and* the route that reaches it keeps its label
+           (F3-1). The synthetic source is a point on the target's own centre line. */
+        const entrySource = (b: Placed): Placed => ({ ...b, x: b.x + b.w / 2, y: b.y - ENTRY + 8, w: 0, h: 0 });
+        const sourceOf = (e: (typeof spec.edges)[number], a: Placed, b: Placed) =>
+          vertical && headingFor.has(e.to) ? entrySource(b) : a;
         /* How many edges have already left each box toward each side. Two edges out of one
            box in the same direction used to be drawn on the same run, which leaves their
            labels nowhere to belong (see `edgePath`'s `sibling`). */
@@ -898,11 +914,12 @@ function Graph({
           const a0 = nodes.get(e.from);
           const b0 = nodes.get(e.to);
           if (!a0 || !b0) continue;
-          if (vertical && (headingFor.has(e.to) || e.stub)) continue;
+          if (vertical && e.stub) continue;
+          const from0 = sourceOf(e, a0, b0);
           const r0: Route = vertical
-            ? a0.state || b0.state
+            ? from0.state || b0.state
               ? 'right'
-              : a0.vat.track === b0.vat.track
+              : from0.vat.track === b0.vat.track
                 ? e.route === 'loop-side'
                   ? 'loop-side'
                   : 'down'
@@ -910,10 +927,10 @@ function Graph({
             : e.route;
           /* Stagger only the departures that actually share a run: same source, same side,
              and the same kind of drop. A box's edges to opposite sides do not collide. */
-          const key = `${e.from}:${b0.x > a0.x ? 'r' : 'l'}:${r0}`;
+          const key = `${from0 === a0 ? e.from : `entry:${e.to}`}:${b0.x > from0.x ? 'r' : 'l'}:${r0}`;
           const sibling = departure.get(key) ?? 0;
           departure.set(key, sibling + 1);
-          pathOf.set(e.id, edgePath(a0, b0, r0, bounds, vertical, sibling));
+          pathOf.set(e.id, edgePath(from0, b0, r0, bounds, vertical, sibling));
         }
         /* The painted centre lines, as run segments. Paths here are only M/H/V, so this is
            exact and cheap to test a rectangle against. */
@@ -1000,10 +1017,11 @@ function Graph({
         const a = nodes.get(e.from);
         const b = nodes.get(e.to);
         if (!a || !b) return null;
-        /* The heading above a cluster stands in for the edge that entered it, and a
-           stub edge is drawn as text on its source. Drawing either as a line would put
-           one across a gap the design deliberately leaves empty. */
-        if (vertical && headingFor.has(e.to)) return null;
+        /* The heading above a cluster names the group, but it does not stand in for the
+           edge that enters it: that edge carries the route or the failure that reaches
+           the group, and its label is the thing the diagram is saying (F3-1). So the
+           edge is drawn, as a short arrow under the heading into the group's first box.
+           A stub is still text rather than a line. */
         if (vertical && e.stub) return null;
         /* The vertical layout goes down the spine or across to an indented branch;
            a horizontal route would cut through the column. */
@@ -1016,7 +1034,7 @@ function Graph({
                 : 'down'
               : 'branch'
           : e.route;
-        const d = pathOf.get(e.id) ?? edgePath(a, b, route, bounds, vertical);
+        const d = pathOf.get(e.id) ?? edgePath(sourceOf(e, a, b), b, route, bounds, vertical);
         /* One value decides where the label is, and both the words and the pill are
            rendered from it. The previous version measured a pill, moved the text with two
            nudges and then drew the pill from the stale rectangle: Ticket-Pipeline's STAGE
@@ -1047,7 +1065,7 @@ function Graph({
           ? /* Above a horizontal run and on a vertical one: the line stays visible and
                the label touches its own segment. */
             { x: anchor.x, y: anchor.horiz ? anchor.y - 8 : anchor.y }
-          : labelPos(a, b, route, bounds, labelW);
+          : labelPos(sourceOf(e, a, b), b, route, bounds, labelW);
         /* One resolver decides where the label ends up, and the pill and the words are
            both rendered from what it returns. The two used to be separate: a pill was
            measured, two nudges moved the text, and the pill was drawn from the stale
