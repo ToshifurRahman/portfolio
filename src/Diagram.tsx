@@ -320,17 +320,24 @@ function layoutVertical(spec: DiagramSpec) {
   /* The ticket's states, on their own rail at the end: this already read correctly. */
   if (states.length) {
     y += 18;
-    const pillW = (W - MARGIN * 2 - 8) / 2;
+    /* The four states are a set, not a sequence, and the gap between them is the only
+       thing that says so. At 8 units across and 12 down the dashed borders read as shared
+       at 3x. The gaps are in viewBox units and the vertical layout draws at 1.358, so
+       these are ~14 and ~27 screen pixels. */
+    const pillGapX = 14;
+    const pillGapY = 20;
+    const pillH = 30;
+    const pillW = (W - MARGIN * 2 - pillGapX) / 2;
     states.forEach((node, i) => {
       nodes.push({
         ...node,
-        x: MARGIN + (i % 2) * (pillW + 8),
-        y: y + Math.floor(i / 2) * 42,
+        x: MARGIN + (i % 2) * (pillW + pillGapX),
+        y: y + Math.floor(i / 2) * (pillH + pillGapY),
         w: pillW,
-        h: 30,
+        h: pillH,
       });
     });
-    y += Math.ceil(states.length / 2) * 42;
+    y += Math.ceil(states.length / 2) * (pillH + pillGapY);
   }
 
   return { nodes, w: W, h: y + 26, headings, labels };

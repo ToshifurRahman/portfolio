@@ -1290,3 +1290,62 @@ for (const d of DIAGRAMS) {
     }
   });
 }
+
+/* ---------------------------------------------------------------- round P2b
+ *
+ * P2b-5. At the foot of the vertical layout the four stage pills sat 10px apart, close
+ * enough that the dashed borders read as one smudge at 3x. They are separate states, not
+ * a sequence, so the gap between them is what says so.
+ *
+ * Asserted on the pill borders themselves rather than on the constants that place them, so
+ * a change to the pill width or the font cannot quietly close the gap again.
+ */
+
+for (const d of DIAGRAMS) {
+  test.describe(`${d.slug}: the stage pills`, () => {
+    test('are separated, not nearly touching', async ({ page }) => {
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.goto(d.path);
+      await panel(page, d.slug).scrollIntoViewIfNeeded();
+
+      const gaps = await page.evaluate(() => {
+        const svg = [...document.querySelectorAll('.flow-svg')].find(
+          (s) => s.getBoundingClientRect().width > 0,
+        ) as SVGSVGElement;
+        const scale = svg.getScreenCTM()!.a;
+        /* The state pills are the nodes marked `is-state` — selected by what they are
+           rather than by being the lowest four boxes, which is not the same thing in a
+           study that has no state rail (RannaGhor's lowest four are ordinary steps, and
+           measuring those made this pass for the wrong reason). */
+        const boxes = [...svg.querySelectorAll('.flow-node.is-state rect')].map((r) =>
+          (r as SVGRectElement).getBBox(),
+        );
+        let minX = Infinity;
+        let minY = Infinity;
+        for (let i = 0; i < boxes.length; i++) {
+          for (let j = i + 1; j < boxes.length; j++) {
+            const a = boxes[i];
+            const b = boxes[j];
+            const dx = Math.max(b.x - (a.x + a.width), a.x - (b.x + b.width), 0);
+            const dy = Math.max(b.y - (a.y + a.height), a.y - (b.y + b.height), 0);
+            /* Only neighbours in the grid matter: opposite corners are far apart anyway. */
+            if (dx > 0) minX = Math.min(minX, dx);
+            if (dy > 0) minY = Math.min(minY, dy);
+          }
+        }
+        return { x: minX * scale, y: minY * scale, scale, count: boxes.length };
+      });
+
+      /* RannaGhor has no state rail; Ticket-Pipeline has all four. Stated per study rather
+         than asserting 4 for both, so this cannot pass by finding nothing to measure in the
+         study that does have the pills. */
+      expect(gaps.count, `${d.slug} stage pills`).toBe(d.slug === 'ticket-pipeline' ? 4 : 0);
+      if (d.slug !== 'ticket-pipeline') return;
+      /* 12px: the pill border is dashed, so a gap under one dash period reads as a shared
+         border rather than two. Measured in screen pixels, at the scale actually drawn. */
+      expect(gaps.x, 'horizontal gap between the pills').toBeGreaterThanOrEqual(12);
+      expect(gaps.y, 'vertical gap between the pills').toBeGreaterThanOrEqual(12);
+    });
+  });
+}
