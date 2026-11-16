@@ -16,7 +16,7 @@
         "displayName": "Raised Ground",
         "canonical": "#0f1114",
         "light": "#ded9cf",
-        "description": "The one step up, for surfaces that sit over the page — the flowchart panel and its label pills, the certificate dialog, the node diagram — and for the Tech decision card, the one place it sits behind body copy. Never the bar, which is the page ground with a rule underline."
+        "description": "The one step up, for surfaces that sit over the page — the flowchart panel and its label pills, the certificate dialog and its thumbnail, the node diagram — and for the Tech decision card, the one place it sits behind body copy. Never the bar, which is the page ground with a rule underline."
       },
       "ink": {
         "role": "neutral",

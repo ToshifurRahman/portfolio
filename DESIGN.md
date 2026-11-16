@@ -228,19 +228,21 @@ and the navigation is a sticky bar with a case-study sub-nav.
 
 Every value below is the token as it is named in `src/styles.css`. The dark values are on
 `:root`; the light values are the same token names re-declared under `:root[data-theme='light']`,
-which is why no component ever branches on theme.
+which is why no component branches on theme for colour. (The theme toggle's two icons are the
+one component that branches at all, and they switch `display`, not paint.)
 
 ### The night panel (`:root`)
 - **Ground** (`bg` `#0a0b0d`): the page, and the sticky bar — the bar is the page ground with a
   `rule` underline, not a raised band. **Raised** (`bg-raised` `#0f1114`): the one step up, used
   for things that sit *over* the page — the flowchart panel and its label pills, the certificate
-  dialog, and the Work node diagram's nodes — and for the Tech decision card, the one place a
-  raised ground sits behind body copy. There is no third elevation: a Work card is not raised, it
-  is ruled (see below), and a flowchart's node box is the page ground itself.
+  dialog and its thumbnail, and the Work node diagram's nodes — and for the Tech decision card,
+  the one place a raised ground sits behind body copy. There is no third elevation: a Work card is
+  not raised, it is ruled (see below), and a flowchart's node box is the page ground itself.
 - **Ink** (`ink` `#f2f1ec`) is body text, headings, and the label on a ruled control such as a
   ghost button. **`ink-2`** (`#c4c7cd`) is the quieter second voice: copy controls, secondary
   labels. **`muted`** (`#8b9099`) is tertiary — captions, bar links, diagram labels, meta. Three
-  text colours, no more.
+  neutral text colours, no more; the two amber ones are text on a fill (`on-accent`) and accent
+  text (`accent-text`), both described below.
 - **Rules** come in two strengths, and the distinction is load-bearing: `rule` `#23272d`
   separates rows and closes the bar; `rule-strong` `#343941` outlines a control that can be
   pressed. `grid` `#15181c` draws the column lines behind the introduction, deliberately
@@ -249,11 +251,11 @@ which is why no component ever branches on theme.
   the same value: an unlit lamp and an empty track are the same darkness.
 
 ### The signal
-- **Amber** (`accent` `#ffb340`) is the only saturated colour on the site: a lit lamp, the
-  live token on the track, the current nav item, the glow in a hero cell. **`accent-hover`**
-  (`#ffc56b`) is its hover. **`on-accent`** (`#1a1204`) is text on an amber fill — a brown-black,
-  not the ground, so amber stays legible as a button. A focused control is ringed in
-  `accent-text`, not `accent`: `:focus-visible` is `outline: var(--line-track) solid
+- **Amber** (`accent` `#ffb340`) is the only saturated colour outside the failure semantics: a
+  lit lamp, the live token on the track, the current nav item, the glow in a hero cell.
+  **`accent-hover`** (`#ffc56b`) is its hover. **`on-accent`** (`#1a1204`) is text on an amber
+  fill — a brown-black, not the ground, so amber stays legible as a button. A focused control is
+  ringed in `accent-text`, not `accent`: `:focus-visible` is `outline: var(--line-track) solid
   var(--accent-text)`, the same amber at night and `#7a4600` on paper.
 - **`accent-text`** (`#ffb340`) exists separately from `accent` because the two jobs differ:
   a fill needs a colour that reads as light, text needs one that passes contrast on the
@@ -318,8 +320,9 @@ own `flow-label` 12px, which is a viewBox unit rather than a page step (see the 
   as universal: `2xs` defaults to 430 with `.tl-lane-title` the one 520; `sm` to 430 with
   `.nav-links a` and `.contents a` at 520; `md` to 430 with `.button`, `.more-link`, `.brand` and
   `.certificate-title` at 600 and `.ghost`, `.text-button`, `.next-lead` at 520; `xl` to 520 with
-  `.subhead` and `.entry-title` at 600. `lg` and `flow-label` are never given a weight, so what
-  they render is `body`'s 430.
+  `.subhead` and `.entry-title` at 600; `lg` to 430 with `.nav-links a` at 520 inside the phone
+  menu, where that rule takes `--text-lg` (`@media (max-width: 57rem)`). `flow-label` is the one
+  step no rule gives a weight, so what it renders is `body`'s 430.
 
 ### Named rules
 **The Mono Means Data Rule.** If it is a number, a station, a stack, a label or a system name,
@@ -370,12 +373,14 @@ take every label under the 12px floor.
 ## The bar and the signal strip
 
 The bar is sticky, `bg` with a `rule` underline, and holds the wordmark (the one amber text in
-the chrome, `accent-text`), the five nav links with a lamp each, and a CV action. Nav links are
-`muted` at rest and `ink` when current. A lit lamp fills `accent`; the current item's lamp takes
-an `accent` ring rather than the `lamp-edge` one, because `.nav-links a.is-current .lamp` is the
-more specific rule and `lamp-edge` is only the ring on a lamp lit outside the nav — the two are
-the same amber at night and differ on paper, where the ring stays `accent` `#e09a12`. **The lamp
-is the indicator, the text weight does not change.** The current item carries `aria-current`.
+the bar at rest, `accent-text`), the five nav links with a lamp each, and a CV action. Two chrome
+elements turn amber on demand: the open menu button (`.menu-button[aria-expanded='true']`) and
+the theme toggle's hover. Nav links are `muted` at rest and `ink` when current. A lit lamp fills
+`accent`; the current item's lamp takes an `accent` ring rather than the `lamp-edge` one, because
+`.nav-links a.is-current .lamp` is the more specific rule and `lamp-edge` is only the ring on a
+lamp lit outside the nav — the two are the same amber at night and differ on paper, where the
+ring stays `accent` `#e09a12`. **The lamp is the indicator, the text weight does not change.**
+The current item carries `aria-current`.
 
 The **signal strip** is a fixed, decorative layer of twelve strips on the frame's own column
 lines, `z-index: -1`, `pointer-events: none`. A ray — a 1px-wide soft gradient of `accent` —
@@ -518,7 +523,8 @@ sibling stagger separates them (the owner ruled to leave it).
 - **Don't** put a filled card behind body copy — the Tech decision card is the one exception, and
   it earns it by being a short paired readout rather than prose. `bg-raised` is otherwise the
   surface of things that sit over the page (the flowchart's panel and label pills, the certificate
-  dialog, the node diagram), never the bar; a Work card is a ruled row rather than a raised box.
+  dialog and its thumbnail, the node diagram), never the bar; a Work card is a ruled row rather
+  than a raised box.
 - **Don't** add a drop shadow, a blur, or a third elevation step; the only `box-shadow`s are the
   zero-blur lamp rings.
 - **Don't** introduce a third rule strength or a fourth text weight.
