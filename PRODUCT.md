@@ -33,7 +33,7 @@ The owner builds asynchronous, stateful systems and cares about what happens whe
 - Dark first. A light theme may exist but dark is the default and the designed-for state.
 - Minimal, simple design. No profile picture anywhere.
 - Full case studies: Ticket-Pipeline and the e-commerce project (RannaGhor). No other projects appear as short entries; the site's Work section lists only these two, and the earlier "What I build" and "Other projects" sections are not on the page.
-- Undecided: availability and a biography. Until the owner supplies them they are left empty in `src/content.ts`: hidden on the built site, shown as notes only while developing. Location, contact email, LinkedIn URL and the CV file are supplied and shown.
+- Undecided: availability. It is left empty in `src/content.ts` (`availability: ''`), hidden on the built site and shown as a note only while developing. Location, contact email, LinkedIn URL and the CV file are supplied and shown.
 
 ## Brand Commitments
 
