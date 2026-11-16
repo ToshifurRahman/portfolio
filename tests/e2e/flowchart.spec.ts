@@ -896,3 +896,74 @@ for (const d of DIAGRAMS) {
     }
   });
 }
+
+/* ---------------------------------------------------------------- fix pass 7
+ *
+ * F7-2, test first. The geometry checks never asked whether a label's pill overlaps a
+ * node box: they check that a label is near its own edge (e) and that text does not
+ * collide with text (b). A pill painted under a box passes both.
+ *
+ * d165e95's anchor search made this real: RannaGhor's "VENDOR ROUTE" moved onto the
+ * Postgres box's top-left corner and the box painted over "VE". This check is a plain
+ * geometric fact, measured from the rendered rects, for every label at every width.
+ */
+
+const ALL_WIDTHS = [390, 834, 1100, 1210, 1280, 1440, 1920];
+
+for (const d of DIAGRAMS) {
+  test.describe(`${d.slug}: label pills`, () => {
+    for (const width of ALL_WIDTHS) {
+      for (const theme of THEMES) {
+        test(`${width}px ${theme}: no label pill touches a box`, async ({ page }) => {
+          await page.setViewportSize({ width, height: 900 });
+          await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+          await page.goto(d.path);
+          await panel(page, d.slug).scrollIntoViewIfNeeded();
+          await page.waitForTimeout(120);
+
+          const touching = await page.evaluate(() => {
+            const svg = [...document.querySelectorAll('.flow-svg')].find(
+              (s) => s.getBoundingClientRect().width > 0,
+            ) as SVGSVGElement;
+            const boxes = [...svg.querySelectorAll('.flow-node rect')].map((r) => ({
+              owner: (r.closest('.flow-node') as Element).getAttribute('data-node') ?? '',
+              b: r.getBoundingClientRect(),
+            }));
+            const out: string[] = [];
+            /* Every label's pill: the pill is what the box paints over, so it is the
+               rectangle to test, not the glyphs. A label with no pill still gets its
+               text box tested. */
+            for (const pill of svg.querySelectorAll('.flow-edge-pill')) {
+              const g = pill.parentElement as Element;
+              const label = g.querySelector('.flow-edge-label');
+              const id = label?.getAttribute('data-edge-label') ?? '?';
+              const text = (label?.textContent ?? '').trim();
+              const p = pill.getBoundingClientRect();
+              for (const { owner, b } of boxes) {
+                /* The 4px the round asks for, on either axis: a pill that merely grazes
+                   a box's border is still read as part of that box. */
+                const dx = Math.max(b.left - p.right, 0, p.left - b.right);
+                const dy = Math.max(b.top - p.bottom, 0, p.top - b.bottom);
+                /* Hidden ink is the defect: a whole pixel of overlap on both axes. A
+                   label in a row gap sits a pixel or two from the box it runs into,
+                   which paints nothing and is what every seated label looks like. */
+                if (Math.hypot(dx, dy) < 1) {
+                  /* Both axes must overlap for ink to be hidden; one axis alone is a
+                     pill beside a box, which is what a label in a gap looks like. */
+                  const overlapX = Math.min(p.right, b.right) - Math.max(p.left, b.left);
+                  const overlapY = Math.min(p.bottom, b.bottom) - Math.max(p.top, b.top);
+                  out.push(
+                    `${id}: "${text}" vs box ${owner}, ` +
+                      `${overlapX >= 1 && overlapY >= 1 ? `overlapping ${Math.round(overlapX)}x${Math.round(overlapY)}px` : `within ${Math.max(1, Math.round(Math.hypot(dx, dy)))}px`}`,
+                  );
+                }
+              }
+            }
+            return out;
+          });
+          expect(touching, 'label pills touching a node box').toEqual([]);
+        });
+      }
+    }
+  });
+}
