@@ -1872,22 +1872,31 @@ textarea {
   grid-column: auto;
 }
 
-/* The handles under the readout: one line, the same shape as a list row, and
-   only the fact the figures cannot carry. The platform name is already in each
-   figure's label, so it is the link's accessible name rather than a repeat. */
-.readout-sources {
+/* The handles under the readout: one line naming each platform and the name the
+   owner goes by there. Each pair is one link, so it is one unbreakable run — at
+   390 the line wraps between the two pairs, never inside one — and the separator
+   is drawn between them rather than being markup. */
+.source-line {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: var(--space-1) var(--space-5);
+  gap: var(--space-1) 0;
   max-width: var(--measure);
 }
 
-.readout-sources a {
+.source-pair {
   display: inline-flex;
   align-items: center;
   min-height: var(--target);
   color: var(--ink-2);
+  white-space: nowrap;
+}
+
+/* Between the pairs, not inside one: a pseudo-element on the link would have its
+   underline painted through it. */
+.source-sep {
+  padding-inline: var(--space-3);
+  color: var(--muted);
 }
 
 .certificate-list {

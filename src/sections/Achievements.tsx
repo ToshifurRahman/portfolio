@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import { achievements } from '../content';
 import { Section } from '../Section';
 import { Certificates } from './Certificates';
@@ -25,17 +26,24 @@ export function Achievements() {
             ))}
           </ul>
           {lead.links && (
-            <p className="readout-sources">
-              {lead.links.map((link) => (
-                <a
-                  key={link.href}
-                  className="inline-link mono"
-                  href={link.href}
-                  rel="noopener noreferrer"
-                  aria-label={`${link.label}: ${link.handle ?? link.label}`}
-                >
-                  {link.handle ?? link.label}
-                </a>
+            <p className="source-line">
+              {lead.links.map((link, i) => (
+                /* The platform name is visible link text, not an aria-label, so
+                   the accessible name is exactly what the reader sees. The pair
+                   does not break internally: at 390 the line wraps between the
+                   two, never inside one. The separator is its own node between
+                   the links, not a pseudo-element inside one: inside, the link's
+                   underline paints through the middot. */
+                <Fragment key={link.href}>
+                  {i > 0 && (
+                    <span className="source-sep" aria-hidden="true">
+                      ·
+                    </span>
+                  )}
+                  <a className="inline-link mono source-pair" href={link.href} rel="noopener noreferrer">
+                    {link.label}: {link.handle ?? link.label}
+                  </a>
+                </Fragment>
               ))}
             </p>
           )}
@@ -54,9 +62,17 @@ export function Achievements() {
               {entry.year && <span className="achievement-year mono">{entry.year}</span>}
             </p>
             {entry.links && (
-              <p className="achievement-links">
+              /* The same line shape the lead item uses, so an entry that gains a
+                 link is styled rather than rendered as a bare paragraph. No entry
+                 in the list has links today; this is what it would look like. */
+              <p className="source-line">
                 {entry.links.map((link) => (
-                  <a key={link.href} className="inline-link" href={link.href} rel="noopener noreferrer">
+                  <a
+                    key={link.href}
+                    className="inline-link mono source-pair"
+                    href={link.href}
+                    rel="noopener noreferrer"
+                  >
                     {link.label}
                   </a>
                 ))}
