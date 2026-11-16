@@ -1319,13 +1319,20 @@ textarea {
   color: var(--accent-text);
 }
 
-/* The window is the space the chart is drawn into. The SVG keeps its own aspect
-   ratio and the window is capped at the room under the header, so on a desktop the
-   whole graph is visible at once without scrolling inside the panel.
+/* The window is the space the chart is drawn into. The SVG keeps its own aspect ratio and
+   takes its natural height: the page scrolls, the chart never does, and there is no scroll
+   container inside the panel.
 
-   The height has to be set on the SVG, not on the window: the window is the
-   container, and a container query cannot style its own container. Every rule
-   below that depends on the *panel width* therefore lands on a descendant. */
+   It is deliberately NOT height-capped to the viewport. With
+   `preserveAspectRatio="xMidYMid meet"` a max-height shrinks the drawing on both axes at
+   once, so capping the height quietly took every label under the 12px floor wherever the
+   graph was taller than the window — 5.34px on Ticket-Pipeline at 1024x720, 9.44px at
+   1280x720. The floor is a promise to the reader; fitting one screen at every window size
+   is not, and the two cannot both hold once the natural drawing is taller than the window.
+
+   The height has to be set on the SVG, not on the window: the window is the container,
+   and a container query cannot style its own container. Every rule below that depends on
+   the *panel width* therefore lands on a descendant. */
 .flow-window {
   padding: var(--space-5) max(var(--frame-margin), calc((100vw - var(--frame)) / 2));
   container-type: inline-size;
@@ -1334,7 +1341,6 @@ textarea {
 .flow-svg {
   display: block;
   width: 100%;
-  max-height: calc(100svh - var(--header-h));
   overflow: visible;
 }
 
@@ -1350,13 +1356,6 @@ textarea {
   margin-inline: auto;
 }
 
-/* The vertical graph is tall, so it takes its natural height and the page scrolls: a
-   phone scrolls the document, never inside the chart. */
-@container (max-width: 56rem) {
-  .flow-svg {
-    max-height: none;
-  }
-}
 
 /* The layout switches where the *desktop* graph stops drawing at 1:1, not at a round
    breakpoint. The graph is scaled to fit, and scaling it below 1:1 takes every label

@@ -184,7 +184,18 @@ for (const d of DIAGRAMS) {
       expect(box.x + box.width).toBeGreaterThanOrEqual(1440 - 18);
     });
 
-    test('shows the whole graph without scrolling inside it at 1280 and 1440', async ({ page }) => {
+    /* R4b-3 asked for `min(100svh - header, the graph's natural height)`, so the whole
+     * graph is visible at once at 1280 and 1440. That promise and ruling 9's 12px floor
+     * cannot both hold: with `preserveAspectRatio="xMidYMid meet"` a height cap scales the
+     * drawing on both axes, so at 1440x900 the natural height is 957px against a 900px
+     * window and capping it painted the labels at 10.6px (F9-1).
+     *
+     * The floor is the promise kept, because a chart nobody can read at any window size is
+     * worse than a chart that scrolls. What survives of R4b-3 is asserted here: the graph
+     * takes the full width at its own aspect ratio, it is never scrolled *inside* the
+     * panel, and the page carries the extra height. The short-viewport case is covered by
+     * the F9-2 sweep, which is what makes this trade explicit. */
+    test('fills the width at its natural height, with no scroll inside it at 1280 and 1440', async ({ page }) => {
       for (const width of [1280, 1440]) {
         await page.setViewportSize({ width, height: 900 });
         await page.goto(d.path);
@@ -193,10 +204,25 @@ for (const d of DIAGRAMS) {
         const geo = await figure.evaluate((el) => {
           const svg = el.querySelector('.flow-h .flow-svg') as SVGSVGElement;
           const r = svg.getBoundingClientRect();
-          return { h: r.height, top: r.top, winH: innerHeight };
+          const vb = svg.viewBox.baseVal;
+          /* Any scroll container inside the panel would mean the chart is cropped and
+             scrolled, which is the thing R4b-3 rules out. */
+          const scrollers = [...el.querySelectorAll<HTMLElement>('*')].filter(
+            (n) => n.scrollHeight > n.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(n).overflowY),
+          ).length;
+          return {
+            h: r.height,
+            natural: (r.width * vb.height) / vb.width,
+            scrollers,
+            ctm: svg.getScreenCTM()!.a,
+          };
         });
-        expect(geo.h, `chart is taller than the viewport at ${width}`).toBeLessThan(geo.winH);
-        expect(geo.h).toBeGreaterThan(120);
+        expect(geo.h, `chart is cropped at ${width}`).toBeGreaterThan(120);
+        /* Undistorted: the drawn height is the width over the viewBox aspect ratio. */
+        expect(Math.abs(geo.h - geo.natural), `chart is distorted at ${width}`).toBeLessThan(2);
+        expect(geo.scrollers, `the panel scrolls inside itself at ${width}`).toBe(0);
+        /* And the height it draws at is the height its labels are read at. */
+        expect(geo.ctm).toBeGreaterThanOrEqual(1);
       }
     });
 
