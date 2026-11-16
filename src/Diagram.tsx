@@ -538,9 +538,23 @@ function touchesBox(lab: { x: number; y: number }, pill: { w: number; h: number 
 
 /* The pill behind an edge label, sized from the label's own advance, so a label
    reads over a line instead of being cut by it. */
+/* Martian Mono's line box at DETAIL, measured rather than guessed: a 12-unit text rect is
+   14.6 units tall with the baseline 12.0 from its top, so the words reach 12 units above
+   the baseline and 2.6 below. The pill is sized from those numbers, which is the only way
+   it can be guaranteed to hold the words it belongs to — the old box gave 11 above and 7
+   below, so every label's top edge sat a pixel proud of its own pill. */
+const LABEL_ASCENT = DETAIL;
+const LABEL_DESCENT = Math.ceil(DETAIL * 0.22);
+const PILL_PAD = 1;
+
 const pillFor = (text: string, x: number, y: number) => {
   const w = text.length * adv(DETAIL) + 10;
-  return { x: x - w / 2, y: y - DETAIL + 1, w, h: DETAIL + 6 };
+  return {
+    x: x - w / 2,
+    y: y - LABEL_ASCENT - PILL_PAD,
+    w,
+    h: LABEL_ASCENT + LABEL_DESCENT + PILL_PAD * 2,
+  };
 };
 
 export function Diagram({ spec }: { spec: DiagramSpec }) {
@@ -845,42 +859,80 @@ function Graph({
               : 'branch'
           : e.route;
         const d = edgePath(a, b, route, bounds, vertical);
-        const labelW = (e.label?.length ?? 0) * adv(DETAIL);
+        /* One value decides where the label is, and both the words and the pill are
+           rendered from it. The previous version measured a pill, moved the text with two
+           nudges and then drew the pill from the stale rectangle: Ticket-Pipeline's STAGE
+           FAILS ended up 18px below its own words, painting over EACH STEP instead. Three
+           passes in a row moved this defect to another label because each one added a
+           nudge; there is now nowhere for the two to disagree. */
+        const label = e.label;
+        /* An edge with no label draws nothing but its line: the pill and the text are
+           both derived from `pos`, so there is no second position to keep in step. */
+        if (!label) {
+          return (
+            <g key={e.id}>
+              <path
+                className={`flow-edge${e.branch ? ' is-branch' : ''}`}
+                d={d}
+                data-edge={e.id}
+                style={!animated && !spec.still.edges.includes(e.id) ? { opacity: 0.45 } : undefined}
+                markerEnd={`url(#${marker})`}
+              />
+            </g>
+          );
+        }
+        const labelW = label.length * adv(DETAIL);
         /* The vertical layout's seating is closed and its gaps are ~24 units wide;
            this search is for the desktop graph, where the regression was. */
         const anchor = vertical ? null : bestAnchor(d, labelW, placed, bounds);
-        const lab = anchor
+        const pos = anchor
           ? /* Above a horizontal run and on a vertical one: the line stays visible and
                the label touches its own segment. */
             { x: anchor.x, y: anchor.horiz ? anchor.y - 8 : anchor.y }
           : labelPos(a, b, route, bounds, labelW);
-        const pill = pillFor(e.label ?? '', lab.x, lab.y);
-        /* A label placed by geometry can still land on a box, so the final position is
-           checked: text over text is the one thing a label may never do. */
-        if (e.label && touchesBox(lab, pill, placed)) {
-          /* The pill is re-measured at each candidate y: stepping away from a position
-             with the old pill tests a rectangle that is no longer where the label is. */
-          for (let step = 8; step <= 160; step += 8) {
-            for (const y of [lab.y - step, lab.y + step]) {
-              const p2 = pillFor(e.label, lab.x, y);
-              if (!touchesBox({ x: lab.x, y }, p2, placed)) {
-                lab.y = y;
+        /* One resolver decides where the label ends up, and the pill and the words are
+           both rendered from what it returns. The two used to be separate: a pill was
+           measured, two nudges moved the text, and the pill was drawn from the stale
+           rectangle — STAGE FAILS sat 18 units below its own words, painting over EACH
+           STEP. Adding a third nudge (which is what the last two passes did) only moves
+           that defect to another label, so there are no nudges left to add: candidates
+           are tried in order of increasing displacement and the first one that satisfies
+           every constraint is taken.
+
+           Constraints, all measured on the pill this position would actually draw:
+           inside the drawing, clear of every node box, clear of every label already
+           placed on its band. */
+        const holds = (x: number, y: number) => {
+          const r = pillFor(label, x, y);
+          if (r.x < 1 || r.x + r.w > bounds.w - 1 || r.y < 1 || r.y + r.h > bounds.h - 1) return false;
+          if (touchesBox({ x, y }, r, placed)) return false;
+          return !placedLabels.some(
+            (o) => r.x < o.x + o.w + 4 && o.x < r.x + r.w + 4 && r.y < o.y + o.h + 2 && o.y < r.y + r.h + 2,
+          );
+        };
+        if (!holds(pos.x, pos.y)) {
+          /* Search outwards in both axes: a label that has to move should move as
+             little as possible, and preferring the shortest displacement keeps it near
+             its own line — which is what makes it read as that line's label. */
+          const radii = [4, 8, 12, 16, 20, 26, 32, 40, 48, 58, 70, 84, 100, 120, 145, 175];
+          let found = false;
+          for (const r of radii) {
+            for (const [dx, dy] of [
+              [0, -r], [0, r], [-r, 0], [r, 0],
+              [-r, -r], [r, -r], [-r, r], [r, r],
+              [0, -r * 1.8], [0, r * 1.8],
+            ]) {
+              if (holds(pos.x + dx, pos.y + dy)) {
+                pos.x += dx;
+                pos.y += dy;
+                found = true;
                 break;
               }
             }
-            if (!touchesBox(lab, pillFor(e.label, lab.x, lab.y), placed)) break;
+            if (found) break;
           }
         }
-        /* Nudge this label clear of any already placed on the same band. */
-        const clash = placedLabels.find(
-          (o) =>
-            lab.x - pill.w / 2 < o.x + o.w / 2 + 4 &&
-            o.x - o.w / 2 < lab.x + pill.w / 2 + 4 &&
-            lab.y - 12 < o.y + o.h &&
-            o.y - 12 < lab.y + 12,
-        );
-        if (clash) lab.y = clash.y + 20;
-        if (e.label) placedLabels.push({ x: lab.x, y: lab.y, w: pill.w, h: pill.h });
+        placedLabels.push(pillFor(label, pos.x, pos.y));
         return (
           <g key={e.id}>
             <path
@@ -893,23 +945,35 @@ function Graph({
               style={!animated && !spec.still.edges.includes(e.id) ? { opacity: 0.45 } : undefined}
               markerEnd={`url(#${marker})`}
             />
-            {e.label && (
-              <>
-                <rect className="flow-edge-pill" x={pill.x} y={pill.y} width={pill.w} height={pill.h} rx="3" />
-                <text
-                  className="flow-edge-label"
-                  data-edge-label={e.id}
-                  data-edge-from={e.from}
-                  data-edge-to={e.to}
-                  data-edge-loop={e.route.startsWith('loop') ? 'true' : undefined}
-                  x={lab.x}
-                  y={lab.y}
-                  textAnchor="middle"
-                >
-                  {e.label}
-                </text>
-              </>
-            )}
+            {(() => {
+              /* The pill and the words are rendered from the same `pos`. This is the
+                 whole fix: they cannot disagree, because neither is stored. */
+              const pill = pillFor(label, pos.x, pos.y);
+              return (
+                <>
+                  <rect
+                    className="flow-edge-pill"
+                    x={pill.x}
+                    y={pill.y}
+                    width={pill.w}
+                    height={pill.h}
+                    rx="3"
+                  />
+                  <text
+                    className="flow-edge-label"
+                    data-edge-label={e.id}
+                    data-edge-from={e.from}
+                    data-edge-to={e.to}
+                    data-edge-loop={e.route.startsWith('loop') ? 'true' : undefined}
+                    x={pos.x}
+                    y={pos.y}
+                    textAnchor="middle"
+                  >
+                    {label}
+                  </text>
+                </>
+              );
+            })()}
           </g>
         );
         });
