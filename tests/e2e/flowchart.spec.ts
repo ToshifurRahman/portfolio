@@ -1349,3 +1349,46 @@ for (const d of DIAGRAMS) {
     });
   });
 }
+
+/* ---------------------------------------------------------------- round P2b
+ *
+ * P2b-4, and the other half of ruling 12. Ruling 12 accepted that the chart may scroll
+ * rather than shrink its labels below the floor, but it did not accept that Ticket-Pipeline
+ * cannot fit a 1440x900 window at all: it ended 57px past the fold. Row spacing is the lever
+ * that buys the height without touching the type — the CTM must stay where it was.
+ *
+ * So this asserts both halves together: the chart fits, and every label is still 12px or
+ * more and still drawn at the same scale. A future change that fits the window by shrinking
+ * the drawing fails on the second half.
+ */
+
+test.describe('ticket-pipeline: fits a desktop window', () => {
+  test('ends inside a 1440x900 window, at the full scale', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/work/ticket-pipeline');
+    await panel(page, 'ticket-pipeline').scrollIntoViewIfNeeded();
+
+    const geo = await page.evaluate(() => {
+      const svg = [...document.querySelectorAll('.flow-svg')].find(
+        (s) => s.getBoundingClientRect().width > 0,
+      ) as SVGSVGElement;
+      const ctm = svg.getScreenCTM()!;
+      const sizes = [...svg.querySelectorAll('text')]
+        .filter((t) => (t.textContent ?? '').trim().length > 0)
+        .map((t) => parseFloat(getComputedStyle(t).fontSize) * ctm.a);
+      return {
+        h: svg.getBoundingClientRect().height,
+        win: innerHeight,
+        ctmA: ctm.a,
+        min: Math.min(...sizes),
+      };
+    });
+
+    expect(geo.h, 'the chart is taller than a 1440x900 window').toBeLessThanOrEqual(geo.win);
+    /* The floor and the scale are the invariants ruling 12 protected; fitting must not
+       buy the window with either. */
+    expect(geo.min, 'smallest label at 1440x900').toBeGreaterThanOrEqual(12);
+    expect(geo.ctmA, 'the chart must not be scaled down to fit').toBeGreaterThanOrEqual(1);
+  });
+});

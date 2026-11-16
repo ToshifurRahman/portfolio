@@ -178,7 +178,7 @@ const heightOf = (node: Node, inner: number) => {
 };
 
 const GAP_X = 46;
-const GAP_Y = 38;
+const GAP_Y = 30;
 
 /* The desktop layout. Boxes are sized from their text; a column is as wide as its
    widest box; a row is as tall as its tallest. The loop margin is reserved on both
