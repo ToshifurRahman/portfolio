@@ -61,6 +61,62 @@ test('the CV sections carry their ids and headings, certificates inside Achievem
   await expect(page.locator('section#achievements #certificates')).toHaveCount(1);
 });
 
+/* Owner, 2026-11-16 23:13: at 390 the lead line wraps and the middot began the
+   second line, reading as a stray bullet. Wherever the two pairs sit, no visible
+   separator may lead or end a line, and each pair must stay whole. Measured from
+   the boxes, at both ends of the range: the wrap happens below ~645px, so 390
+   wraps and 1440 does not. */
+for (const width of [390, 1440] as const) {
+  test(`the achievements lead line never leaves a separator alone (${width}px)`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await gotoHome(page);
+    const line = page.locator('#achievements .source-line');
+    await line.scrollIntoViewIfNeeded();
+
+    const boxes = await page.evaluate(() => {
+      const rect = (el: Element) => {
+        const r = el.getBoundingClientRect();
+        return { left: r.left, right: r.right, top: r.top, bottom: r.bottom, text: el.textContent?.trim() ?? '' };
+      };
+      const pairs = [...document.querySelectorAll<HTMLElement>('#achievements .source-pair')].map(rect);
+      /* The separators that are actually visible: a `display: none` one is not a
+         bullet on any line, and the fix may hide it rather than move it. */
+      const seps = [...document.querySelectorAll<HTMLElement>('#achievements .source-sep')]
+        .filter((el) => getComputedStyle(el).display !== 'none' && el.getBoundingClientRect().width > 0)
+        .map(rect);
+      return { pairs, seps };
+    });
+
+    expect(boxes.pairs).toHaveLength(2);
+    for (const pair of boxes.pairs) expect(pair.text, 'a pair is empty').toBeTruthy();
+
+    /* Each pair is one unbreakable run: its link text is on one line, so its
+       height is one line tall. */
+    const heights = await page.evaluate(() =>
+      [...document.querySelectorAll<HTMLElement>('#achievements .source-pair')].map((el) => ({
+        h: el.getBoundingClientRect().height,
+        lh: Number.parseFloat(getComputedStyle(el).lineHeight) || el.getBoundingClientRect().height,
+      })),
+    );
+    for (const { h, lh } of heights) {
+      expect(h, 'a pair wrapped inside itself').toBeLessThan(lh * 1.9);
+    }
+
+    for (const sep of boxes.seps) {
+      /* A line is a shared vertical centre: a pair is on the separator's line when
+         their centres agree, which is robust whether the separator is flush
+         against a pair (one line) or alone at the start of a wrapped one. */
+      const centre = (b: { top: number; bottom: number }) => (b.top + b.bottom) / 2;
+      const sepMid = (sep.left + sep.right) / 2;
+      const onLine = boxes.pairs.filter((p) => Math.abs(centre(p) - centre(sep)) < 4);
+      const before = onLine.filter((p) => (p.left + p.right) / 2 < sepMid);
+      const after = onLine.filter((p) => (p.left + p.right) / 2 > sepMid);
+      expect(before.length, `separator "${sep.text}" leads its line`).toBeGreaterThan(0);
+      expect(after.length, `separator "${sep.text}" ends its line`).toBeGreaterThan(0);
+    }
+  });
+}
+
 test('a certificate dialog opens, traps focus, closes on Escape and returns focus', async ({ page }) => {
   await gotoHome(page);
 
