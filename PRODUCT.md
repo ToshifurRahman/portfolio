@@ -25,20 +25,20 @@ The owner builds asynchronous, stateful systems and cares about what happens whe
 ## Operating Context
 
 - Single site: a home page and one page per case study.
-- Each case study follows seven fixed sections, in this order: Overview, Problem, Architecture, Tech decisions, Challenges, Solutions, Results. (The owner confirmed seven on 2026-11-15; the earlier list also named Motivation and Future improvements, which no case study has.)
+- Each case study follows six fixed sections, in this order: Overview, Problem, Architecture, Tech decisions, Challenges and solutions, Results. (The owner confirmed seven on 2026-11-15; the site ships six, because Challenges and Solutions are one section pairing a challenge with its solution one to one.)
 - Visitors arrive from a CV link or a LinkedIn / GitHub profile, on desktop or phone.
 
 ## Capabilities and Constraints
 
 - Dark first. A light theme may exist but dark is the default and the designed-for state.
 - Minimal, simple design. No profile picture anywhere.
-- Full case studies: Ticket-Pipeline and the e-commerce project (RannaGhor). Other projects may appear as short entries.
-- Undecided: location, biography, contact email, LinkedIn URL, availability, CV file. Until the owner supplies them they are left empty in `src/content.ts`: hidden on the built site, shown as notes only while developing.
+- Full case studies: Ticket-Pipeline and the e-commerce project (RannaGhor). No other projects appear as short entries; the site's Work section lists only these two, and the earlier "What I build" and "Other projects" sections are not on the page.
+- Undecided: availability and a biography. Until the owner supplies them they are left empty in `src/content.ts`: hidden on the built site, shown as notes only while developing. Location, contact email, LinkedIn URL and the CV file are supplied and shown.
 
 ## Brand Commitments
 
 - Name shown as "Toshifur Rahman", title "Software Engineer".
-- The owner asked for a state-diagram design language, and for the design to show the owner's taste and be unique.
+- The owner asked for a design language of his own, and for the design to show his taste and be unique. The shipped language is Signal Box: a dark control panel with one amber signal, described in `DESIGN.md`.
 - Reference portfolios the owner asked to be analysed for design sense (not to be copied): marcobaldini.pages.dev, aathifzahir.vercel.app, moritzhauer.github.io, alexandrefernandes.dev.
 
 ## Evidence on Hand
