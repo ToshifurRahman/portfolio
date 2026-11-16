@@ -822,8 +822,11 @@ textarea {
   display: none;
 }
 
+/* Level with every other action's target. It was 2.25rem, which made the bar's smallest
+   action the only one under 44px; the bar is 65px tall, so the button grows inside the
+   existing bar instead of pushing it taller. */
 .cv-link {
-  min-height: 2.25rem;
+  min-height: var(--target);
   padding: 0 var(--space-4);
   font-size: var(--text-sm);
 }
