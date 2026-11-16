@@ -129,6 +129,37 @@ describe('CvSections', () => {
     ]);
   });
 
+  /* Owner, at route close: "the readout plus one line each" — the lead item is
+     one line like every other, not the CV sentence printed under the figures.
+     What the line may say is what the readout does not already: the handles and
+     their links. The sentence stays in content.ts as the source of truth. */
+  it('does not print the CV sentence under the readout, and repeats no figure', () => {
+    renderSections();
+    const readout = document.querySelector('#achievements .readout-figures')!;
+    const text = readout.textContent ?? '';
+
+    /* The source sentence is not on the page at all. */
+    expect(text.split(achievements[0].text).length - 1).toBe(0);
+
+    /* No figure the readout already shows is printed a second time, in the
+       figures or in the line beside them. */
+    for (const { value } of achievements[0].record!) {
+      expect(text.split(value).length - 1, `${value} appears more than once`).toBe(1);
+    }
+
+    /* The line carries what the figures do not: the two handles. */
+    for (const handle of ['ToshifurRahman', 'tasin_021']) {
+      expect(text, `${handle} missing from the lead line`).toContain(handle);
+    }
+
+    /* Guards the guard: the sentence really does carry every figure, so the
+       comparison above is a real one and not two blanks agreeing. */
+    const source = achievements[0].text.replace(/,/g, '');
+    for (const { value } of achievements[0].record!) {
+      expect(source, value).toContain(value.replace(/,/g, ''));
+    }
+  });
+
   it('shows the first achievement once, in the readout, and the rest as the list', () => {
     renderSections();
     const readout = document.querySelector('#achievements .readout-figures')!;
