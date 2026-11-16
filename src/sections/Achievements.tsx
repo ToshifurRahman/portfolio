@@ -3,10 +3,12 @@ import { Section } from '../Section';
 import { Certificates } from './Certificates';
 
 /* The problem-solving record leads the section as a highlighted readout: online
-   judge ratings, problems solved and contests entered, with the two profiles.
-   Every figure is split from the first achievement's own sentence in
-   src/content.ts, so no fact changes; that entry is shown here instead of
-   again in the list, and the remaining achievements follow it. */
+   judge ratings, problems solved and contests entered. Every figure is split
+   from the first achievement's own sentence in src/content.ts, so no fact
+   changes. Under it sits one line, like every other achievement: the handles,
+   which are what the figures cannot say. The sentence itself is not printed —
+   the owner asked for "the readout plus one line each" (2026-11-16) — but it
+   stays in content.ts as the source both views are derived from. */
 export function Achievements() {
   const lead = achievements.find((a) => a.record);
   const rest = achievements.filter((a) => !a.record);
@@ -22,18 +24,21 @@ export function Achievements() {
               </li>
             ))}
           </ul>
-          <p className="readout-record">
-            <span>{lead.text}</span>
-            {lead.links && (
-              <span className="achievement-links">
-                {lead.links.map((link) => (
-                  <a key={link.href} className="inline-link" href={link.href} rel="noopener noreferrer">
-                    {link.label}
-                  </a>
-                ))}
-              </span>
-            )}
-          </p>
+          {lead.links && (
+            <p className="readout-sources">
+              {lead.links.map((link) => (
+                <a
+                  key={link.href}
+                  className="inline-link mono"
+                  href={link.href}
+                  rel="noopener noreferrer"
+                  aria-label={`${link.label}: ${link.handle ?? link.label}`}
+                >
+                  {link.handle ?? link.label}
+                </a>
+              ))}
+            </p>
+          )}
         </div>
       )}
       {/* One line per achievement: title, place if the title does not say it,

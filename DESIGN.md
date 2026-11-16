@@ -416,10 +416,13 @@ affordance is the title and the arrow.
 
 ## Achievements, Certificates, Contact
 
-**Achievements** keeps the readout (the figures) plus one line per item — a record sentence and
-the item, nothing more. **Certificates** live inside Achievements rather than as their own
-section: a grid of certificate cards that open a `CertificateDialog` with the preview image and
-its details; the dialog is a real modal with a backdrop token, focus trapped and Escape to close.
+**Achievements** keeps the readout (the figures) plus one line per item. The lead item's line is
+the two handles and nothing else — the figures already carry the platform names and the ratings,
+so the line adds only the names the owner goes by there. Every item's CV sentence stays in
+`src/content.ts` as the source both views are split from; none is printed as a paragraph.
+**Certificates** live inside Achievements rather than as their own section: a grid of
+certificate cards that open a `CertificateDialog` with the preview image and its details; the
+dialog is a real modal with a backdrop token, focus trapped and Escape to close.
 **Contact** sets the address in the `email` clamp and puts a **Copy email** button beside it —
 a `copy-button` in mono `2xs`, `ink-2` on a `rule-strong` border, turning amber on hover, that
 copies to the clipboard and confirms in place. The address itself is owner-voice copy from

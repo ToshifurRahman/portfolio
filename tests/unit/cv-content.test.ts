@@ -154,12 +154,16 @@ describe('achievements', () => {
   it('carries the CV figures and links', () => {
     expect(texts.join(' ')).toMatch(/1,600\+ problems/);
     expect(texts.join(' ')).toMatch(/100\+ online and onsite contests/);
+    /* Since 2026-11-16 the lead item's one line is the handles, so each link
+       carries the name the owner goes by there as well as the profile URL. */
     expect(find('Codeforces')?.links).toContainEqual({
-      label: 'Codeforces profile',
+      label: 'Codeforces',
+      handle: 'ToshifurRahman',
       href: 'https://codeforces.com/profile/ToshifurRahman',
     });
     expect(find('CodeChef')?.links).toContainEqual({
-      label: 'CodeChef profile',
+      label: 'CodeChef',
+      handle: 'tasin_021',
       href: 'https://www.codechef.com/users/tasin_021',
     });
     expect(find('1290')).toBeDefined();

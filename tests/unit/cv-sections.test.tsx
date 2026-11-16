@@ -64,8 +64,11 @@ describe('CvSections', () => {
 
     const ach = document.getElementById('achievements') as HTMLElement;
     const text = ach.textContent ?? '';
-    expect(text).toMatch(/max rating 1290/);
-    expect(text).toMatch(/max rating 1461/);
+    /* The readout prints the figures with their labels; the CV sentence they came
+       from is no longer printed under them (owner, 2026-11-16, "the readout plus
+       one line each"). */
+    expect(text).toMatch(/Codeforces max rating/);
+    expect(text).toMatch(/CodeChef max rating/);
     expect(text).toMatch(/1st Runner-up/);
     expect(text).toMatch(/Best Mentor Award/);
     expect(text.indexOf('Codeforces')).toBeLessThan(text.indexOf('1st Runner-up'));
@@ -163,7 +166,11 @@ describe('CvSections', () => {
   it('shows the first achievement once, in the readout, and the rest as the list', () => {
     renderSections();
     const readout = document.querySelector('#achievements .readout-figures')!;
-    expect(readout.textContent).toContain(achievements[0].text);
+    /* Its facts, not its sentence: since 2026-11-16 the readout shows the figures
+       and one line of handles, and the sentence is only the source. */
+    for (const { label } of achievements[0].record!) {
+      expect(readout.textContent).toContain(label);
+    }
     /* Since 23:03 each of the rest is one line, not its full sentence, so the
        test checks the line's own title and year rather than the paragraph. */
     const listed = [...document.querySelectorAll('.achievements li')].map((li) => li.textContent ?? '');
@@ -172,9 +179,9 @@ describe('CvSections', () => {
       expect(entry.title, `${entry.text} has no short title`).toBeTruthy();
       expect(listed.some((t) => t.includes(entry.title!)), entry.text).toBe(true);
     }
-    /* The record sentence appears once on the page, not twice. */
+    /* The record sentence is never printed, so it cannot appear twice. */
     const page = document.getElementById('achievements')!.textContent ?? '';
-    expect(page.split(achievements[0].text).length - 1).toBe(1);
+    expect(page.split(achievements[0].text).length - 1).toBe(0);
   });
 
   it('lists one row per certificate inside Achievements, named by its own text', () => {

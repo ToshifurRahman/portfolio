@@ -1872,25 +1872,22 @@ textarea {
   grid-column: auto;
 }
 
-.readout-record {
+/* The handles under the readout: one line, the same shape as a list row, and
+   only the fact the figures cannot carry. The platform name is already in each
+   figure's label, so it is the link's accessible name rather than a repeat. */
+.readout-sources {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: var(--space-2) var(--space-5);
-  max-width: var(--measure);
-  color: var(--ink-2);
-}
-
-.achievement-links {
-  display: flex;
-  flex-wrap: wrap;
   gap: var(--space-1) var(--space-5);
+  max-width: var(--measure);
 }
 
-.achievement-links a {
+.readout-sources a {
   display: inline-flex;
   align-items: center;
   min-height: var(--target);
+  color: var(--ink-2);
 }
 
 .certificate-list {

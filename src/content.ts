@@ -154,12 +154,18 @@ export type Achievement = {
   title?: string;
   year?: string;
   place?: string;
-  links?: { label: string; href: string }[];
+  /* `handle` is the name the owner goes by on that site — the one fact the
+     one-line row adds that the sentence's readout figures cannot show. */
+  links?: { label: string; handle?: string; href: string }[];
   record?: RecordFigure[];
 };
 
 export const achievements: Achievement[] = [
   {
+    /* The owner's CV sentence, verbatim, and the source of truth for this entry:
+       the readout's figures and the lead line below are both split from it and
+       restate nothing. It is deliberately not printed as a paragraph — the owner
+       asked for "the readout plus one line each" (2026-11-16). */
     text: 'Codeforces: ToshifurRahman (Pupil, max rating 1290); CodeChef: tasin_021 (max rating 1461). Solved 1,600+ problems and participated in 100+ online and onsite contests.',
     /* Split from the sentence above, fact for fact, for the section's readout. */
     record: [
@@ -168,9 +174,16 @@ export const achievements: Achievement[] = [
       { value: '1,600+', label: 'problems solved' },
       { value: '100+', label: 'contests entered' },
     ],
+    /* The one line beside the figures, carrying only what they cannot: which
+       handle each rating belongs to. Both names are the sentence's own, and
+       "Pupil" is already in the readout's first label, so it is not repeated. */
     links: [
-      { label: 'Codeforces profile', href: 'https://codeforces.com/profile/ToshifurRahman' },
-      { label: 'CodeChef profile', href: 'https://www.codechef.com/users/tasin_021' },
+      {
+        label: 'Codeforces',
+        handle: 'ToshifurRahman',
+        href: 'https://codeforces.com/profile/ToshifurRahman',
+      },
+      { label: 'CodeChef', handle: 'tasin_021', href: 'https://www.codechef.com/users/tasin_021' },
     ],
   },
   {
