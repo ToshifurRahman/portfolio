@@ -171,6 +171,48 @@ test.describe('design review 1 regressions', () => {
     expect(box!.height).toBeGreaterThanOrEqual(24);
     expect(box!.width).toBeGreaterThanOrEqual(24);
   });
+
+  /* P2b-12. The bar's CV action measured 53x36: `.cv-link` overrode the button's
+     `min-height: var(--target)` down to 2.25rem, so the smallest action in the bar was
+     the one under the 44px target. Asserted against `--target` rather than the literal
+     44, so the token stays the single source of truth, and asserted through
+     `elementFromPoint` at the box's edges: a target that a neighbour covers is not a
+     target, and a transparent pseudo-element would still have to receive the hit. */
+  test('the CV action is at least the target size, and its own hit area', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+    const measured = await page.locator('.cv-link').evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      const target = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--target')) * 16;
+      const edge = (x: number, y: number) => {
+        const hit = document.elementFromPoint(x, y);
+        return hit === el || el.contains(hit) ? 'self' : (hit?.className || hit?.tagName || 'none');
+      };
+      return {
+        w: r.width,
+        h: r.height,
+        target,
+        /* 2px in from each edge, so a hairline border cannot win the hit. */
+        corners: [
+          edge(r.left + 2, r.top + 2),
+          edge(r.right - 2, r.top + 2),
+          edge(r.left + 2, r.bottom - 2),
+          edge(r.right - 2, r.bottom - 2),
+        ],
+      };
+    });
+    expect(measured.h).toBeGreaterThanOrEqual(measured.target);
+    expect(measured.w).toBeGreaterThanOrEqual(measured.target);
+    expect(measured.corners).toEqual(['self', 'self', 'self', 'self']);
+  });
+
+  test('a 44 px CV target does not make the bar taller', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+    const barH = await page.locator('header').first().evaluate((el) => el.getBoundingClientRect().height);
+    /* The bar's height is a layout commitment the hero offsets depend on. */
+    expect(barH).toBeLessThanOrEqual(66);
+  });
 });
 
 test.describe('case-study contents', () => {
