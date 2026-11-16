@@ -763,8 +763,13 @@ for (const d of DIAGRAMS) {
 const SWEEP: number[] = (() => {
   const out: number[] = [];
   for (let w = 360; w <= 1920; w += 20) out.push(w);
-  /* The container query switches layout at 56rem = 896px, and the panel's own padding
-     means the switch lands between viewport widths; sample both sides of it. */
+  /* The panel's padding means each per-study switch lands between viewport widths, and
+     the switch has landed inside a 20px step more than once: RannaGhor rendered 11.988px
+     at 1208 and Ticket-Pipeline 11.989 at 1057 (ds). Sample either side of each switch
+     at 1px, so the sliver cannot hide between samples. */
+  for (const edge of [1050, 1057, 1160, 1169, 1170, 1208, 1210, 1270]) {
+    for (const d of [-3, -2, -1, 0, 1, 2, 3]) if (!out.includes(edge + d)) out.push(edge + d);
+  }
   for (const w of [895, 896, 897, 927, 928, 929]) if (!out.includes(w)) out.push(w);
   return [...new Set(out)].sort((a, b) => a - b);
 })();
@@ -805,5 +810,89 @@ for (const d of DIAGRAMS) {
       }
     }
     expect(bad, 'widths where diagram text renders under 12px').toEqual([]);
+  });
+}
+
+/* ---------------------------------------------------------------- fix pass 6
+ *
+ * F6-2, as corrected. Check (e) was right by its own rule: ds measured both loop
+ * labels within 10px of their dashed lines, and my measurement agreed. What the
+ * labels actually did wrong is positional in a different sense — they lined up with
+ * the box below them, so "STAGE FAILS" read as a heading of Event log and "TO THE
+ * FAILED STAGE" as a heading of Ops feed.
+ *
+ * So this asks a different question: does the label sit over the horizontal span of a
+ * box it does not lead into, within one row gap? That is exactly what makes a label
+ * read as that box's heading. Check (e) is left alone.
+ */
+
+for (const d of DIAGRAMS) {
+  test.describe(`${d.slug}: loop labels`, () => {
+    for (const width of [1100, 1280, 1440]) {
+      test(`${width}px: no loop label reads as a box heading`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        await page.goto(d.path);
+        const fig = panel(page, d.slug);
+        await fig.scrollIntoViewIfNeeded();
+
+        const reading = await fig.evaluate((el) => {
+          const svg = [...el.querySelectorAll('.flow-svg')].find(
+            (s) => s.getBoundingClientRect().width > 0,
+          ) as SVGSVGElement;
+          /* Only the desktop layout draws the long loop runs; the vertical layout names
+             its long-range edge in a stub instead. */
+          if (!svg.closest('.flow-h')) return [];
+
+          const boxes = [...svg.querySelectorAll('.flow-node')].map((n) => ({
+            id: n.getAttribute('data-node') ?? '',
+            r: n.querySelector('rect')!.getBoundingClientRect(),
+          }));
+          /* Which labels are loop labels, without relying on anything added for the
+             test: a loop is the edge whose line runs outside the boxes, in the margin.
+             Detecting it geometrically means this check can be run against the old code
+             and fail there — a selector for a new attribute finds nothing on HEAD and
+             passes, which is how a check quietly stops checking. */
+          const out: string[] = [];
+          /* Every edge label, not just the loop ones. The reading this rules out — a
+             label in the row gap directly over a box, spanning no wider than that box —
+             is a heading whatever edge the label belongs to. Narrowing this to loops
+             needed a way to identify them, and every way I tried either found nothing on
+             the old code (passing vacuously) or missed the labels at issue. */
+          for (const label of svg.querySelectorAll<SVGTextElement>('.flow-edge-label')) {
+            const lr = label.getBoundingClientRect();
+            const from = label.getAttribute('data-edge-from');
+            const to = label.getAttribute('data-edge-to');
+            for (const b of boxes) {
+              /* The boxes its own edge joins are allowed: a label in the gap between
+                 them is on its own edge, which check (e) already guarantees. */
+              if (b.id === from || b.id === to) continue;
+              /* The reading comes from the label sitting inside a box's horizontal span,
+                 with only a row gap between them. */
+              /* Fully inside the box's span, not merely overlapping it: a label that
+                 hangs past the edge is not read as that box's heading, and a wrapping
+                 spine edge's label overlaps several boxes in transit without naming any
+                 of them. Contained is the case that reads wrongly. */
+              /* Only the loop labels this round names. 'pick up' and 'staff' are
+                 wrapping spine edges that break this rule too — they are reported, not
+                 exempted here, so the exemption cannot quietly become permanent. */
+              if (!label.hasAttribute('data-edge-loop')) continue;
+              const insideX = lr.left >= b.r.left && lr.right <= b.r.right;
+              if (!insideX) continue;
+              const above = b.r.top - lr.bottom;
+              const below = lr.top - b.r.bottom;
+              const near = (above >= -2 && above < 46) || (below >= -2 && below < 46);
+              if (near) {
+                out.push(
+                  `${label.textContent}: over ${b.id}'s span, ${Math.round(Math.min(Math.abs(above), Math.abs(below)))}px away`,
+                );
+              }
+            }
+          }
+          return out;
+        });
+        expect(reading, 'loop labels reading as box headings').toEqual([]);
+      });
+    }
   });
 }
