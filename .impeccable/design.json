@@ -1,284 +1,304 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-13T14:09:09Z",
+  "generatedAt": "2026-11-16T10:12:00Z",
   "title": "Design System: Toshifur Rahman Portfolio",
   "extensions": {
     "colorMeta": {
       "bg": {
         "role": "neutral",
-        "displayName": "Carbon Ground",
-        "canonical": "#0e0f11",
-        "tonalRamp": [
-          "oklch(15.0% 0.004 264)",
-          "oklch(26.0% 0.004 264)",
-          "oklch(38.0% 0.004 264)",
-          "oklch(49.0% 0.004 264)",
-          "oklch(61.0% 0.004 264)",
-          "oklch(72.0% 0.004 264)",
-          "oklch(84.0% 0.004 264)",
-          "oklch(95.0% 0.004 264)"
-        ]
+        "displayName": "Ground",
+        "canonical": "#0a0b0d",
+        "light": "#e8e5dd",
+        "description": "The page and the panel at night."
+      },
+      "bg-raised": {
+        "role": "neutral",
+        "displayName": "Raised Ground",
+        "canonical": "#0f1114",
+        "light": "#ded9cf",
+        "description": "The one step up: the bar band, cards, diagram boxes."
       },
       "ink": {
         "role": "neutral",
-        "displayName": "Warm Ink",
-        "canonical": "#f2f0ea",
-        "tonalRamp": [
-          "oklch(15.0% 0.008 91)",
-          "oklch(26.0% 0.008 91)",
-          "oklch(38.0% 0.008 91)",
-          "oklch(49.0% 0.008 91)",
-          "oklch(61.0% 0.008 91)",
-          "oklch(72.0% 0.008 91)",
-          "oklch(84.0% 0.008 91)",
-          "oklch(95.0% 0.008 91)"
-        ]
+        "displayName": "Ink",
+        "canonical": "#f2f1ec",
+        "light": "#121417",
+        "description": "Body text and headings."
+      },
+      "ink-2": {
+        "role": "neutral",
+        "displayName": "Second Ink",
+        "canonical": "#c4c7cd",
+        "light": "#33373d",
+        "description": "Ghost buttons, copy controls, quieter labels."
       },
       "muted": {
         "role": "neutral",
-        "displayName": "Slate Muted",
-        "canonical": "#9a9ea5",
-        "tonalRamp": [
-          "oklch(15.0% 0.011 262)",
-          "oklch(26.0% 0.011 262)",
-          "oklch(38.0% 0.011 262)",
-          "oklch(49.0% 0.011 262)",
-          "oklch(61.0% 0.011 262)",
-          "oklch(72.0% 0.011 262)",
-          "oklch(84.0% 0.011 262)",
-          "oklch(95.0% 0.011 262)"
-        ]
+        "displayName": "Muted",
+        "canonical": "#8b9099",
+        "light": "#5a5f68",
+        "description": "Tertiary: captions, diagram labels, meta."
+      },
+      "grid": {
+        "role": "neutral",
+        "displayName": "Grid Line",
+        "canonical": "#15181c",
+        "light": "#dcd7cc",
+        "description": "The column lines behind the introduction, below rule."
       },
       "rule": {
         "role": "neutral",
-        "displayName": "Graphite Rule",
-        "canonical": "#2a2d31",
-        "tonalRamp": [
-          "oklch(15.0% 0.008 256)",
-          "oklch(26.0% 0.008 256)",
-          "oklch(38.0% 0.008 256)",
-          "oklch(49.0% 0.008 256)",
-          "oklch(61.0% 0.008 256)",
-          "oklch(72.0% 0.008 256)",
-          "oklch(84.0% 0.008 256)",
-          "oklch(95.0% 0.008 256)"
-        ]
+        "displayName": "Rule",
+        "canonical": "#23272d",
+        "light": "#cdc7bb",
+        "description": "Separates rows and closes the bar."
+      },
+      "rule-strong": {
+        "role": "neutral",
+        "displayName": "Strong Rule",
+        "canonical": "#343941",
+        "light": "#b3ad9f",
+        "description": "Outlines a control that can be pressed."
+      },
+      "track": {
+        "role": "neutral",
+        "displayName": "Track",
+        "canonical": "#2c3138",
+        "light": "#a8a294",
+        "description": "The unfilled part of a track or rail."
+      },
+      "lamp-off": {
+        "role": "neutral",
+        "displayName": "Lamp Off",
+        "canonical": "#2c3138",
+        "light": "#bab4a6",
+        "description": "An unlit lamp; the same darkness as an empty track."
       },
       "accent": {
         "role": "primary",
-        "displayName": "Signal Vermilion",
-        "canonical": "#ff5b36",
-        "tonalRamp": [
-          "oklch(15.0% 0.206 34)",
-          "oklch(26.0% 0.206 34)",
-          "oklch(38.0% 0.206 34)",
-          "oklch(49.0% 0.206 34)",
-          "oklch(61.0% 0.206 34)",
-          "oklch(72.0% 0.206 34)",
-          "oklch(84.0% 0.206 34)",
-          "oklch(95.0% 0.206 34)"
-        ]
+        "displayName": "Amber Signal",
+        "canonical": "#ffb340",
+        "light": "#e09a12",
+        "description": "A lit lamp, the live token, the current item, the glow, focus."
+      },
+      "accent-hover": {
+        "role": "primary",
+        "displayName": "Amber Hover",
+        "canonical": "#ffc56b",
+        "light": "#e8a72c",
+        "description": "The hover of an amber fill."
+      },
+      "accent-text": {
+        "role": "primary",
+        "displayName": "Amber Text",
+        "canonical": "#ffb340",
+        "light": "#7a4600",
+        "description": "Amber as text, kept separate so it passes contrast on the ground."
       },
       "on-accent": {
-        "role": "neutral",
-        "displayName": "On-accent",
-        "canonical": "#0e0f11",
-        "tonalRamp": [
-          "oklch(15.0% 0.004 264)",
-          "oklch(26.0% 0.004 264)",
-          "oklch(38.0% 0.004 264)",
-          "oklch(49.0% 0.004 264)",
-          "oklch(61.0% 0.004 264)",
-          "oklch(72.0% 0.004 264)",
-          "oklch(84.0% 0.004 264)",
-          "oklch(95.0% 0.004 264)"
-        ]
-      },
-      "light-bg": {
-        "role": "neutral",
-        "displayName": "Paper Ground (light theme)",
-        "canonical": "#f2f0ea",
-        "tonalRamp": [
-          "oklch(15.0% 0.008 91)",
-          "oklch(26.0% 0.008 91)",
-          "oklch(38.0% 0.008 91)",
-          "oklch(49.0% 0.008 91)",
-          "oklch(61.0% 0.008 91)",
-          "oklch(72.0% 0.008 91)",
-          "oklch(84.0% 0.008 91)",
-          "oklch(95.0% 0.008 91)"
-        ]
-      },
-      "light-ink": {
-        "role": "neutral",
-        "displayName": "Carbon Ink (light theme)",
-        "canonical": "#0e0f11",
-        "tonalRamp": [
-          "oklch(15.0% 0.004 264)",
-          "oklch(26.0% 0.004 264)",
-          "oklch(38.0% 0.004 264)",
-          "oklch(49.0% 0.004 264)",
-          "oklch(61.0% 0.004 264)",
-          "oklch(72.0% 0.004 264)",
-          "oklch(84.0% 0.004 264)",
-          "oklch(95.0% 0.004 264)"
-        ]
-      },
-      "light-muted": {
-        "role": "neutral",
-        "displayName": "Slate Muted (light theme)",
-        "canonical": "#565a61",
-        "tonalRamp": [
-          "oklch(15.0% 0.012 262)",
-          "oklch(26.0% 0.012 262)",
-          "oklch(38.0% 0.012 262)",
-          "oklch(49.0% 0.012 262)",
-          "oklch(61.0% 0.012 262)",
-          "oklch(72.0% 0.012 262)",
-          "oklch(84.0% 0.012 262)",
-          "oklch(95.0% 0.012 262)"
-        ]
-      },
-      "light-rule": {
-        "role": "neutral",
-        "displayName": "Paper Rule (light theme)",
-        "canonical": "#d3d0c7",
-        "tonalRamp": [
-          "oklch(15.0% 0.013 92)",
-          "oklch(26.0% 0.013 92)",
-          "oklch(38.0% 0.013 92)",
-          "oklch(49.0% 0.013 92)",
-          "oklch(61.0% 0.013 92)",
-          "oklch(72.0% 0.013 92)",
-          "oklch(84.0% 0.013 92)",
-          "oklch(95.0% 0.013 92)"
-        ]
-      },
-      "light-accent": {
         "role": "primary",
-        "displayName": "Fired Vermilion (light theme)",
-        "canonical": "#c23410",
-        "tonalRamp": [
-          "oklch(15.0% 0.184 34)",
-          "oklch(26.0% 0.184 34)",
-          "oklch(38.0% 0.184 34)",
-          "oklch(49.0% 0.184 34)",
-          "oklch(61.0% 0.184 34)",
-          "oklch(72.0% 0.184 34)",
-          "oklch(84.0% 0.184 34)",
-          "oklch(95.0% 0.184 34)"
-        ]
+        "displayName": "On Accent",
+        "canonical": "#1a1204",
+        "light": "#1a1204",
+        "description": "Text on an amber fill; a brown-black, not the ground."
       },
-      "light-on-accent": {
-        "role": "neutral",
-        "displayName": "On-accent (light theme)",
-        "canonical": "#f2f0ea",
-        "tonalRamp": [
-          "oklch(15.0% 0.008 91)",
-          "oklch(26.0% 0.008 91)",
-          "oklch(38.0% 0.008 91)",
-          "oklch(49.0% 0.008 91)",
-          "oklch(61.0% 0.008 91)",
-          "oklch(72.0% 0.008 91)",
-          "oklch(84.0% 0.008 91)",
-          "oklch(95.0% 0.008 91)"
-        ]
+      "lamp-edge": {
+        "role": "primary",
+        "displayName": "Lamp Edge",
+        "canonical": "#ffb340",
+        "light": "#7a4600",
+        "description": "The hairline ring around a lit lamp."
+      },
+      "fail": {
+        "role": "semantic",
+        "displayName": "Fail",
+        "canonical": "#ff5b4a",
+        "light": "#c2321f",
+        "description": "Failure semantics in the flowcharts only; never a UI colour."
       }
     },
     "typographyMeta": {
-      "display": {
-        "displayName": "Display",
-        "purpose": "Page titles: the owner name, case-study and not-found titles."
-      },
-      "headline": {
-        "displayName": "Headline",
-        "purpose": "The heading inside a state panel."
+      "name": {
+        "displayName": "Name",
+        "fontSize": "var(--text-name)",
+        "fontWeight": "var(--weight-bold)",
+        "letterSpacing": "var(--tracking-display)",
+        "family": "font",
+        "description": "The home hero."
       },
       "title": {
         "displayName": "Title",
-        "purpose": "Case-study section headings and case-study entry titles."
+        "fontSize": "var(--text-title)",
+        "fontWeight": "var(--weight-bold)",
+        "letterSpacing": "var(--tracking-display)",
+        "family": "font",
+        "description": "The case-study title."
       },
-      "subtitle": {
-        "displayName": "Subtitle",
-        "purpose": "Row titles inside a panel."
+      "email": {
+        "displayName": "Email",
+        "fontSize": "var(--text-email)",
+        "fontWeight": "var(--weight-bold)",
+        "letterSpacing": "var(--tracking-display)",
+        "family": "font",
+        "description": "The contact address."
       },
-      "state-label": {
-        "displayName": "State label",
-        "purpose": "The word inside a state box."
+      "h2": {
+        "displayName": "H2",
+        "fontSize": "var(--text-h2)",
+        "fontWeight": "var(--weight-semibold)",
+        "letterSpacing": "var(--tracking-tight)",
+        "family": "font",
+        "description": "Section headings."
       },
-      "lede": {
-        "displayName": "Lede",
-        "purpose": "One sentence under a title, max 34em."
+      "case": {
+        "displayName": "Case",
+        "fontSize": "var(--text-case)",
+        "fontWeight": "var(--weight-semibold)",
+        "letterSpacing": "var(--tracking-tight)",
+        "family": "font",
+        "description": "A work card's title."
+      },
+      "figure": {
+        "displayName": "Figure",
+        "fontSize": "var(--text-figure)",
+        "fontWeight": "var(--weight-semibold)",
+        "letterSpacing": "var(--tracking-tight)",
+        "family": "font",
+        "description": "A proof number."
+      },
+      "motto": {
+        "displayName": "Motto",
+        "fontSize": "var(--text-motto)",
+        "fontWeight": "var(--weight-medium)",
+        "letterSpacing": "var(--tracking-snug)",
+        "family": "font",
+        "description": "The hero statement."
+      },
+      "lg": {
+        "displayName": "Lg",
+        "fontSize": "var(--text-lg)",
+        "fontWeight": "var(--weight-regular)",
+        "letterSpacing": "normal",
+        "family": "font",
+        "description": "Secondary prose."
+      },
+      "xl": {
+        "displayName": "Xl",
+        "fontSize": "var(--text-xl)",
+        "fontWeight": "var(--weight-medium)",
+        "letterSpacing": "normal",
+        "family": "font",
+        "description": "A lead-in line."
       },
       "body": {
         "displayName": "Body",
-        "purpose": "Default text."
+        "fontSize": "var(--text-body)",
+        "fontWeight": "var(--weight-regular)",
+        "letterSpacing": "normal",
+        "family": "font",
+        "description": "Default prose."
       },
-      "body-long": {
-        "displayName": "Body long",
-        "purpose": "Case-study prose, max 42rem."
+      "md": {
+        "displayName": "Md",
+        "fontSize": "var(--text-md)",
+        "fontWeight": "var(--weight-regular)",
+        "letterSpacing": "normal",
+        "family": "font",
+        "description": "Secondary body."
       },
-      "fact": {
-        "displayName": "Fact",
-        "purpose": "Values in fact rows and skill lists."
+      "sm": {
+        "displayName": "Sm",
+        "fontSize": "var(--text-sm)",
+        "fontWeight": "var(--weight-regular)",
+        "letterSpacing": "normal",
+        "family": "font",
+        "description": "Small prose."
       },
-      "small": {
-        "displayName": "Small",
-        "purpose": "Footer, diagram captions and notes."
+      "xs": {
+        "displayName": "Xs",
+        "fontSize": "var(--text-xs)",
+        "fontWeight": "var(--weight-medium)",
+        "letterSpacing": "normal",
+        "family": "font",
+        "description": "Small labels."
       },
-      "label": {
-        "displayName": "Label",
-        "purpose": "Uppercase muted term of a term/value pair, lane names, stack line."
-      },
-      "action": {
-        "displayName": "Action",
-        "purpose": "Uppercase underlined transition links and text buttons."
-      },
-      "state-num": {
-        "displayName": "State number",
-        "purpose": "Two-digit number in a state box."
+      "2xs": {
+        "displayName": "2xs",
+        "fontSize": "var(--text-2xs)",
+        "fontWeight": "var(--weight-semibold)",
+        "letterSpacing": "var(--tracking-mono)",
+        "family": "mono",
+        "description": "Mono labels, diagram text."
       }
     },
     "shadows": [],
     "motion": [
       {
-        "name": "ease",
+        "name": "ease-out",
         "value": "cubic-bezier(0.16, 1, 0.3, 1)",
-        "purpose": "The only easing: panel reveal and arrow nudge."
+        "purpose": "The easing for the fast transitions."
       },
       {
-        "name": "dur",
-        "value": "0.24s",
-        "purpose": "Panel reveal: clip-path from the top edge down when a state opens."
+        "name": "lamp",
+        "value": "120ms",
+        "purpose": "A lamp lighting or going out."
       },
       {
-        "name": "dur-fast",
-        "value": "0.2s",
-        "purpose": "Arrow in a transition link moving 4px right on hover."
+        "name": "fast",
+        "value": "160ms",
+        "purpose": "Small state transitions."
       },
       {
-        "name": "state-swap",
-        "value": "0s",
-        "purpose": "State fill, hover inversion and colour changes are instant."
+        "name": "fade",
+        "value": "220ms",
+        "purpose": "A hero cell lighting under the pointer."
       },
       {
-        "name": "reduced-motion",
-        "value": "none",
-        "purpose": "All animation and transition removed under prefers-reduced-motion: reduce."
+        "name": "wave",
+        "value": "9s",
+        "purpose": "The hero cells' slow wave; the owner's low-frequency floor."
+      },
+      {
+        "name": "pulse",
+        "value": "26s",
+        "purpose": "The signal ray's cycle, inside the owner's 20-30s window."
+      },
+      {
+        "name": "strip-step",
+        "value": "120ms",
+        "purpose": "Each strip starts this long after the one before, so the charge crosses the page."
+      },
+      {
+        "name": "none",
+        "value": "0.01ms",
+        "purpose": "The reduced-motion stop value."
       }
     ],
     "breakpoints": [
       {
-        "name": "lanes-vertical",
-        "value": "40rem"
+        "name": "art-vertical",
+        "value": "48rem",
+        "purpose": "Now lanes stack; the Work node structure collapses."
       },
       {
-        "name": "chain-vertical",
-        "value": "62rem"
+        "name": "bar-collapse",
+        "value": "57rem",
+        "purpose": "The bar collapses into a menu button."
+      },
+      {
+        "name": "flow-ticket-vertical",
+        "value": "1171px container",
+        "purpose": "Where Ticket-Pipeline's desktop chart would fall below 1:1."
+      },
+      {
+        "name": "flow-rannaghor-vertical",
+        "value": "1155px container",
+        "purpose": "Where RannaGhor's desktop chart would fall below 1:1."
       },
       {
         "name": "page-max",
-        "value": "100rem"
+        "value": "84rem",
+        "purpose": "The frame width; the 12-column grid lives inside it."
       }
     ],
     "themes": {
@@ -288,164 +308,168 @@
         "dark",
         "light"
       ]
+    },
+    "fonts": {
+      "font": "'Mona Sans Variable', 'Mona Fallback', system-ui, sans-serif",
+      "mono": "'Martian Mono Variable', 'Martian Fallback', ui-monospace, monospace",
+      "display": "optional",
+      "note": "Both faces are self-hosted with metric-matched fallbacks, so a cold visit reflows nothing."
+    },
+    "flowchart": {
+      "attribution": 6,
+      "labelFloorPx": 12,
+      "gapY": 30,
+      "heightClamp": false,
+      "note": "A label is legal only if its pill is 6 units nearer its own edge than any other stroke; no height clamp may return (Ruling 12)."
     }
   },
   "components": [
     {
-      "name": "State box",
+      "name": "Bar",
+      "kind": "component",
+      "refersTo": "bar",
+      "description": "Sticky control bar: accent wordmark, five nav links with lamps, a CV action.",
+      "html": "<header class=\"site-header\"><nav class=\"navbar frame grid12\"><a class=\"brand\" href=\"/\">Toshifur Rahman</a></nav></header>",
+      "css": ".site-header { position: sticky; top: 0; z-index: 20; background: var(--bg); border-bottom: var(--line) solid var(--rule); } .navbar { display: flex; align-items: center; gap: var(--space-6); min-height: var(--bar-h); padding-inline: var(--pad); } .brand { display: inline-flex; align-items: center; min-height: var(--target); margin-right: auto; color: var(--accent-text); white-space: nowrap; }"
+    },
+    {
+      "name": "Nav link",
+      "kind": "link",
+      "refersTo": "nav-link",
+      "description": "A bar or sub-nav entry; muted at rest, ink when current, its lamp lit amber.",
+      "html": "<a href=\"#work\" aria-current=\"true\"><span class=\"lamp is-lit\"></span>Work</a>",
+      "css": ".nav-links a { display: inline-flex; align-items: center; gap: var(--space-2); min-height: var(--target); color: var(--muted); font-size: var(--text-md); } .nav-links a:hover, .nav-links a.is-current { color: var(--ink); } .lamp { width: var(--lamp); height: var(--lamp); border-radius: 50%; background: var(--lamp-off); } .lamp.is-lit { background: var(--accent); box-shadow: 0 0 0 var(--line) var(--lamp-edge); }"
+    },
+    {
+      "name": "Primary button",
       "kind": "button",
-      "refersTo": "state-box",
-      "description": "Square outlined disclosure button naming one state; hover inverts.",
-      "html": "<button class=\"ds-state\" aria-expanded=\"false\"><span class=\"ds-state-num\">02</span><span class=\"ds-state-label\">Builds</span></button>",
-      "css": ".ds-state { display: flex; flex-direction: column; justify-content: space-between; width: 14rem; height: 7.5rem; padding: 0.75rem 1rem 0.875rem; border: 2px solid var(--ink); border-radius: 0; background: var(--bg); color: var(--ink); text-align: left; cursor: pointer; font-family: var(--font, 'Archivo Variable', 'Archivo', system-ui, sans-serif); } .ds-state-num { font-size: 1.125rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; line-height: 1.3; } .ds-state-label { font-size: clamp(1.375rem, 2.6vw, 2.875rem); font-stretch: 62%; font-weight: 900; text-transform: uppercase; line-height: 0.88; letter-spacing: -0.005em; } .ds-state:hover { background: var(--ink); color: var(--bg); } .ds-state:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }"
+      "refersTo": "button",
+      "description": "An amber fill with on-accent text; Download CV in the hero.",
+      "html": "<a class=\"button\" href=\"/cv.pdf\" download>Download CV</a>",
+      "css": ".button { display: inline-flex; align-items: center; gap: var(--space-2); min-height: var(--target); padding: 0 var(--space-5); border-radius: var(--radius); background: var(--accent); color: var(--on-accent); font-size: var(--text-md); font-weight: var(--weight-semibold); } .button:hover { background: var(--accent-hover); }"
     },
     {
-      "name": "State box, current",
+      "name": "Ghost button",
       "kind": "button",
-      "refersTo": "state-box-current",
-      "description": "The selected state: solid vermilion fill and outline, on-accent text.",
-      "html": "<button class=\"ds-state-current\" aria-expanded=\"true\"><span class=\"ds-state-current-num\">01</span><span class=\"ds-state-current-label\">Who</span></button>",
-      "css": ".ds-state-current { display: flex; flex-direction: column; justify-content: space-between; width: 14rem; height: 7.5rem; padding: 0.75rem 1rem 0.875rem; border: 2px solid var(--accent); border-radius: 0; background: var(--accent); color: var(--on-accent); text-align: left; cursor: pointer; font-family: var(--font, 'Archivo Variable', 'Archivo', system-ui, sans-serif); } .ds-state-current-num { font-size: 1.125rem; font-weight: 700; letter-spacing: 0.04em; line-height: 1.3; } .ds-state-current-label { font-size: clamp(1.375rem, 2.6vw, 2.875rem); font-stretch: 62%; font-weight: 900; text-transform: uppercase; line-height: 0.88; letter-spacing: -0.005em; } .ds-state-current:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }"
+      "refersTo": "ghost",
+      "description": "A ruled control: ink-2 text on a rule-strong outline, amber on hover.",
+      "html": "<a class=\"ghost\" href=\"https://github.com/ToshifurRahman\">GitHub</a>",
+      "css": ".ghost { display: inline-flex; align-items: center; gap: var(--space-2); min-height: var(--target); padding: 0 var(--space-4); border: var(--line) solid var(--rule-strong); border-radius: var(--radius); color: var(--ink-2); } .ghost:hover { border-color: var(--accent); color: var(--accent-text); }"
     },
     {
-      "name": "Chain",
-      "kind": "nav",
-      "refersTo": "state-box",
-      "description": "Start dot, states joined by straight arrows, end ring. Shown with three states.",
-      "html": "<div class=\"ds-chain\"><span class=\"ds-chain-dot\"></span><span class=\"ds-chain-arrow\"></span><button class=\"ds-chain-state ds-chain-current\">01 Who</button><span class=\"ds-chain-arrow\"></span><button class=\"ds-chain-state\">02 Builds</button><span class=\"ds-chain-arrow\"></span><button class=\"ds-chain-state\">03 Skills</button><span class=\"ds-chain-line\"></span><span class=\"ds-chain-ring\"></span></div>",
-      "css": ".ds-chain { display: flex; align-items: center; font-family: var(--font, 'Archivo Variable', 'Archivo', system-ui, sans-serif); } .ds-chain-dot { flex: none; width: 1.125rem; height: 1.125rem; border-radius: 50%; background: var(--ink); } .ds-chain-ring { flex: none; width: 1.5rem; height: 1.5rem; border: 2px solid var(--ink); border-radius: 50%; background: radial-gradient(circle, var(--ink) 0 0.3rem, transparent 0.36rem); } .ds-chain-arrow, .ds-chain-line { position: relative; flex: 1 0 1.5rem; height: 2px; background: var(--ink); } .ds-chain-arrow::after { content: ''; position: absolute; right: 1px; top: 50%; width: 0.625rem; height: 0.625rem; margin-top: -0.3125rem; border-top: 2px solid var(--ink); border-right: 2px solid var(--ink); transform: rotate(45deg); } .ds-chain-state { flex: none; padding: 1rem; border: 2px solid var(--ink); border-radius: 0; background: var(--bg); color: var(--ink); font-size: 1.5rem; font-stretch: 62%; font-weight: 900; text-transform: uppercase; line-height: 0.88; letter-spacing: -0.005em; cursor: pointer; } .ds-chain-state:hover { background: var(--ink); color: var(--bg); } .ds-chain-state.ds-chain-current { border-color: var(--accent); background: var(--accent); color: var(--on-accent); } .ds-chain-state:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }"
+      "name": "Case card",
+      "kind": "card",
+      "refersTo": "case",
+      "description": "A work card: raised ground, rule border, node diagram at its centre.",
+      "html": "<article class=\"case\"><h3 class=\"case-title\"><a href=\"/work/rannaghor\">RannaGhor</a></h3></article>",
+      "css": ".case { background: var(--bg-raised); border: var(--line) solid var(--rule); border-radius: var(--radius); padding: var(--space-6); } .case-title { font-size: var(--text-case); font-weight: var(--weight-semibold); letter-spacing: var(--tracking-tight); }"
     },
     {
-      "name": "Panel",
-      "kind": "custom",
-      "refersTo": "panel",
-      "description": "The open state: vermilion outline and connector, heading first, ruled fact rows, transitions bar last.",
-      "html": "<div class=\"ds-panel\"><h3 class=\"ds-panel-title\">Software Engineer</h3><p class=\"ds-panel-lede\">I build backend and full-stack systems, and I design for the moment they fail.</p><dl class=\"ds-panel-facts\"><div><dt>Focus</dt><dd>Async backends and full-stack web apps</dd></div><div><dt>Main stack</dt><dd>TypeScript, Bun, PostgreSQL, React</dd></div></dl><div class=\"ds-panel-transitions\"><a class=\"ds-panel-next\" href=\"#\">Next: 02 Builds <svg class=\"ds-arrow\" viewBox=\"0 0 24 12\" width=\"24\" height=\"12\" aria-hidden=\"true\"><path d=\"M0 6h21M16 1l6 5-6 5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/></svg></a></div></div>",
-      "css": ".ds-panel { position: relative; margin-top: 3rem; padding: clamp(1.75rem, 3.2vw, 3rem) clamp(1.25rem, 3.2vw, 3rem) clamp(1rem, 2vw, 1.5rem); border: 2px solid var(--accent); color: var(--ink); background: var(--bg); font-family: var(--font, 'Archivo Variable', 'Archivo', system-ui, sans-serif); font-size: 1.0625rem; line-height: 1.55; animation: ds-panel-in 0.24s cubic-bezier(0.16, 1, 0.3, 1); } .ds-panel::before { content: ''; position: absolute; bottom: 100%; left: 6rem; width: 2px; height: 3rem; background: var(--accent); } @keyframes ds-panel-in { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(-4rem 0 0 0); } } .ds-panel-title { margin: 0 0 clamp(1rem, 1.8vw, 1.5rem); font-size: clamp(2.75rem, 6.6vw, 6rem); font-stretch: 62%; font-weight: 900; text-transform: uppercase; line-height: 0.88; letter-spacing: -0.005em; } .ds-panel-lede { margin: 0; max-width: 34em; font-size: clamp(1.25rem, 2vw, 1.875rem); line-height: 1.3; } .ds-panel-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 0 2.5rem; margin: clamp(1.75rem, 3vw, 2.5rem) 0 0; } .ds-panel-facts > div { padding: 0.875rem 0 1rem; border-top: 2px solid var(--rule); } .ds-panel-facts dt { font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; line-height: 1.3; color: var(--muted); } .ds-panel-facts dd { margin: 0.375rem 0 0; font-size: 1.25rem; font-weight: 600; line-height: 1.3; } .ds-panel-transitions { display: flex; justify-content: flex-end; margin-top: clamp(1.75rem, 3vw, 2.75rem); padding-top: 0.5rem; border-top: 2px solid var(--rule); } .ds-panel-next { display: inline-flex; align-items: center; gap: 0.625rem; min-height: 2.75rem; padding: 0; border: 0; background: none; font-family: var(--font, 'Archivo Variable', 'Archivo', system-ui, sans-serif); font-size: 0.9375rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 0.35em; cursor: pointer; color: var(--accent); } .ds-panel-next:hover { color: var(--ink); } .ds-panel-next .ds-arrow { flex: none; transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1); } .ds-panel-next:hover .ds-arrow { transform: translateX(4px); } .ds-panel-next:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; } @media (prefers-reduced-motion: reduce) { .ds-panel { animation: none; } .ds-panel-next .ds-arrow { transition: none; } }"
-    },
-    {
-      "name": "Transition link",
+      "name": "Copy email button",
       "kind": "button",
-      "refersTo": "action-link",
-      "description": "Vermilion uppercase underlined link with arrow; moves the visitor to another state or page.",
-      "html": "<a class=\"ds-action\" href=\"#\">Read the case study <svg class=\"ds-arrow\" viewBox=\"0 0 24 12\" width=\"24\" height=\"12\" aria-hidden=\"true\"><path d=\"M0 6h21M16 1l6 5-6 5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/></svg></a>",
-      "css": ".ds-action { display: inline-flex; align-items: center; gap: 0.625rem; min-height: 2.75rem; padding: 0; border: 0; background: none; font-family: var(--font, 'Archivo Variable', 'Archivo', system-ui, sans-serif); font-size: 0.9375rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 0.35em; cursor: pointer; color: var(--accent); } .ds-action:hover { color: var(--ink); } .ds-action .ds-arrow { flex: none; transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1); } .ds-action:hover .ds-arrow { transform: translateX(4px); } .ds-action:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; } @media (prefers-reduced-motion: reduce) { .ds-action .ds-arrow { transition: none; } }"
+      "refersTo": "copy-button",
+      "description": "Copies the address; mono 2xs on a strong rule, amber on hover.",
+      "html": "<button class=\"copy-button\" type=\"button\">Copy email</button>",
+      "css": ".copy-button { display: inline-flex; align-items: center; min-height: var(--target); padding: 0 var(--space-4); border: var(--line) solid var(--rule-strong); border-radius: var(--radius); background: transparent; color: var(--ink-2); font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: var(--tracking-mono); text-transform: uppercase; } .copy-button:hover { border-color: var(--accent); color: var(--accent-text); }"
     },
     {
-      "name": "Text button",
-      "kind": "button",
-      "refersTo": "text-button",
-      "description": "Muted secondary action: going back (mirrored arrow first) and the theme switch.",
-      "html": "<button class=\"ds-textbutton\" type=\"button\"><svg class=\"ds-arrow\" viewBox=\"0 0 24 12\" width=\"24\" height=\"12\" aria-hidden=\"true\"><path d=\"M0 6h21M16 1l6 5-6 5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/></svg> Back to 01 Who</button>",
-      "css": ".ds-textbutton { display: inline-flex; align-items: center; gap: 0.625rem; min-height: 2.75rem; padding: 0; border: 0; background: none; font-family: var(--font, 'Archivo Variable', 'Archivo', system-ui, sans-serif); font-size: 0.9375rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 0.35em; cursor: pointer; color: var(--muted); } .ds-textbutton .ds-arrow { flex: none; transform: scaleX(-1); } .ds-textbutton:hover { color: var(--ink); } .ds-textbutton:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }"
+      "name": "Flow node",
+      "kind": "diagram",
+      "refersTo": "flow-node",
+      "description": "A box in a case study's flowchart.",
+      "html": "<g class=\"flow-node\"><rect width=\"150\" height=\"44\" rx=\"6\"></rect><text class=\"flow-node-name\">PostgreSQL</text></g>",
+      "css": ".flow-node rect { fill: var(--bg-raised); stroke: var(--rule-strong); stroke-width: var(--line); } .flow-node-name { font-family: var(--mono); font-size: var(--flow-label); fill: var(--ink); }"
     },
     {
-      "name": "Progress chain",
-      "kind": "nav",
-      "refersTo": "progress-step",
-      "description": "Compact sticky chain on case-study pages; the section in view is filled vermilion.",
-      "html": "<nav class=\"ds-progress\"><ol><li><a href=\"#\" aria-current=\"location\">01 Overview</a></li><li><a href=\"#\">02 Problem</a></li><li><a href=\"#\">03 Motivation</a></li><li><a href=\"#\">04 Architecture</a></li></ol></nav>",
-      "css": ".ds-progress { padding: 0.625rem 0; border-bottom: 2px solid var(--rule); background: var(--bg); font-family: var(--font, 'Archivo Variable', 'Archivo', system-ui, sans-serif); } .ds-progress ol { display: flex; align-items: center; margin: 0; padding: 0; list-style: none; overflow-x: auto; scrollbar-width: none; } .ds-progress ol::before, .ds-progress ol::after { content: ''; flex: none; border-radius: 50%; } .ds-progress ol::before { width: 0.75rem; height: 0.75rem; background: var(--ink); } .ds-progress ol::after { width: 1rem; height: 1rem; border: 2px solid var(--ink); background: radial-gradient(circle, var(--ink) 0 0.17rem, transparent 0.22rem); } .ds-progress li { display: flex; flex: 1 0 auto; align-items: center; } .ds-progress li::before, .ds-progress li:last-child::after { content: ''; flex: 1 0 0.75rem; height: 2px; background: var(--ink); } .ds-progress li:last-child::after { flex: 0 0 0.75rem; } .ds-progress a { position: relative; display: block; padding: 0.4375rem 0.375rem; border: 2px solid var(--ink); color: var(--ink); font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; text-decoration: none; white-space: nowrap; } .ds-progress a::before { content: ''; position: absolute; top: 50%; right: 100%; width: 0.4375rem; height: 0.4375rem; margin: -0.21875rem 3px 0 0; border-top: 2px solid var(--ink); border-right: 2px solid var(--ink); transform: rotate(45deg); } .ds-progress a:hover { background: var(--ink); color: var(--bg); } .ds-progress a[aria-current] { border-color: var(--accent); background: var(--accent); color: var(--on-accent); } .ds-progress a:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }"
+      "name": "Flow edge label",
+      "kind": "diagram",
+      "refersTo": "flow-edge-label",
+      "description": "A pill and its text on an edge; must own its seat by 6 units.",
+      "html": "<g><rect class=\"flow-edge-pill\"></rect><text class=\"flow-edge-label\">allowed</text></g>",
+      "css": ".flow-edge-label { font-family: var(--mono); font-size: var(--flow-label); fill: var(--muted); } .flow-edge-pill { fill: var(--bg); }"
     },
     {
-      "name": "Ruled rows",
-      "kind": "custom",
-      "refersTo": "panel",
-      "description": "The list pattern: a 2px rule on top of each row, label column then value.",
-      "html": "<dl class=\"ds-rows\"><div><dt>Languages</dt><dd>TypeScript, JavaScript, SQL, Python</dd></div><div><dt>Backend</dt><dd>Bun, Hono, PostgreSQL, Redis</dd></div></dl>",
-      "css": ".ds-rows { margin: 0; color: var(--ink); font-family: var(--font, 'Archivo Variable', 'Archivo', system-ui, sans-serif); } .ds-rows > div { display: grid; grid-template-columns: 12rem minmax(0, 1fr); align-items: baseline; gap: 0.25rem 2.5rem; padding: 0.875rem 0; border-top: 2px solid var(--rule); } .ds-rows dt { font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; line-height: 1.3; color: var(--muted); } .ds-rows dd { margin: 0; font-size: 1.25rem; font-weight: 600; line-height: 1.3; }"
+      "name": "Signal strip",
+      "kind": "decoration",
+      "refersTo": "signal-strip",
+      "description": "The decorative ray that runs from the wordmark down the page's strips.",
+      "html": "<div class=\"site-rail\" aria-hidden=\"true\"><span><i></i></span></div>",
+      "css": ".site-rail { position: fixed; inset: 0; z-index: -1; display: grid; width: min(100% - 2 * var(--frame-margin), var(--frame)); margin-inline: auto; pointer-events: none; overflow: hidden; } .site-rail i { position: absolute; inset-block: 0; left: 0; width: var(--line); background: linear-gradient(to bottom, transparent, var(--accent) 45%, var(--accent) 55%, transparent); opacity: 0; }"
     },
     {
-      "name": "Case-study entry",
-      "kind": "custom",
-      "refersTo": "action-link",
-      "description": "Whole-block link under an ink rule: condensed title, summary, stack line, transition link.",
-      "html": "<a class=\"ds-case\" href=\"#\"><span class=\"ds-case-title\">Ticket-Pipeline</span><span class=\"ds-case-summary\">A support-ticket pipeline with retries, replay and a live status page.</span><span class=\"ds-case-stack\">Bun, Hono, PostgreSQL, Redis, AWS SQS</span><span class=\"ds-case-action\">Read the case study <svg class=\"ds-arrow\" viewBox=\"0 0 24 12\" width=\"24\" height=\"12\" aria-hidden=\"true\"><path d=\"M0 6h21M16 1l6 5-6 5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/></svg></span></a>",
-      "css": ".ds-case { display: grid; gap: 0.75rem; padding: 1.125rem 0 1.5rem; border-top: 2px solid var(--ink); color: var(--ink); text-decoration: none; font-family: var(--font, 'Archivo Variable', 'Archivo', system-ui, sans-serif); font-size: 1.0625rem; line-height: 1.55; } .ds-case-title { font-size: clamp(2.5rem, 5vw, 4.5rem); font-stretch: 62%; font-weight: 900; text-transform: uppercase; line-height: 0.88; letter-spacing: -0.005em; } .ds-case:hover .ds-case-title { text-decoration: underline; text-decoration-thickness: 0.07em; text-underline-offset: 0.08em; } .ds-case-summary { max-width: 36em; } .ds-case-stack { font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; line-height: 1.3; color: var(--muted); } .ds-case-action { display: inline-flex; align-items: center; gap: 0.625rem; min-height: 2.75rem; padding: 0; border: 0; background: none; font-family: var(--font, 'Archivo Variable', 'Archivo', system-ui, sans-serif); font-size: 0.9375rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 0.35em; cursor: pointer; justify-self: start; color: var(--accent); } .ds-case:hover .ds-case-action { color: var(--ink); } .ds-case-action .ds-arrow { flex: none; transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1); } .ds-case:hover .ds-case-action .ds-arrow { transform: translateX(4px); } .ds-case:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }"
-    },
-    {
-      "name": "Architecture lane",
-      "kind": "custom",
-      "refersTo": "diagram-node",
-      "description": "A labelled lane of outlined nodes joined by the chain arrow, with a muted note.",
-      "html": "<div class=\"ds-lane\"><h3 class=\"ds-lane-label\">Request</h3><ol class=\"ds-lane-nodes\"><li>React app</li><li>Hono API</li><li>PostgreSQL</li></ol><p class=\"ds-lane-note\">Each node is a real list item; the order is the flow.</p></div>",
-      "css": ".ds-lane { color: var(--ink); font-family: var(--font, 'Archivo Variable', 'Archivo', system-ui, sans-serif); } .ds-lane-label { margin: 0 0 0.625rem; font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; line-height: 1.3; color: var(--muted); } .ds-lane-nodes { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 1.5rem 1.75rem; margin: 0; padding: 0; list-style: none; } .ds-lane-nodes li { position: relative; display: flex; align-items: center; padding: 0.5625rem 0.75rem; border: 2px solid var(--ink); font-size: 0.9375rem; font-weight: 700; line-height: 1.2; } .ds-lane-nodes li + li::before, .ds-lane-nodes li + li::after { content: ''; position: absolute; top: 50%; right: 100%; } .ds-lane-nodes li + li::before { width: 1.75rem; height: 2px; margin: -1px 2px 0 0; background: var(--ink); } .ds-lane-nodes li + li::after { width: 0.5rem; height: 0.5rem; margin: -0.25rem 3px 0 0; border-top: 2px solid var(--ink); border-right: 2px solid var(--ink); transform: rotate(45deg); } .ds-lane-note { margin: 0.625rem 0 0; color: var(--muted); font-size: 0.9375rem; line-height: 1.45; }"
+      "name": "Hero cell",
+      "kind": "decoration",
+      "refersTo": "hero-cell",
+      "description": "One of eleven glow cells between the column lines; the wave lights it.",
+      "html": "<span class=\"hero-cell\" style=\"--cell-index: 3\"></span>",
+      "css": ".hero-cell { margin-inline: 1px; background: linear-gradient(to bottom, transparent, var(--accent) 30%, var(--accent) 70%, transparent); opacity: 0; animation: hero-wave var(--dur-wave) ease-in-out infinite; animation-delay: calc(var(--cell-index, 0) * var(--strip-step) * -3); }"
     }
   ],
   "narrative": {
-    "northStar": "The Chain",
-    "overview": "The site is one state diagram. On the home page five square states in a row (Who, Builds, Skills, Projects, Contact) describe the owner as a system, with a filled start dot on the left and a ringed end dot on the right. The selected state fills with vermilion and a connector drops from it into an outlined panel holding that part of the owner. Case-study pages reuse the same chain as a compact, sticky row of nine states, one per section, and architecture diagrams inside a case study are drawn from the same boxes and arrows.\n\nEverything else is typography and rules. One family, Archivo, does all the work: extra-condensed heavy uppercase for names and headings, regular width for reading. Content is separated by 2px lines on top of each row, never by filled surfaces. The ground is near-black, the ink is a warm off-white, and a single vermilion marks where the machine is and where it can go next. Dark is the designed-for state; a light theme swaps ground and ink and deepens the vermilion.\n\nThe mood is blunt, legible and engineered: large, heavy, few elements, each one drawn with a straight line. Motion is nearly absent. A state change is an instant swap; the panel redraws from its top edge in 0.24s and the arrow on a transition link nudges 4px on hover, and both are removed under reduced motion.",
+    "northStar": "The signal box",
+    "overview": "A control panel for a working engineer. Everything sits inside one 12-column frame drawn by two hairlines, and colour is spent on one thing: an amber signal that says where you are. The ground reads as an instrument panel at night; every section is a readout rather than a card. Charge runs from the wordmark down the page's strips to the footer, and cells between the strips glow as it passes. It is slow, it is decoration, and it stops under prefers-reduced-motion. This replaces an earlier language (Archivo, a vermilion accent, a five-state chain as navigation) that is no longer on the site.",
     "keyCharacteristics": [
-      "A state diagram is the navigation: boxes, straight arrows, start dot, end ring.",
-      "One typeface, two widths: condensed 900 uppercase for display, regular width for text.",
-      "One accent, used only for the current state and the way out of it.",
-      "Flat and square: no shadows, no corner radius on any box, no filled content surfaces.",
-      "2px lines carry all structure: box outlines, arrows, row rules, link underlines, focus ring.",
-      "Two-digit numbers (01 to 09) name every state and section."
+      "One frame, twelve columns, two hairlines, on every page.",
+      "Dark first: :root is the night panel and the light theme is a token swap, not an inversion.",
+      "One accent, amber, for the live signal, the wordmark and the way forward.",
+      "Mono type wherever a number, label or system name appears; Sans for prose.",
+      "Flat and hairline: 1px rules, 6px radii, no shadows, no filled cards behind body copy.",
+      "The chart engine is part of the design language, so its rules are design rules."
     ],
     "rules": [
       {
-        "name": "The Current State Rule",
-        "body": "Vermilion says \"you are here\" or \"go there\". It fills the one current state, outlines its panel, and colours transition links. It is never a heading colour, a background wash, or decoration.",
+        "name": "The One Signal Rule",
+        "body": "Amber means live or go. It marks the current item, the lit lamp, the charge, the primary action and the focused control. It is never a heading colour, a section background, or decoration.",
         "section": "colors"
       },
       {
-        "name": "The Two Rules Rule",
-        "body": "A line in ink is part of the diagram or opens a major entry; a line in rule colour separates rows of content. Do not introduce a third line colour.",
+        "name": "The Two Rule Strengths Rule",
+        "body": "rule separates rows; rule-strong outlines something pressable. Do not reach for a third grey.",
         "section": "colors"
       },
       {
-        "name": "The One Family Rule",
-        "body": "Archivo only. Hierarchy comes from width, weight and size, never from a second typeface.",
+        "name": "The Mono Means Data Rule",
+        "body": "A number, a station, a stack, a label or a system name is Martian Mono. A sentence is Mona Sans. A line never mixes the two.",
         "section": "typography"
       },
       {
-        "name": "The Condensed Means Heading Rule",
-        "body": "Width 62% is always 900 and uppercase, and only for names, headings, state labels, step counters and figures. Running text is never condensed and never uppercase.",
+        "name": "The Diagram Floor Rule",
+        "body": "No flowchart text may render below 12px, measured from the rendered transform (getScreenCTM().a), not from the viewBox. The floor wins over fitting the chart in one window.",
         "section": "typography"
       },
       {
-        "name": "The Two Digits Rule",
-        "body": "States and sections are numbered 01, 02 and so on, shown inside the box or directly in front of the heading in the same line. A number is never a separate tag floating above a heading.",
-        "section": "typography"
+        "name": "The Frame Rule",
+        "body": "Every page sits inside the 84rem frame with its two hairlines and twelve columns. Nothing is placed outside it.",
+        "section": "layout"
       },
       {
-        "name": "The Flat Rule",
-        "body": "No shadows and no translucent layers, at rest or on interaction. Hover and selection change fill and colour only.",
+        "name": "The One Elevation Rule",
+        "body": "There is bg and bg-raised and nothing above. No shadows, no blur, no translucent surfaces except an overlay backdrop.",
         "section": "elevation"
       },
       {
-        "name": "The Box Means State Rule",
-        "body": "An outlined box is a state or a node in a diagram, and the only container is the panel of the current state. Content inside is never boxed again; it is separated by rules.",
-        "section": "shapes"
-      },
-      {
-        "name": "The Round Means Terminal Rule",
-        "body": "A circle marks the start or end of a chain and nothing else.",
-        "section": "shapes"
+        "name": "The Motion Is Decoration Rule",
+        "body": "The wave and the pulse carry no information, pause out of view and on a hidden tab, and vanish under reduced motion.",
+        "section": "motion"
       }
     ],
     "dos": [
-      "Do draw every structural line at 2px: outlines, arrows, rules, underlines and the focus ring.",
-      "Do keep vermilion to the current state, its panel and connector, and transition links.",
-      "Do set every heading in Archivo at width 62%, weight 900, uppercase, line-height 0.88.",
-      "Do number states and sections with two digits, inside the box or inline before the heading.",
-      "Do separate content with a 2px line on top of each row and a 2.5rem column gap.",
-      "Do show hover by inversion (ink fill, ground text) and selection by vermilion fill.",
-      "Do use the theme tokens by name so the light theme follows without extra rules.",
-      "Do keep targets at least 2.75rem tall for links and buttons, and keep the visible 2px focus outline.",
-      "Do remove the panel reveal and arrow nudge under reduced motion."
+      "Do put every page inside the frame, with the 12 columns and both hairlines.",
+      "Do spend amber on the live signal only: current item, lit lamp, charge, primary action, focus.",
+      "Do set numbers, labels, stacks and system names in Martian Mono, and prose in Mona Sans.",
+      "Do separate with a 1px rule and outline a pressable control with rule-strong.",
+      "Do keep targets at 2.75rem and keep the visible focus ring.",
+      "Do stop all signature motion under reduced motion and give the flowchart its still picture.",
+      "Do hold every flowchart label to the invariants, including the 12px floor read from the rendered transform."
     ],
     "donts": [
-      "Don't add shadows, blur or translucent layers.",
-      "Don't round the corners of a box. Only the start dot and end ring of a chain are round.",
-      "Don't put a filled or outlined card around content. The panel of the current state is the only container.",
-      "Don't use a gradient as a surface or text fill.",
-      "Don't introduce a second typeface or a second accent colour.",
-      "Don't set running text in the condensed width or in uppercase.",
-      "Don't place a small label or tag above a heading. The heading comes first.",
-      "Don't animate a state change beyond the 0.24s panel reveal; the fill swap is instant.",
-      "Don't add a profile picture or decorative imagery."
+      "Don’t add a second accent, or use fail as a UI colour.",
+      "Don’t put a filled card behind body copy; bg-raised is for controls and readouts.",
+      "Don’t add shadows, blur or a third elevation step.",
+      "Don’t introduce a third rule strength or a third text weight.",
+      "Don’t let the chart shrink to fit: the floor wins and the panel scrolls.",
+      "Don’t special-case a single label, or seat a label by eye where a rule decides.",
+      "Don’t bring back the height clamp, or re-describe the pre-Signal-Box chain design."
     ]
   }
 }
