@@ -38,7 +38,7 @@ The owner builds asynchronous, stateful systems and cares about what happens whe
 ## Brand Commitments
 
 - Name shown as "Toshifur Rahman", title "Software Engineer".
-- The owner asked for a design language of his own, and for the design to show his taste and be unique. The shipped language is Signal Box: a dark control panel with one amber signal, described in `DESIGN.md`.
+- The owner asked for a state-diagram design language, and for the design to show the owner's taste and be unique. The shipped language is Signal Box: a dark control panel with one amber signal, described in DESIGN.md.
 - Reference portfolios the owner asked to be analysed for design sense (not to be copied): marcobaldini.pages.dev, aathifzahir.vercel.app, moritzhauer.github.io, alexandrefernandes.dev.
 
 ## Evidence on Hand
