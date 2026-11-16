@@ -221,7 +221,12 @@ for (const d of DIAGRAMS) {
          viewBox units and has to be multiplied by the scale. */
       const smallest = await panel(page, d.slug).evaluate((el) => {
         const svg = el.querySelector('.flow-v .flow-svg') as SVGSVGElement;
-        const scale = svg.getBoundingClientRect().width / svg.viewBox.baseVal.width;
+        /* The scale the SVG is actually drawn at. Width / viewBox width is not that
+           number: with `preserveAspectRatio="xMidYMid meet"` a height clamp shrinks the
+           drawing sideways as well, so the width ratio reported 1.358 while the labels
+           were painted at 0.445 of their size. `getScreenCTM().a` is what the browser
+           applies to the geometry, clamp or no clamp. */
+        const scale = svg.getScreenCTM()!.a;
         const sizes = [...svg.querySelectorAll('.flow-node-name, .flow-node-detail, .flow-edge-label')].map(
           (t) => parseFloat(getComputedStyle(t).fontSize) * scale,
         );
@@ -397,7 +402,8 @@ for (const d of DIAGRAMS) {
           const svg = [...document.querySelectorAll('.flow-svg')].find(
             (s) => s.getBoundingClientRect().width > 0,
           ) as SVGSVGElement;
-          const scale = svg.getBoundingClientRect().width / svg.viewBox.baseVal.width;
+          /* `getScreenCTM().a`, not width / viewBox: see the phone check above. */
+          const scale = svg.getScreenCTM()!.a;
           const name = svg.querySelector('.flow-node-name') as SVGTextElement;
           const edge = svg.querySelector('.flow-edge-label') as SVGTextElement | null;
           return {
@@ -798,8 +804,11 @@ for (const d of DIAGRAMS) {
         /* The scale the SVG is actually drawn at. A <text>'s own bounding rect is not
            usable for this: it is clipped by overflow and by the parent's box, so an
            element's on-screen height came out at 8px while the label rendered at 12 —
-           which is the kind of measurement that agrees with the bug. */
-        const scale = svg.getBoundingClientRect().width / svg.viewBox.baseVal.width;
+           which is the kind of measurement that agrees with the bug. Neither is width /
+           viewBox: that ratio ignores a height constraint entirely, which is how a
+           5.34px label passed a 12px floor at 1024. The CTM is the transform the browser
+           applies, so it cannot be fooled by which axis is binding. */
+        const scale = svg.getScreenCTM()!.a;
         const sizes = [...svg.querySelectorAll('text')]
           .filter((t) => (t.textContent ?? '').trim().length > 0)
           .map((t) => parseFloat(getComputedStyle(t).fontSize) * scale);
@@ -1035,5 +1044,78 @@ for (const d of DIAGRAMS) {
         });
       }
     }
+  });
+}
+
+/* ---------------------------------------------------------------- fix pass 9
+ *
+ * F9-2. Every floor check above measured the drawn scale as bounding-rect width over
+ * viewBox width. That ratio is correct only while the width is what limits the drawing.
+ * `preserveAspectRatio="xMidYMid meet"` scales to fit *both* axes, so a `max-height`
+ * clamp on `.flow-svg` shrinks the chart sideways too — and the width ratio cannot see it,
+ * because the width never changed.
+ *
+ * That is not hypothetical: at a 1024px viewport the width ratio read 1.358 (comfortably
+ * over the floor) while the browser painted Ticket-Pipeline's labels at 5.34px and
+ * RannaGhor's at 8.52px. The clamp applies from 56rem up to each study's layout switch,
+ * so the band is exactly where the old sweep's 20px steps, and its four named widths,
+ * either missed or measured with the wrong formula.
+ *
+ * `getScreenCTM().a` is the horizontal factor the browser is applying. When the height
+ * binds it drops below the width ratio; when nothing binds it equals it.
+ */
+
+const FLOOR_BAND: { w: number; h: number }[] = (() => {
+  const out: { w: number; h: number }[] = [];
+  /* The offending band, at 2px. */
+  for (let w = 940; w <= 1230; w += 2) out.push({ w, h: 720 });
+  /* A short laptop: the height clamp is worst here, and these are the sizes a visitor
+     with a browser window open actually has. */
+  out.push({ w: 1280, h: 720 }, { w: 1440, h: 800 }, { w: 1024, h: 768 }, { w: 1366, h: 768 });
+  return out;
+})();
+
+for (const d of DIAGRAMS) {
+  test.describe(`${d.slug}: the drawn scale, not the width ratio`, () => {
+    test('every label is 12px or more across the band, at short viewports too', async ({ page }) => {
+      test.setTimeout(240_000);
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.goto(d.path);
+      await panel(page, d.slug).scrollIntoViewIfNeeded();
+
+      const bad: string[] = [];
+      for (const { w, h } of FLOOR_BAND) {
+        await page.setViewportSize({ width: w, height: h });
+        /* The chart re-lays out after a resize and the browser re-applies the clamp, so
+           a sample taken in the same frame reads the previous layout's scale. */
+        await page.waitForTimeout(60);
+        const small = await page.evaluate(() => {
+          const svg = [...document.querySelectorAll('.flow-svg')].find(
+            (s) => s.getBoundingClientRect().width > 0,
+          ) as SVGSVGElement;
+          if (!svg) return null;
+          const ctm = svg.getScreenCTM();
+          if (!ctm) return null;
+          const sizes = [...svg.querySelectorAll('text')]
+            .filter((t) => (t.textContent ?? '').trim().length > 0)
+            .map((t) => parseFloat(getComputedStyle(t).fontSize) * ctm.a);
+          return {
+            min: sizes.length ? Math.min(...sizes) : null,
+            ctmA: ctm.a,
+            ratio: svg.getBoundingClientRect().width / svg.viewBox.baseVal.width,
+            h: svg.getBoundingClientRect().height,
+            drawn: svg.closest('.flow-h') ? 'desktop' : 'vertical',
+          };
+        });
+        if (!small || small.min === null) continue;
+        if (small.min < 11.995) {
+          bad.push(
+            `${w}x${h} ${small.drawn}: ${small.min.toFixed(2)}px ` +
+              `(CTM ${small.ctmA.toFixed(3)} vs width ratio ${small.ratio.toFixed(3)}, svg h ${Math.round(small.h)})`,
+          );
+        }
+      }
+      expect(bad, 'viewports where diagram text paints under 12px').toEqual([]);
+    });
   });
 }
