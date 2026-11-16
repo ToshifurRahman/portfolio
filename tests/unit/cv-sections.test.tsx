@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
@@ -17,6 +19,10 @@ beforeAll(() => {
     this.dispatchEvent(new Event('close'));
   };
 });
+
+/* Read the stylesheet from disk: these assertions are about the CSS, and jsdom
+   does not load it for a rendered component. */
+const styles = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
 
 const renderSections = () =>
   render(
@@ -130,6 +136,80 @@ describe('CvSections', () => {
       'https://codeforces.com/profile/ToshifurRahman',
       'https://www.codechef.com/users/tasin_021',
     ]);
+  });
+
+  /* Owner, 2026-11-16 22:14: "name the platforms". The lead line says which site
+     each handle is on, as `Codeforces: ToshifurRahman · CodeChef: tasin_021` —
+     the accessible names the links already had, made visible. A platform is a
+     label, not a figure, so it does not count as a repeated number. */
+  it('names the platform on each handle, and the visible text is the accessible name', () => {
+    renderSections();
+    const readout = document.querySelector('#achievements .readout-figures')!;
+    const links = [...readout.querySelectorAll('a')];
+
+    /* Two pairs, in the order the sentence names them. */
+    expect(links.map((a) => (a.textContent ?? '').replace(/\s+/g, ' ').trim())).toEqual([
+      'Codeforces: ToshifurRahman',
+      'CodeChef: tasin_021',
+    ]);
+
+    /* Label-in-name: the accessible name is the visible text, asked of the
+       accessibility tree rather than the DOM, so an aria-label that dropped the
+       visible words would fail here. */
+    for (const [i, pair] of ['Codeforces: ToshifurRahman', 'CodeChef: tasin_021'].entries()) {
+      expect(screen.getByRole('link', { name: pair }).getAttribute('href')).toBe(
+        links[i].getAttribute('href'),
+      );
+      expect(links[i].hasAttribute('aria-label')).toBe(false);
+    }
+
+    /* A pair is one unbreakable run, so a narrow screen wraps between pairs and
+       never inside one. */
+    const pairs = [...readout.querySelectorAll('.source-pair')];
+    expect(pairs).toHaveLength(2);
+    for (const pair of pairs) expect(pair.textContent?.trim()).toBeTruthy();
+    /* The wrapper is the same line shape the list uses: one class, one meaning,
+       rather than two names for one look. */
+    expect(readout.querySelectorAll('.source-line')).toHaveLength(1);
+    /* The separator sits between the pairs, not inside a link, so the link's
+       underline cannot paint through it. */
+    expect(readout.querySelectorAll('.source-sep')).toHaveLength(1);
+    expect(readout.querySelector('.source-sep')?.closest('a')).toBeNull();
+  });
+
+  /* A class in the markup with no rule behind it renders as a bare paragraph and
+     nothing fails — which is how `achievement-links` outlived its CSS in
+     4d1e726. Each class Achievements renders must have a rule. */
+  it('styles every class it renders in the readout and the list', () => {
+    renderSections();
+    /* Scoped to the two containers this component styles, not the whole section:
+       Certificates is a child with its own file, and `.certificates` there is an
+       `id` anchor target rather than a styled element. */
+    const roots = [
+      document.querySelector('#achievements .readout-figures')!,
+      document.querySelector('#achievements .achievements')!,
+    ];
+    /* The rendered tree plus the component's own source: a branch that no entry
+       reaches today (a list row with links) still has to be styled for the day
+       one does, and reading the source is the only way to see it. A hand-written
+       list of classes would pin only what someone remembered to add — the defect
+       itself. */
+    const source = readFileSync(resolve(process.cwd(), 'src/sections/Achievements.tsx'), 'utf8');
+    const declared = new Set(
+      [...source.matchAll(/className="([^"`]+)"/g)]
+        .flatMap((m) => m[1].split(/\s+/))
+        .filter((c) => c && !c.includes('$')),
+    );
+    const rendered = new Set([
+      ...roots.flatMap((r) => [...r.querySelectorAll('[class]')]).flatMap((el) => [...el.classList]),
+      ...declared,
+    ]);
+    expect(rendered.size).toBeGreaterThan(0);
+    for (const cls of rendered) {
+      expect(styles.includes(`.${cls}`), `.${cls} is rendered but has no rule in src/styles.css`).toBe(
+        true,
+      );
+    }
   });
 
   /* Owner, at route close: "the readout plus one line each" — the lead item is
