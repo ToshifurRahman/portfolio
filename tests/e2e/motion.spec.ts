@@ -114,15 +114,44 @@ test.describe('signature motion', () => {
     await expect.poll(() => page.locator('.hero-cell.is-hot').count()).toBe(0);
   });
 
-  test('never lights a cell on a touch screen', async ({ page }) => {
-    /* No hover: the media query excludes the whole effect, so a tap cannot
-       leave a cell stuck lit. */
+  /* P2b-10. This test used to skip itself on every run: the default Playwright context
+     reports `(hover: hover) and (pointer: fine)`, so `if (hoverable) test.skip(...)` was
+     always taken and the no-hover promise in the CSS was never executed here.
+
+     The runner cannot be talked into a coarse pointer from inside the page, so the test
+     opens its own context with `hasTouch: true`, which is what makes the browser report
+     `(pointer: coarse)` and `(hover: none)`. It asserts that first, so if a future runner
+     drifts back to a fine pointer the test fails loudly instead of passing untested. */
+  test('never lights a cell on a touch screen', async ({ browser }) => {
+    const context = await browser.newContext({ hasTouch: true });
+    const page = await context.newPage();
     await page.emulateMedia({ reducedMotion: 'no-preference' });
     await page.goto('/');
-    const hoverable = await page.evaluate(() => matchMedia('(hover: hover) and (pointer: fine)').matches);
-    if (hoverable) test.skip(true, 'this runner reports a fine pointer');
-    await page.locator('.intro').tap().catch(() => {});
+
+    const pointer = await page.evaluate(() => ({
+      fine: matchMedia('(hover: hover) and (pointer: fine)').matches,
+      coarse: matchMedia('(pointer: coarse)').matches,
+    }));
+    expect(pointer.coarse, 'the touch context must report a coarse pointer').toBe(true);
+    expect(pointer.fine, 'the touch context must not report a fine pointer').toBe(false);
+
+    /* A tap cannot prove this on its own: `touchscreen.tap` fires pointerdown and
+       pointerup but never pointermove, and pointermove is the only event the wave listens
+       for — so a tap stays green even with the guard deleted (I checked: it did). The
+       proof needs a real pointermove in a context that reports a coarse pointer. */
+    const box = (await page.locator('.intro').boundingBox())!;
+    await page.touchscreen.tap(box.x + box.width * 0.45, box.y + box.height * 0.5);
+    await page.waitForTimeout(120);
     expect(await page.locator('.hero-cell.is-hot').count()).toBe(0);
+
+    await page.mouse.move(box.x + box.width * 0.45, box.y + box.height * 0.5);
+    await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.5, { steps: 4 });
+    await page.waitForTimeout(150);
+    expect(
+      await page.locator('.hero-cell.is-hot').count(),
+      'a pointermove on a coarse pointer must light nothing',
+    ).toBe(0);
+    await context.close();
   });
 
   test('keeps the text readable over a lit cell', async ({ page }) => {
