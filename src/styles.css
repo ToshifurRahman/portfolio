@@ -1873,14 +1873,20 @@ textarea {
 }
 
 /* The handles under the readout: one line naming each platform and the name the
-   owner goes by there. Each pair is one link, so it is one unbreakable run — at
-   390 the line wraps between the two pairs, never inside one — and the separator
-   is drawn between them rather than being markup. */
+   owner goes by there. Each pair is one unbreakable run, and the two are joined by
+   a middot only while they sit on one line. Below 48rem the pairs stack and the
+   separator is not rendered at all, because a middot that begins a wrapped line
+   reads as a stray bullet (owner ruling, 2026-11-16).
+
+   48rem is the site's existing phone breakpoint, and the conservative choice: the
+   pairs need 563px and the line is capped at `--measure` 40rem, so they fit from
+   48rem up with room to spare. A container query would be tidier in principle but
+   cannot style the container it measures, so a token the rest of the page already
+   uses keeps this honest rather than adding a fifth breakpoint. */
 .source-line {
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--space-1) 0;
+  flex-direction: column;
+  align-items: flex-start;
   max-width: var(--measure);
 }
 
@@ -1893,10 +1899,22 @@ textarea {
 }
 
 /* Between the pairs, not inside one: a pseudo-element on the link would have its
-   underline painted through it. */
+   underline painted through it. Not rendered in the stacked state. */
 .source-sep {
+  display: none;
   padding-inline: var(--space-3);
   color: var(--muted);
+}
+
+@media (min-width: 48rem) {
+  .source-line {
+    flex-direction: row;
+    align-items: baseline;
+  }
+
+  .source-sep {
+    display: inline;
+  }
 }
 
 .certificate-list {
