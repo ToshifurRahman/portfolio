@@ -1145,3 +1145,79 @@ for (const d of DIAGRAMS) {
     });
   });
 }
+
+/* ---------------------------------------------------------------- round P2b
+ *
+ * P2b-9. The state rail's connectors run into the pill borders. The path stops 2 units
+ * short of the box, which looks like enough — but the arrowhead is a `marker` drawn in
+ * `strokeWidth` units and it extends past the path's own endpoint, so the ink lands much
+ * closer than the geometry suggests: at 390 the visible tip sits 0.6px from the border.
+ *
+ * That gap between "where the path ends" and "where the ink reaches" is the whole finding,
+ * and it is the same shape as every other measurement trap in this round: the model was
+ * the path endpoint, the drawing was the marker. So the test measures the marker's own
+ * geometry — its size in stroke units and its refX offset — rather than assuming it.
+ */
+
+for (const d of DIAGRAMS) {
+  test.describe(`${d.slug}: the state rail`, () => {
+    for (const [w, h] of [[390, 844], [834, 900]] as const) {
+      test(`connectors end clear of the pills at ${w}`, async ({ page }) => {
+        await page.setViewportSize({ width: w, height: h });
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        await page.goto(d.path);
+        await panel(page, d.slug).scrollIntoViewIfNeeded();
+
+        const worst = await page.evaluate(() => {
+          const svg = [...document.querySelectorAll('.flow-svg')].find(
+            (s) => s.getBoundingClientRect().width > 0,
+          ) as SVGSVGElement;
+          const scale = svg.getScreenCTM()!.a;
+          /* The marker's ink extent beyond the path end, in viewBox units. Resolved from
+             the marker's own attributes: markerUnits defaults to strokeWidth, so the
+             marker box is markerWidth x stroke, and the path's tip sits at refX of its
+             viewBox. */
+          const marker = svg.querySelector('marker')!;
+          const mp = marker.querySelector('path') as SVGPathElement;
+          const sw = parseFloat(getComputedStyle(svg.querySelector('path.flow-edge')!).strokeWidth);
+          const mw = Number(marker.getAttribute('markerWidth'));
+          const refX = Number(marker.getAttribute('refX'));
+          const vbw = Number((marker.getAttribute('viewBox') ?? '0 0 8 8').split(/\s+/)[2]);
+          const overhangU = mw * sw * ((vbw - refX) / vbw);
+
+          const boxes = [...svg.querySelectorAll('.flow-node rect')].map((r) => (r as SVGRectElement).getBBox());
+          /* The rail is the last row of the graph, so its pills are the four lowest boxes. */
+          const pills = [...boxes].sort((a, b) => a.y - b.y).slice(-4);
+
+          let minGapPx = Infinity;
+          let where = '';
+          for (const el of [...svg.querySelectorAll('path[marker-end]')] as SVGPathElement[]) {
+            const len = el.getTotalLength();
+            const end = el.getPointAtLength(len);
+            /* Where the ink actually stops: past the endpoint along the final tangent. */
+            const before = el.getPointAtLength(Math.max(0, len - 1));
+            const dx = end.x - before.x;
+            const dy = end.y - before.y;
+            const norm = Math.hypot(dx, dy) || 1;
+            const tip = { x: end.x + (dx / norm) * overhangU, y: end.y + (dy / norm) * overhangU };
+            for (const q of pills) {
+              const gx = Math.max(q.x - tip.x, 0, tip.x - (q.x + q.width));
+              const gy = Math.max(q.y - tip.y, 0, tip.y - (q.y + q.height));
+              const gap = Math.hypot(gx, gy);
+              if (gap < minGapPx) {
+                minGapPx = gap;
+                where = `tip(${tip.x.toFixed(1)},${tip.y.toFixed(1)}) vs pill(${q.x.toFixed(0)},${q.y.toFixed(0)} ${q.width.toFixed(0)}x${q.height.toFixed(0)})`;
+              }
+            }
+          }
+          return { px: minGapPx * scale, where, overhangU, scale };
+        });
+
+        /* The connector should stop at the cell edge, not touch it. One marker width of
+           clearance is the smallest gap that reads as a deliberate join rather than a
+           collision at 3x. */
+        expect(worst.px, `closest connector ink to a pill border: ${worst.where}`).toBeGreaterThanOrEqual(3);
+      });
+    }
+  });
+}
