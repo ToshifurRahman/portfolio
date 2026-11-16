@@ -16,7 +16,7 @@
         "displayName": "Raised Ground",
         "canonical": "#0f1114",
         "light": "#ded9cf",
-        "description": "The one step up: the bar band, cards, diagram boxes."
+        "description": "The one step up, for surfaces that sit over the page: the flowchart panel and its label pills, the certificate dialog, work nodes and decision rows. Not the bar, which is the page ground with a rule underline, and not a card style."
       },
       "ink": {
         "role": "neutral",
@@ -30,7 +30,7 @@
         "displayName": "Second Ink",
         "canonical": "#c4c7cd",
         "light": "#33373d",
-        "description": "Ghost buttons, copy controls, quieter labels."
+        "description": "Secondary labels and the copy control’s text. Ghost-button text is ink."
       },
       "muted": {
         "role": "neutral",
@@ -138,14 +138,14 @@
         "displayName": "Email",
         "fontSize": "var(--text-email)",
         "fontWeight": "var(--weight-bold)",
-        "letterSpacing": "var(--tracking-display)",
+        "letterSpacing": "var(--tracking-tight)",
         "family": "font",
         "description": "The contact address."
       },
       "h2": {
         "displayName": "H2",
         "fontSize": "var(--text-h2)",
-        "fontWeight": "var(--weight-semibold)",
+        "fontWeight": "var(--weight-bold)",
         "letterSpacing": "var(--tracking-tight)",
         "family": "font",
         "description": "Section headings."
@@ -153,7 +153,7 @@
       "case": {
         "displayName": "Case",
         "fontSize": "var(--text-case)",
-        "fontWeight": "var(--weight-semibold)",
+        "fontWeight": "var(--weight-bold)",
         "letterSpacing": "var(--tracking-tight)",
         "family": "font",
         "description": "A work card's title."
@@ -170,7 +170,7 @@
         "displayName": "Motto",
         "fontSize": "var(--text-motto)",
         "fontWeight": "var(--weight-medium)",
-        "letterSpacing": "var(--tracking-snug)",
+        "letterSpacing": "var(--tracking-tight)",
         "family": "font",
         "description": "The hero statement."
       },
@@ -233,7 +233,7 @@
       "flow-label": {
         "displayName": "Flow label",
         "fontSize": "var(--flow-label)",
-        "fontWeight": "var(--weight-semibold)",
+        "fontWeight": "var(--weight-regular)",
         "letterSpacing": "0.03em",
         "family": "mono",
         "description": "Flowchart text in viewBox units; 12px floor."

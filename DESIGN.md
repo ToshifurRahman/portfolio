@@ -48,11 +48,11 @@ typography:
     letterSpacing: "-0.045em"
   h2:
     fontSize: "clamp(2rem, 1.55rem + 1.5vw, 2.625rem)"
-    fontWeight: 600
+    fontWeight: 680
     letterSpacing: "-0.03em"
   case:
     fontSize: "clamp(1.75rem, 1.35rem + 1.5vw, 2.5rem)"
-    fontWeight: 600
+    fontWeight: 680
     letterSpacing: "-0.03em"
   figure:
     fontSize: "clamp(2rem, 1.55rem + 1.5vw, 2.75rem)"
@@ -61,11 +61,11 @@ typography:
   motto:
     fontSize: "clamp(1.5rem, 1.12rem + 1.35vw, 2.25rem)"
     fontWeight: 520
-    letterSpacing: "-0.015em"
+    letterSpacing: "-0.03em"
   email:
     fontSize: "clamp(1.75rem, 1rem + 3.4vw, 3.5rem)"
     fontWeight: 680
-    letterSpacing: "-0.045em"
+    letterSpacing: "-0.03em"
   lg:
     fontSize: "1.1875rem"
     fontWeight: 430
@@ -90,7 +90,7 @@ typography:
     letterSpacing: "0.04em"
   flow-label:
     fontSize: "12px"
-    fontWeight: 600
+    fontWeight: 430
     letterSpacing: "0.03em"
   weights:
     regular: 430
@@ -230,9 +230,11 @@ Every value below is the token as it is named in `src/styles.css`. The dark valu
 which is why no component ever branches on theme.
 
 ### The night panel (`:root`)
-- **Ground** (`bg` `#0a0b0d`): the page. **Raised** (`bg-raised` `#0f1114`): the one step up —
-  the bar's band and the flowcharts' label pills. There is no third elevation: a Work card is not
-  raised, it is ruled (see below), and a flowchart's node box is the page ground itself.
+- **Ground** (`bg` `#0a0b0d`): the page, and the sticky bar — the bar is the page ground with a
+  `rule` underline, not a raised band. **Raised** (`bg-raised` `#0f1114`): the one step up, used
+  for things that sit *over* the page: the flowchart panel and its label pills, the certificate
+  dialog, work nodes and decision rows. There is no third elevation: a Work card is not raised, it
+  is ruled (see below), and a flowchart's node box is the page ground itself.
 - **Ink** (`ink` `#f2f1ec`) is body text, headings, and the label on a ruled control such as a
   ghost button. **`ink-2`** (`#c4c7cd`) is the quieter second voice: copy controls, secondary
   labels. **`muted`** (`#8b9099`) is tertiary — captions, bar links, diagram labels, meta. Three
@@ -246,9 +248,11 @@ which is why no component ever branches on theme.
 
 ### The signal
 - **Amber** (`accent` `#ffb340`) is the only saturated colour on the site: a lit lamp, the
-  live token on the track, the current nav item, the glow in a hero cell, the border of a
-  focused control. **`accent-hover`** (`#ffc56b`) is its hover. **`on-accent`** (`#1a1204`) is
-  text on an amber fill — a brown-black, not the ground, so amber stays legible as a button.
+  live token on the track, the current nav item, the glow in a hero cell. **`accent-hover`**
+  (`#ffc56b`) is its hover. **`on-accent`** (`#1a1204`) is text on an amber fill — a brown-black,
+  not the ground, so amber stays legible as a button. A focused control is ringed in
+  `accent-text`, not `accent`: `:focus-visible` is `outline: var(--line-track) solid
+  var(--accent-text)`, the same amber at night and `#7a4600` on paper.
 - **`accent-text`** (`#ffb340`) exists separately from `accent` because the two jobs differ:
   a fill needs a colour that reads as light, text needs one that passes contrast on the
   ground. In the light theme they diverge — `#e09a12` for fills, `#7a4600` for text — because
@@ -306,7 +310,10 @@ own `flow-label` 12px, which is a viewBox unit rather than a page step (see the 
 
 ### Named rules
 **The Mono Means Data Rule.** If it is a number, a station, a stack, a label or a system name,
-it is Martian Mono. If it is a sentence, it is Mona Sans. A line never mixes the two.
+it is Martian Mono. If it is a sentence, it is Mona Sans. A line never mixes the two. One
+exception is written into the CSS rather than the rule: the Now panel's `tl-lane-title` ("Study",
+"Work") is uppercase `2xs` in **Mona Sans**, because it is a heading for a lane rather than a
+data label, and `.tl-lane-title` sets no `font-family`.
 
 **The Diagram Floor Rule.** No text in a flowchart may render below **12px**. The floor is
 measured from the rendered transform (`getScreenCTM().a`), not from the viewBox, because the
@@ -337,20 +344,25 @@ decisions, Challenges and solutions, Results — Challenges and Solutions are on
 section list, and it lights **Work** while a case study is open — the owner asked for the two to
 be one design, not two.
 
-**Breakpoints.** `57rem` collapses the bar into a menu button; `48rem` stacks the Now lanes and
-the Work node structure. The flowcharts switch layout on *container* width, not viewport:
-`@container (max-width: 1171px)` for Ticket-Pipeline and `1155px` for RannaGhor: each study's
-own viewBox width (1170.30 and 1154.44 units) rounded up, so the switch happens just before the
-desktop graph would scale below 1:1. Those numbers are not arbitrary — they are where the
-desktop chart would drop below 1:1 and take every label under the 12px floor.
+**Breakpoints.** `57rem` collapses the bar into a menu button; `48rem` hides the Now panel's year
+axis and turns the stops from a grid into a column (the two lanes are stacked at every width),
+and restacks the Work node structure.
+
+The flowcharts switch layout on *container* width, not viewport: `@container (max-width: 1171px)`
+for Ticket-Pipeline and `1155px` for RannaGhor — each study's own viewBox width (1170.30 and
+1154.44 units) rounded up, so the switch happens just before the desktop graph would scale below
+1:1. Those numbers are not arbitrary — they are where the desktop chart would drop below 1:1 and
+take every label under the 12px floor.
 
 ## The bar and the signal strip
 
 The bar is sticky, `bg` with a `rule` underline, and holds the wordmark (the one amber text in
 the chrome, `accent-text`), the five nav links with a lamp each, and a CV action. Nav links are
-`muted` at rest and `ink` when current, with the lamp filling amber and taking a `lamp-edge`
-ring: **the lamp is the indicator, the text weight does not change.** The current item carries
-`aria-current`.
+`muted` at rest and `ink` when current. A lit lamp fills `accent`; the current item's lamp takes
+an `accent` ring rather than the `lamp-edge` one, because `.nav-links a.is-current .lamp` is the
+more specific rule and `lamp-edge` is only the ring on a lamp lit outside the nav — the two are
+the same amber at night and differ on paper, where the ring stays `accent` `#e09a12`. **The lamp
+is the indicator, the text weight does not change.** The current item carries `aria-current`.
 
 The **signal strip** is a fixed, decorative layer of twelve strips on the frame's own column
 lines, `z-index: -1`, `pointer-events: none`. A ray — a 1px-wide soft gradient of `accent` —
@@ -361,15 +373,19 @@ runs from the wordmark, which is where the charge is drawn from.
 Hero cells: eleven cells between the column lines, each a vertical gradient of `accent` from
 transparent through the middle, inset 1px per side so the glow sits *between* the lines rather
 than on them. The wave (`--dur-wave` 9s) peaks at 0.03 opacity, staggered by the cell's grid
-index. Under a fine pointer the wave pauses and exactly three cells — the one under the pointer
-and its two nearest neighbours — light at 0.07 over `--dur-fade` 220ms.
+index. Under a fine pointer the wave pauses and the cell under the pointer lights at 0.07 over
+`--dur-fade` 220ms together with its two nearest neighbours — three cells, except at the two ends
+of the row, where the neighbour that does not exist is simply not lit and the count is two.
 
 ## The Now panel
 
 Two lanes, **Study** and **Work**, sharing one year axis: a `tl-lane-title` heading per lane,
 year ticks drawn as decoration over the lists, and each stop a real list item, so the panel
-reads with no CSS and no script. Below 48rem the two lanes stack into one column and keep the
-same order. It is a timeline, not a card grid — the earlier two-cell version is gone.
+reads with no CSS and no script. The lanes are already a single column at every width — the
+`.timeline` is `flex-direction: column` at 1440 as much as at 390, and the two lanes sit one
+above the other. What 48rem changes is the year axis, which is hidden, and the stops, which go
+from a grid to a column; the lane order is the same either way. It is a timeline, not a card
+grid — the earlier two-cell version is gone.
 
 ## The Work node diagram
 
@@ -412,9 +428,13 @@ carries information.
 
 ## The flowchart engine
 
-The two case studies draw a real graph (React/Vite/Postgres for Ticket-Pipeline; the RannaGhor
-request path), not a picture of one, and its rules are design rules because a wrong label
-changes what the diagram *says*.
+The two case studies draw a real graph, not a picture of one, and its rules are design rules
+because a wrong label changes what the diagram *says*. Ticket-Pipeline draws its own pipeline:
+a React app, a Hono API, an SQS queue, a Worker, an LLM gateway with a Primary and a Backup
+model, an Event log onto the customer's page and the Ops feed, then the failure path (stage
+fails, retry, needs attention, replay by staff) and the ticket's four states. RannaGhor draws
+its request path. Every box is a node in `src/diagrams.ts`; the study's Stack string in
+`src/content.ts` names the wider stack, and the two are not the same list.
 
 **Two layouts.** A desktop graph, and a vertical one used below the container thresholds above.
 The vertical layout is a complete picture of the same graph — spine, then each branch group as
@@ -445,7 +465,9 @@ the eye:
 - No height clamp exists and none may return. `Ruling 12`: the 12px floor outranks fitting in
   one window, so the chart scrolls on short viewports rather than shrinking its labels. The
   desktop Ticket-Pipeline chart *does* fit a 1440x900 window (`P2b-4`, row spacing tightened to
-  `GAP_Y` 30), and at 1440 the type renders above the floor; below that height it scrolls.
+  `GAP_Y` 30), and at 1440 the type renders above the floor; below that height it scrolls. The
+  drawing is 892px against the 900px window, but the 65px sticky bar means the chart is never
+  wholly on screen at once — it fits the window, not the viewport under the bar.
 
 **Both layouts are held to it.** `holds()` (`src/Diagram.tsx`) has no layout guard: every seat on
 either layout goes through the same test, the same outward search and the same own-edge walk. What
@@ -473,8 +495,9 @@ sibling stagger separates them (the owner ruled to leave it).
 
 ### Don't
 - **Don't** add a second accent, or use `fail` as a UI colour.
-- **Don't** put a filled card behind body copy; `bg-raised` is the bar's band and the flowchart's
-  label pills, and a Work card is a ruled row rather than a raised box.
+- **Don't** put a filled card behind body copy; `bg-raised` is the surface of things that sit over
+  the page (the flowchart's panel and label pills, the certificate dialog), not a card style and
+  not the bar — and a Work card is a ruled row rather than a raised box.
 - **Don't** add shadows, blur or a third elevation step.
 - **Don't** introduce a third rule strength or a third text weight.
 - **Don't** let the chart shrink to fit: the floor wins and the panel scrolls.
