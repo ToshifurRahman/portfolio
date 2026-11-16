@@ -206,11 +206,15 @@ const RG_NODES: Node[] = [
   n('handler', 'Route handler', '21 route modules', { row: 1, col: 0 }, { row: 4, track: 0 }),
   n('postgres', 'PostgreSQL', 'Drizzle', { row: 1, col: 1 }, { row: 5, track: 0 }),
   n('tx', 'One transaction', 'Lock, check, reduce', { row: 1, col: 2 }, { row: 6, track: 0 }),
-  /* The refusals are branches, so they sit in the indented track and come after the
-     spine: they are what happens instead of the next step, not after it. */
   /* The refusals are branches, so they sit in the indented track, after the spine:
      they are what happens instead of the next step, not a step after it. */
-  n('refuseRole', '403: refused', 'At the role check', { row: 2, col: 0 }, { row: 7, track: 1 }),
+  /* The sublabel carries the fact the heading cannot: who is refused, and on what.
+     Both are the study's own words — `src/content.ts` says "A customer must never
+     reach a vendor or admin action", and the caption says "A customer calling a
+     vendor route is refused at the role check by middleware that guards vendor and
+     admin routes separately". The heading says where the group starts; repeating
+     "at the role check" under it was the same sentence twice. */
+  n('refuseRole', '403: refused', 'Customer, vendor route', { row: 2, col: 0 }, { row: 7, track: 1 }),
   n('refuseStock', 'Stock refused', 'The second order', { row: 2, col: 1 }, { row: 8, track: 1 }),
 ];
 
