@@ -118,7 +118,7 @@ const reduceMotion = () =>
   typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 type Placed = Node & { x: number; y: number; w: number; h: number };
-type Bounds = { w: number; h: number };
+type Bounds = { w: number; h: number; laneL?: number; laneR?: number };
 
 const adv = (size: number) => CHAR * size;
 
@@ -196,9 +196,22 @@ function layoutDesktop(spec: DiagramSpec) {
      lane *inside* the drawing. The margin therefore only has to hold the lane, not the
      label: sizing it for the label added ~190 units a side, and because the graph is
      scaled to fit, that shrank every name to 10.6px at 1280. */
-  const sideMargin = 16;
+  /* A loop draws its label centred on the lane it runs down — a label offset by its own
+     half-width from the line sits 50-97px from it, which reads as a heading of whatever
+     box is under it. So the margin is sized to hold half of the widest loop label on
+     that side, and the lane runs down the middle of the margin. Only the sides that
+     actually carry a loop pay for it: RannaGhor has none and keeps 16 units. */
+  const pillOf = (text: string) => Math.ceil(text.length * adv(DETAIL)) + 10;
+  const loopPill = { left: 0, right: 0 };
+  for (const e of spec.edges) {
+    if (!e.label) continue;
+    if (e.route === 'loop-side') loopPill.right = Math.max(loopPill.right, pillOf(e.label));
+    if (e.route === 'loop-side-left') loopPill.left = Math.max(loopPill.left, pillOf(e.label));
+  }
+  const mLeft = loopPill.left ? Math.ceil(loopPill.left / 2) + 10 : 16;
+  const mRight = loopPill.right ? Math.ceil(loopPill.right / 2) + 10 : 16;
   const colX: number[] = [];
-  let x = sideMargin;
+  let x = mLeft;
   for (let c = 0; c < cols; c++) {
     colX[c] = x;
     x += colW[c] + gap;
@@ -225,9 +238,10 @@ function layoutDesktop(spec: DiagramSpec) {
 
   /* The bottom margin is where a loop edge runs: below every row, so it crosses no
      box (ruling 10). */
-  /* Room under the last row for a loop edge and its label, and the same gutter on the
-     right as on the left. */
-  return { nodes, w: x - gap + sideMargin, h: y - GAP_Y + 76 };
+  /* Room under the last row for a loop edge and its label, the margin on each side, and
+     the two lanes: one down the middle of each margin. */
+  const w = x - gap + mRight;
+  return { nodes, w, h: y - GAP_Y + 76, laneL: mLeft / 2, laneR: w - mRight / 2 };
 }
 
 /* The vertical layout, designed rather than patched.
@@ -340,13 +354,13 @@ function edgePath(a: Placed, b: Placed, route: Route, bounds: Bounds, vertical =
   /* Out to the outer margin, up to the target's own height, and in from the side:
      the margin is reserved and no box reaches into it. */
   if (route === 'loop-side') {
-    const lane = bounds.w - 10;
+    const lane = bounds.laneR ?? bounds.w - 10;
     if (bcy < acy) return `M${a.x + a.w} ${acy} H${lane} V${bcy} H${b.x + b.w + 2}`;
     return `M${a.x + a.w} ${acy} H${lane} V${bcy} H${b.x + b.w + 2}`;
   }
   if (route === 'loop-side-left') {
     /* The left margin, for a branch that leaves a box whose neighbours are below it. */
-    const lane = 8;
+    const lane = bounds.laneL ?? 8;
     return `M${a.x} ${acy} H${lane} V${bcy} H${b.x - 2}`;
   }
   if (route === 'loop-bottom') {
@@ -380,12 +394,15 @@ function edgePath(a: Placed, b: Placed, route: Route, bounds: Bounds, vertical =
 /* A label's anchor: the middle of the gap its edge crosses. */
 function labelPos(a: Placed, b: Placed, route: Route, bounds: Bounds, labelW: number): { x: number; y: number } {
   if (route === 'loop-side') {
+    /* Centred *on* the lane its own line runs down, so the label touches its edge and
+       cannot be read as a heading of the box beside it. The margin was sized for this
+       pill, so it fits inside the drawing. */
     const mid = (a.y + a.h / 2 + b.y + b.h / 2) / 2;
-    return { x: bounds.w - 10 - labelW / 2, y: mid };
+    return { x: bounds.laneR ?? bounds.w - 10, y: mid };
   }
   if (route === 'loop-side-left') {
     const mid = (a.y + a.h / 2 + b.y + b.h / 2) / 2;
-    return { x: 10 + labelW / 2, y: mid };
+    return { x: bounds.laneL ?? 10, y: mid };
   }
   if (route === 'loop-bottom') {
     return { x: (a.x + a.w / 2 + b.x + b.w / 2) / 2, y: Math.max(a.y + a.h, b.y + b.h) + 24 };
@@ -405,6 +422,96 @@ function labelPos(a: Placed, b: Placed, route: Route, bounds: Bounds, labelW: nu
   const gapEnd = b.x;
   const mid = (gapStart + gapEnd) / 2;
   return { x: labelW > gapEnd - gapStart ? gapStart + labelW / 2 : mid, y: a.y + a.h / 2 - 9 };
+}
+
+
+/* The midpoint of the longest segment of a path this engine builds. Paths here are only
+   `M`, `H` and `V`, so this is exact and cannot disagree with what is painted. A label
+   anchored here is on its own line and as far from the boxes as the line allows. */
+function bestAnchor(
+  d: string,
+  labelW: number,
+  boxes: { x: number; y: number; w: number; h: number }[],
+): { x: number; y: number; horiz: boolean } | null {
+  const tokens = d.match(/[MHV][^MHV]*/g) ?? [];
+  let x = 0;
+  let y = 0;
+  /* Clearance for a label centred here, above a horizontal run. An anchor whose label
+     would sit inside a box's own horizontal span, one row gap away, is disqualified: it
+     reads as that box's heading, which is the defect this replaced `labelPos` for. */
+  const clearance = (cx: number, cy: number) => {
+    let nearest = Infinity;
+    for (const b of boxes) {
+      const insideX = cx - labelW / 2 >= b.x - 2 && cx + labelW / 2 <= b.x + b.w + 2;
+      const gapUp = b.y - cy;
+      const gapDown = cy - 14 - (b.y + b.h);
+      if (insideX && ((gapUp >= -4 && gapUp < 46) || (gapDown >= -4 && gapDown < 46))) {
+        return -1;
+      }
+      const dx = Math.max(b.x - (cx + labelW / 2), 0, cx - labelW / 2 - (b.x + b.w));
+      const dy = Math.max(b.y - cy, 0, cy - 14 - (b.y + b.h));
+      nearest = Math.min(nearest, Math.hypot(dx, dy));
+    }
+    return nearest;
+  };
+  let best = -1;
+  let at: { x: number; y: number; horiz: boolean } | null = null;
+  for (const t of tokens) {
+    const cmd = t[0];
+    const nums = (t.slice(1).match(/-?[\d.]+/g) ?? []).map(Number);
+    if (cmd === 'M' && nums.length >= 2) {
+      x = nums[0];
+      y = nums[1];
+      continue;
+    }
+    /* A run of coordinates after one command letter: pairs for H/V are single values. */
+    for (const n of nums) {
+      if (cmd === 'H') {
+        const len = Math.abs(n - x);
+        /* The label has to fit along the run, and have room around it. */
+        if (len >= labelW + 6) {
+          const cx = (x + n) / 2;
+          const score = clearance(cx, y - 8);
+          if (score > best) {
+            best = score;
+            at = { x: cx, y, horiz: true };
+          }
+        }
+        x = n;
+      } else if (cmd === 'V') {
+        const len = Math.abs(n - y);
+        if (len >= 24) {
+          const cy = (y + n) / 2;
+          const score = clearance(x, cy);
+          if (score > best) {
+            best = score;
+            at = { x, y: cy, horiz: false };
+          }
+        }
+        y = n;
+      }
+    }
+  }
+  if (at && best >= 0) return at;
+  /* No horizontal run qualified: every one of them passes over some box's span. Use a
+     vertical run instead — its label sits beside the line, between two rows. */
+  x = 0;
+  y = 0;
+  for (const t of tokens) {
+    const cmd = t[0];
+    const nums = (t.slice(1).match(/-?[\d.]+/g) ?? []).map(Number);
+    if (cmd === 'M' && nums.length >= 2) {
+      x = nums[0];
+      y = nums[1];
+      continue;
+    }
+    for (const n of nums) {
+      if (cmd === 'V' && Math.abs(n - y) >= 40) return { x, y: (y + n) / 2, horiz: false };
+      if (cmd === 'H') x = n;
+      else if (cmd === 'V') y = n;
+    }
+  }
+  return at;
 }
 
 /* Does a label's box overlap a node's box? */
@@ -727,7 +834,13 @@ function Graph({
               : 'branch'
           : e.route;
         const d = edgePath(a, b, route, bounds, vertical);
-        const lab = labelPos(a, b, route, bounds, (e.label?.length ?? 0) * adv(11));
+        const labelW = (e.label?.length ?? 0) * adv(11);
+        const anchor = bestAnchor(d, labelW, placed);
+        const lab = anchor
+          ? /* Above a horizontal run and on a vertical one: the line stays visible and
+               the label touches its own segment. */
+            { x: anchor.x, y: anchor.horiz ? anchor.y - 8 : anchor.y }
+          : labelPos(a, b, route, bounds, labelW);
         const pill = pillFor(e.label ?? '', lab.x, lab.y);
         /* A label placed by geometry can still land on a box, so the final position is
            checked: text over text is the one thing a label may never do. */
@@ -768,7 +881,16 @@ function Graph({
             {e.label && (
               <>
                 <rect className="flow-edge-pill" x={pill.x} y={pill.y} width={pill.w} height={pill.h} rx="3" />
-                <text className="flow-edge-label" data-edge-label={e.id} x={lab.x} y={lab.y} textAnchor="middle">
+                <text
+                  className="flow-edge-label"
+                  data-edge-label={e.id}
+                  data-edge-from={e.from}
+                  data-edge-to={e.to}
+                  data-edge-loop={e.route.startsWith('loop') ? 'true' : undefined}
+                  x={lab.x}
+                  y={lab.y}
+                  textAnchor="middle"
+                >
                   {e.label}
                 </text>
               </>

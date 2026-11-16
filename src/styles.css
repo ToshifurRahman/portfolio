@@ -1364,7 +1364,7 @@ textarea {
    studies have different widths (Ticket-Pipeline 1009 units, RannaGhor 1154), so each
    gets its own threshold — a single breakpoint cannot serve both without shrinking one.
    These are the measured viewBox widths minus one, in the container's own units. */
-@container (max-width: 1008px) {
+@container (max-width: 1171px) {
   .flow-panel[data-diagram='ticket-pipeline'] .flow-h {
     display: none;
   }
@@ -1374,7 +1374,7 @@ textarea {
   }
 }
 
-@container (max-width: 1153px) {
+@container (max-width: 1155px) {
   .flow-panel[data-diagram='rannaghor'] .flow-h {
     display: none;
   }
