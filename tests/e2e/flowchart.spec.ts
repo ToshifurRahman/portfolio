@@ -908,10 +908,12 @@ for (const d of DIAGRAMS) {
                  hangs past the edge is not read as that box's heading, and a wrapping
                  spine edge's label overlaps several boxes in transit without naming any
                  of them. Contained is the case that reads wrongly. */
-              /* Only the loop labels this round names. 'pick up' and 'staff' are
-                 wrapping spine edges that break this rule too — they are reported, not
-                 exempted here, so the exemption cannot quietly become permanent. */
-              if (!label.hasAttribute('data-edge-loop')) continue;
+              /* P2b-7: every label, not only the `data-edge-loop` ones. The filter existed because
+                 'pick up' and 'staff' — wrapping spine edges — broke this rule too, and exempting
+                 them would have made the exemption permanent. Enforcing the rule for every label
+                 in the resolver (P2b-3) is what moved them, so the filter can go, and removing
+                 it is now the assertion that the rule holds for the whole graph — which is what
+                 ds asked for, and what would have caught VENDOR ROUTE. */
               const insideX = lr.left >= b.r.left && lr.right <= b.r.right;
               if (!insideX) continue;
               const above = b.r.top - lr.bottom;
