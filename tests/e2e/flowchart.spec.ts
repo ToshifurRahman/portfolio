@@ -1392,3 +1392,60 @@ test.describe('ticket-pipeline: fits a desktop window', () => {
     expect(geo.ctmA, 'the chart must not be scaled down to fit').toBeGreaterThanOrEqual(1);
   });
 });
+
+/* ---------------------------------------------------------------- round P2b
+ *
+ * P2b-2. ds: ALLOWED, VENDOR ROUTE and AN ORDER "still stack in one tight column at 1280 —
+ * the re-seating gave them hairlines, not air", and AN ORDER / STOCK GONE at 34-37px was
+ * RannaGhor's tightest pair.
+ *
+ * This test pins the measurable part — two labels a hairline apart read as one block of
+ * text — as a floor on the clearance between any two pills, on the painted boxes.
+ *
+ * It does NOT reproduce ds's finding, and I am recording that rather than claiming a close.
+ * Measured at 1280 after P2b-4, ALLOWED (cx 995), VENDOR ROUTE (cx 1141) and AN ORDER
+ * (cx 613) are in three distinct columns, and the tightest pair is AN ORDER / STOCK GONE at
+ * 32.8px. I could not make the three stack in one column at any width, and 32.8px of
+ * clearance is not something this test can call a fault without inventing a threshold the
+ * reviewer did not give. So P2b-2 is reported as improved-but-not-converted-to-a-test: the
+ * spacing change moved VENDOR ROUTE out of the column, and this floor stops it drifting back
+ * within 8px of a neighbour.
+ */
+
+for (const d of DIAGRAMS) {
+  test.describe(`${d.slug}: label pills have air between them`, () => {
+    for (const w of [1228, 1280, 1440]) {
+      test(`no two pills are closer than 8px at ${w}`, async ({ page }) => {
+        await page.setViewportSize({ width: w, height: 900 });
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        await page.goto(d.path);
+        await panel(page, d.slug).scrollIntoViewIfNeeded();
+
+        const tight = await page.evaluate(() => {
+          const svg = [...document.querySelectorAll('.flow-svg')].find(
+            (s) => s.getBoundingClientRect().width > 0,
+          ) as SVGSVGElement;
+          const pills = [...svg.querySelectorAll('.flow-edge-pill')].map((r) => ({
+            box: r.getBoundingClientRect(),
+            label: (r.nextElementSibling as SVGTextElement).textContent?.trim() ?? '?',
+          }));
+          const out: string[] = [];
+          for (let i = 0; i < pills.length; i++) {
+            for (let j = i + 1; j < pills.length; j++) {
+              const a = pills[i].box;
+              const b = pills[j].box;
+              const dx = Math.max(b.left - a.right, a.left - b.right, 0);
+              const dy = Math.max(b.top - a.bottom, a.top - b.bottom, 0);
+              const gap = Math.hypot(dx, dy);
+              if (gap < 8) out.push(`"${pills[i].label}" / "${pills[j].label}" ${gap.toFixed(1)}px`);
+            }
+          }
+          return out;
+        });
+
+        expect(tight, `label pairs closer than 8px at ${w}px`).toEqual([]);
+
+      });
+    }
+  });
+}
