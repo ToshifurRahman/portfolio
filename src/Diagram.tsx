@@ -354,7 +354,19 @@ const byId = (nodes: Placed[]) => new Map(nodes.map((n) => [n.id, n]));
 
 /* An edge's path. Every route goes through a gap: a loop leaves the box sideways,
    runs down the reserved bottom margin, and comes back up, so it crosses no box. */
-function edgePath(a: Placed, b: Placed, route: Route, bounds: Bounds, vertical = false): string {
+function edgePath(
+  a: Placed,
+  b: Placed,
+  route: Route,
+  bounds: Bounds,
+  vertical = false,
+  /* How many earlier edges left the same box toward the same side. Two edges that depart
+     from one box onto an identical run give their labels nowhere to belong: every pill near
+     either is equally near both, so attribution can never say which line it names. The
+     departure leg is staggered by this index and the lane pushed out by it, so each edge
+     owns a stretch of its own. */
+  sibling = 0,
+): string {
   if (vertical) {
     const acx = a.x + a.w / 2;
     const bcx = b.x + b.w / 2;
@@ -403,10 +415,12 @@ function edgePath(a: Placed, b: Placed, route: Route, bounds: Bounds, vertical =
     /* To a box that is not directly below, the gap under the source is crossed at
        the outer edge of the two, so the horizontal run misses anything between. */
     const right = b.x > a.x;
-    const lane = right ? Math.max(a.x + a.w, b.x + b.w) + 10 : Math.min(a.x, b.x) - 10;
+    const lane0 = right ? Math.max(a.x + a.w, b.x + b.w) + 10 : Math.min(a.x, b.x) - 10;
+    const lane = right ? lane0 + sibling * 12 : lane0 - sibling * 12;
+    const drop = a.y + a.h + 12 + sibling * 16;
     /* The second-to-last turn sits a whole marker above the target, so the final run is a
        straight leg the arrowhead can sit on (P2b-8: this leg measured 7 units). */
-    return `M${acx} ${a.y + a.h} V${a.y + a.h + 12} H${lane} V${b.y - EDGE_STOP - MARKER_LEN} H${b.x + b.w / 2} V${b.y - EDGE_STOP}`;
+    return `M${acx} ${a.y + a.h} V${drop} H${lane} V${b.y - EDGE_STOP - MARKER_LEN} H${b.x + b.w / 2} V${b.y - EDGE_STOP}`;
   }
   /* Above the source: up the gap and in from the top. */
   if (b.y + b.h <= a.y) {
@@ -876,6 +890,10 @@ function Graph({
            reads as that edge's label: that is how STAGE FAILS ended up touching the solid
            `log` run while belonging to the dashed `fails` one. */
         const pathOf = new Map<string, string>();
+        /* How many edges have already left each box toward each side. Two edges out of one
+           box in the same direction used to be drawn on the same run, which leaves their
+           labels nowhere to belong (see `edgePath`'s `sibling`). */
+        const departure = new Map<string, number>();
         for (const e of spec.edges) {
           const a0 = nodes.get(e.from);
           const b0 = nodes.get(e.to);
@@ -890,7 +908,12 @@ function Graph({
                   : 'down'
                 : 'branch'
             : e.route;
-          pathOf.set(e.id, edgePath(a0, b0, r0, bounds, vertical));
+          /* Stagger only the departures that actually share a run: same source, same side,
+             and the same kind of drop. A box's edges to opposite sides do not collide. */
+          const key = `${e.from}:${b0.x > a0.x ? 'r' : 'l'}:${r0}`;
+          const sibling = departure.get(key) ?? 0;
+          departure.set(key, sibling + 1);
+          pathOf.set(e.id, edgePath(a0, b0, r0, bounds, vertical, sibling));
         }
         /* The painted centre lines, as run segments. Paths here are only M/H/V, so this is
            exact and cheap to test a rectangle against. */
@@ -917,6 +940,46 @@ function Graph({
           }
           return segs;
         });
+        /* Distance from a pill to one edge's nearest run, in viewBox units. Every segment
+           here is axis-aligned, so this is exact rather than sampled. */
+        const distToEdge = (id: string, r: { x: number; y: number; w: number; h: number }) => {
+          let best = Infinity;
+          for (const g of strokes) {
+            if (g.id !== id) continue;
+            const horizontal = Math.abs(g.y2 - g.y1) < 0.01;
+            const dx = horizontal
+              ? Math.max(Math.min(g.x1, g.x2) - (r.x + r.w), r.x - Math.max(g.x1, g.x2), 0)
+              : Math.max(g.x1 - (r.x + r.w), r.x - g.x1, 0);
+            const dy = horizontal
+              ? Math.max(g.y1 - (r.y + r.h), r.y - g.y1, 0)
+              : Math.max(Math.min(g.y1, g.y2) - (r.y + r.h), r.y - Math.max(g.y1, g.y2), 0);
+            const dist = Math.hypot(dx, dy);
+            if (dist < best) best = dist;
+          }
+          return best;
+        };
+        /* Which edge does this pill belong to? A label reads as the line it is nearest, so a
+           candidate seat is only legal if this edge owns the pill outright: nearer by
+           `ATTRIBUTION` than any other edge's ink. This is what stops a label sitting in the
+           corridor between two parallel runs and belonging to neither — RannaGhor's `authorise`
+           and `refuse` share a long run out of Role check, and VENDOR ROUTE had parked at
+           1.4px from both, so the refused branch lost its label and the allowed line carried
+           two. Where two edges share a run, the distance to each is equal there, so a shared
+           stretch can never satisfy this: the label is pushed onto a part of its own edge that
+           no other edge covers. That is the rule, and it applies to every label equally — no
+           label gets a seat of its own. */
+        const ATTRIBUTION = 6;
+        const isOwned = (own: string, r: { x: number; y: number; w: number; h: number }) => {
+          const mine = distToEdge(own, r);
+          if (!Number.isFinite(mine)) return true;
+          let other = Infinity;
+          for (const id of pathOf.keys()) {
+            if (id === own) continue;
+            const d = distToEdge(id, r);
+            if (d < other) other = d;
+          }
+          return mine + ATTRIBUTION <= other;
+        };
         /* Does this pill lie across some other edge's line? Axis-aligned segments, so a
            rectangle-versus-segment test is just a range overlap with a pixel of grace. */
         const coversOtherStroke = (own: string, r: { x: number; y: number; w: number; h: number }) => {
@@ -1004,6 +1067,8 @@ function Graph({
           /* A pill over another edge's line reads as that line's label, so a position
              that covers one is not a legal position for this label. */
           if (coversOtherStroke(e.id, r)) return false;
+          /* And it has to be read as this edge's label, not merely avoiding the others. */
+          if (!isOwned(e.id, r)) return false;
           /* Four units of horizontal air, and a full label height vertically: two pills a
              hairline apart read as one block of text, which is what P2b-3 was about. */
           return !placedLabels.some(
@@ -1030,6 +1095,41 @@ function Graph({
               }
             }
             if (found) break;
+          }
+          if (!found) {
+            /* Nothing near the preferred seat is legal, so the label walks its own edge.
+               A label belongs to a line; if the only legal seats are along that line, the
+               right answer is the nearest one on it, not a displacement ring far from
+               everything. RannaGhor's VENDOR ROUTE is the case: `authorise` and `refuse`
+               leave Role check together and share a long run, so the corridor between them
+               can never satisfy the attribution rule — its own unshared stretch is down the
+               left margin, 850 units away, which no ring radius reaches. Candidates are
+               sampled along each of this edge's own runs and tried nearest-first. */
+            const own = strokes.filter((g) => g.id === e.id);
+            const cands: { x: number; y: number; dist: number }[] = [];
+            for (const g of own) {
+              const horizontal = Math.abs(g.y2 - g.y1) < 0.01;
+              const len = Math.hypot(g.x2 - g.x1, g.y2 - g.y1);
+              const steps = Math.max(2, Math.ceil(len / 6));
+              for (let i = 0; i <= steps; i++) {
+                const t = i / steps;
+                const px = g.x1 + (g.x2 - g.x1) * t;
+                const py = g.y1 + (g.y2 - g.y1) * t;
+                /* Above a horizontal run, beside a vertical one: the line stays visible. */
+                const cx = horizontal ? px : px;
+                const cy = horizontal ? py - 8 : py;
+                cands.push({ x: cx, y: cy, dist: Math.hypot(cx - pos.x, cy - pos.y) });
+              }
+            }
+            cands.sort((p1, p2) => p1.dist - p2.dist);
+            for (const c of cands) {
+              if (holds(c.x, c.y)) {
+                pos.x = c.x;
+                pos.y = c.y;
+                found = true;
+                break;
+              }
+            }
           }
         }
         placedLabels.push(pillFor(label, pos.x, pos.y));
