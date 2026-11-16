@@ -1,326 +1,459 @@
 ---
 name: Toshifur Rahman Portfolio
-description: A software engineer drawn as one state machine, in near-black, warm ink and a single vermilion.
+description: A software engineer drawn as a signal box: a dark control panel, a 12-column frame, and one amber signal that says where you are.
 colors:
-  bg: "#0e0f11"
-  ink: "#f2f0ea"
-  muted: "#9a9ea5"
-  rule: "#2a2d31"
-  accent: "#ff5b36"
-  on-accent: "#0e0f11"
-  light-bg: "#f2f0ea"
-  light-ink: "#0e0f11"
-  light-muted: "#565a61"
-  light-rule: "#d3d0c7"
-  light-accent: "#c23410"
-  light-on-accent: "#f2f0ea"
+  bg: "#0a0b0d"
+  bg-raised: "#0f1114"
+  ink: "#f2f1ec"
+  ink-2: "#c4c7cd"
+  muted: "#8b9099"
+  grid: "#15181c"
+  rule: "#23272d"
+  rule-strong: "#343941"
+  track: "#2c3138"
+  lamp-off: "#2c3138"
+  accent: "#ffb340"
+  accent-hover: "#ffc56b"
+  accent-text: "#ffb340"
+  on-accent: "#1a1204"
+  lamp-edge: "#ffb340"
+  fail: "#ff5b4a"
+  light-bg: "#e8e5dd"
+  light-bg-raised: "#ded9cf"
+  light-ink: "#121417"
+  light-ink-2: "#33373d"
+  light-muted: "#5a5f68"
+  light-grid: "#dcd7cc"
+  light-rule: "#cdc7bb"
+  light-rule-strong: "#b3ad9f"
+  light-track: "#a8a294"
+  light-lamp-off: "#bab4a6"
+  light-accent: "#e09a12"
+  light-accent-hover: "#e8a72c"
+  light-accent-text: "#7a4600"
+  light-lamp-edge: "#7a4600"
+  light-fail: "#c2321f"
 typography:
-  display:
-    fontFamily: "'Archivo Variable', 'Archivo', system-ui, sans-serif"
-    fontSize: "clamp(4rem, 13.2vw, 13.2rem)"
-    fontWeight: 900
-    lineHeight: 0.88
-    letterSpacing: "-0.005em"
-    fontVariation: "'wdth' 62"
-  headline:
-    fontFamily: "'Archivo Variable', 'Archivo', system-ui, sans-serif"
-    fontSize: "clamp(2.75rem, 6.6vw, 6rem)"
-    fontWeight: 900
-    lineHeight: 0.88
-    letterSpacing: "-0.005em"
-    fontVariation: "'wdth' 62"
+  font:
+    fontFamily: "'Mona Sans Variable', 'Mona Fallback', system-ui, sans-serif"
+  mono:
+    fontFamily: "'Martian Mono Variable', 'Martian Fallback', ui-monospace, monospace"
+  name:
+    fontSize: "clamp(3.25rem, 1.55rem + 6.6vw, 6rem)"
+    fontWeight: 680
+    letterSpacing: "-0.045em"
   title:
-    fontFamily: "'Archivo Variable', 'Archivo', system-ui, sans-serif"
-    fontSize: "clamp(2.5rem, 4.8vw, 4.75rem)"
-    fontWeight: 900
-    lineHeight: 0.88
-    letterSpacing: "-0.005em"
-    fontVariation: "'wdth' 62"
-  subtitle:
-    fontFamily: "'Archivo Variable', 'Archivo', system-ui, sans-serif"
-    fontSize: "clamp(1.75rem, 2.6vw, 2.375rem)"
-    fontWeight: 900
-    lineHeight: 0.88
-    letterSpacing: "-0.005em"
-    fontVariation: "'wdth' 62"
-  state-label:
-    fontFamily: "'Archivo Variable', 'Archivo', system-ui, sans-serif"
-    fontSize: "clamp(1.375rem, 2.6vw, 2.875rem)"
-    fontWeight: 900
-    lineHeight: 0.88
-    letterSpacing: "-0.005em"
-    fontVariation: "'wdth' 62"
-  lede:
-    fontFamily: "'Archivo Variable', 'Archivo', system-ui, sans-serif"
-    fontSize: "clamp(1.25rem, 2vw, 1.875rem)"
-    fontWeight: 400
-    lineHeight: 1.3
+    fontSize: "clamp(3rem, 1.7rem + 5.2vw, 5.75rem)"
+    fontWeight: 680
+    letterSpacing: "-0.045em"
+  h2:
+    fontSize: "clamp(2rem, 1.55rem + 1.5vw, 2.625rem)"
+    fontWeight: 600
+    letterSpacing: "-0.03em"
+  case:
+    fontSize: "clamp(1.75rem, 1.35rem + 1.5vw, 2.5rem)"
+    fontWeight: 600
+    letterSpacing: "-0.03em"
+  figure:
+    fontSize: "clamp(2rem, 1.55rem + 1.5vw, 2.75rem)"
+    fontWeight: 600
+    letterSpacing: "-0.03em"
+  motto:
+    fontSize: "clamp(1.5rem, 1.12rem + 1.35vw, 2.25rem)"
+    fontWeight: 520
+    letterSpacing: "-0.015em"
+  email:
+    fontSize: "clamp(1.75rem, 1rem + 3.4vw, 3.5rem)"
+    fontWeight: 680
+    letterSpacing: "-0.045em"
+  lg:
+    fontSize: "1.1875rem"
+    fontWeight: 430
+  xl:
+    fontSize: "1.375rem"
+    fontWeight: 520
   body:
-    fontFamily: "'Archivo Variable', 'Archivo', system-ui, sans-serif"
     fontSize: "1.0625rem"
-    fontWeight: 400
-    lineHeight: 1.55
-  body-long:
-    fontFamily: "'Archivo Variable', 'Archivo', system-ui, sans-serif"
-    fontSize: "1.125rem"
-    fontWeight: 400
-    lineHeight: 1.6
-  fact:
-    fontFamily: "'Archivo Variable', 'Archivo', system-ui, sans-serif"
-    fontSize: "1.25rem"
-    fontWeight: 600
-    lineHeight: 1.3
-  small:
-    fontFamily: "'Archivo Variable', 'Archivo', system-ui, sans-serif"
+    fontWeight: 430
+  md:
     fontSize: "0.9375rem"
-    fontWeight: 400
-    lineHeight: 1.45
-  label:
-    fontFamily: "'Archivo Variable', 'Archivo', system-ui, sans-serif"
-    fontSize: "0.8125rem"
+    fontWeight: 430
+  sm:
+    fontSize: "0.875rem"
+    fontWeight: 430
+  xs:
+    fontSize: "0.75rem"
+    fontWeight: 520
+  "2xs":
+    fontSize: "0.6875rem"
     fontWeight: 600
-    lineHeight: 1.3
-    letterSpacing: "0.1em"
-  action:
-    fontFamily: "'Archivo Variable', 'Archivo', system-ui, sans-serif"
-    fontSize: "0.9375rem"
-    fontWeight: 700
-    letterSpacing: "0.06em"
-  state-num:
-    fontFamily: "'Archivo Variable', 'Archivo', system-ui, sans-serif"
-    fontSize: "1.125rem"
-    fontWeight: 700
-    lineHeight: 1.3
     letterSpacing: "0.04em"
-rounded:
-  none: "0"
-  terminal: "50%"
+  weights:
+    regular: 430
+    medium: 520
+    semibold: 600
+    bold: 680
+  tracking:
+    display: "-0.045em"
+    tight: "-0.03em"
+    snug: "-0.015em"
+    mono: "0.04em"
 spacing:
-  line: "2px"
-  line-thick: "3px"
-  nudge: "4px"
-  pad: "clamp(1rem, 4.4vw, 4rem)"
-  gap: "clamp(1.5rem, 3.9vw, 3.5rem)"
-  column: "2.5rem"
-  connector: "3rem"
-  box: "7.5rem"
-  box-compact: "3.25rem"
+  "1": "0.25rem"
+  "2": "0.5rem"
+  "3": "0.75rem"
+  "4": "1rem"
+  "5": "1.25rem"
+  "6": "1.5rem"
+  "8": "2rem"
+  "10": "2.5rem"
+  "12": "3rem"
+  "16": "4rem"
+  section: "clamp(4rem, 2.6rem + 5vw, 7rem)"
+  frame: "84rem"
+  frame-margin: "clamp(0.625rem, 0.2rem + 2vw, 2rem)"
+  pad: "clamp(1rem, 0.4rem + 2.4vw, 3rem)"
+  col-gap: "clamp(1rem, 0.5rem + 1.5vw, 2rem)"
+  measure: "40rem"
+  bar: "4rem"
+  contents: "3.5rem"
+rounded:
+  sm: "4px"
+  default: "6px"
+  lamp: "50%"
+lines:
+  line: "1px"
+  track: "2px"
+  heavy: "3px"
+  focus-offset: "3px"
+motion:
+  ease-out: "cubic-bezier(0.16, 1, 0.3, 1)"
+  lamp: "120ms"
+  fast: "160ms"
+  none: "0.01ms"
+  wave: "9s"
+  pulse: "26s"
+  fade: "220ms"
+  strip-step: "120ms"
 components:
-  state-box:
+  bar:
     backgroundColor: "{colors.bg}"
     textColor: "{colors.ink}"
-    typography: "{typography.state-label}"
-    rounded: "{rounded.none}"
-    padding: "0.75rem 1rem 0.875rem"
-    height: "{spacing.box}"
-  state-box-hover:
-    backgroundColor: "{colors.ink}"
-    textColor: "{colors.bg}"
-  state-box-current:
+    borderBottom: "{lines.line} solid {colors.rule}"
+    height: "{spacing.bar}"
+  brand:
+    textColor: "{colors.accent-text}"
+    typography: "{typography.md}"
+  lamp-off:
+    backgroundColor: "{colors.lamp-off}"
+    size: "8px"
+  lamp-lit:
     backgroundColor: "{colors.accent}"
-    textColor: "{colors.on-accent}"
-  panel:
-    backgroundColor: "{colors.bg}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.none}"
-    padding: "clamp(1.75rem, 3.2vw, 3rem) clamp(1.25rem, 3.2vw, 3rem) clamp(1rem, 2vw, 1.5rem)"
-  action-link:
-    textColor: "{colors.accent}"
-    typography: "{typography.action}"
-    height: "2.75rem"
-  action-link-hover:
-    textColor: "{colors.ink}"
-  text-button:
+    ring: "{lines.line} {colors.lamp-edge}"
+  nav-link:
     textColor: "{colors.muted}"
-    typography: "{typography.action}"
-    height: "2.75rem"
-  text-button-hover:
+    typography: "{typography.md}"
+    height: "{spacing.target}"
+  nav-link-current:
     textColor: "{colors.ink}"
-  progress-step:
-    backgroundColor: "{colors.bg}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.none}"
-    padding: "0.4375rem 0.375rem"
-  progress-step-hover:
-    backgroundColor: "{colors.ink}"
-    textColor: "{colors.bg}"
-  progress-step-current:
+  button:
     backgroundColor: "{colors.accent}"
     textColor: "{colors.on-accent}"
-  diagram-node:
-    textColor: "{colors.ink}"
-    rounded: "{rounded.none}"
-    padding: "0.5625rem 0.75rem"
-  skip-link:
-    backgroundColor: "{colors.ink}"
-    textColor: "{colors.bg}"
-    padding: "0.75rem 1rem"
+    rounded: "{rounded.default}"
+    height: "2.75rem"
+  button-hover:
+    backgroundColor: "{colors.accent-hover}"
+  ghost:
+    textColor: "{colors.ink-2}"
+    border: "{lines.line} solid {colors.rule-strong}"
+    rounded: "{rounded.default}"
+    height: "2.75rem"
+  ghost-hover:
+    borderColor: "{colors.accent}"
+    textColor: "{colors.accent-text}"
+  case:
+    backgroundColor: "{colors.bg-raised}"
+    border: "{lines.line} solid {colors.rule}"
+    rounded: "{rounded.default}"
+  copy-button:
+    textColor: "{colors.ink-2}"
+    border: "{lines.line} solid {colors.rule-strong}"
+    typography: "{typography.2xs}"
+  flow-node:
+    backgroundColor: "{colors.bg-raised}"
+    border: "{lines.line} solid {colors.rule-strong}"
+    typography: "{typography.2xs}"
+  flow-edge:
+    stroke: "{colors.muted}"
+  flow-edge-branch:
+    stroke: "{colors.muted}"
+    dash: "4px 4px"
 ---
 
 # Design System: Toshifur Rahman Portfolio
 
 ## Overview
 
-**Creative North Star: "The Chain"**
+**Creative North Star: the signal box.**
 
-The site is one state diagram. On the home page five square states in a row (Who, Builds, Skills, Projects, Contact) describe the owner as a system, with a filled start dot on the left and a ringed end dot on the right. The selected state fills with vermilion and a connector drops from it into an outlined panel holding that part of the owner. Case-study pages reuse the same chain as a compact, sticky row of nine states, one per section, and architecture diagrams inside a case study are drawn from the same boxes and arrows.
+The site is a control panel for a working engineer. Everything sits inside one 12-column
+frame drawn by two hairlines down the page, and colour is spent on one thing: an amber signal
+that says where you are. The ground is read as an instrument panel at night — near-black,
+hairline rules, mono type for anything that is data — and every section is a readout rather
+than a card.
 
-Everything else is typography and rules. One family, Archivo, does all the work: extra-condensed heavy uppercase for names and headings, regular width for reading. Content is separated by 2px lines on top of each row, never by filled surfaces. The ground is near-black, the ink is a warm off-white, and a single vermilion marks where the machine is and where it can go next. Dark is the designed-for state; a light theme swaps ground and ink and deepens the vermilion.
+The owner's own image names the motion: charge runs from the wordmark down the page's strips
+to the footer, and cells between the strips glow as it passes. It is slow (a 26s cycle for the
+ray, a 9s wave for the hero cells), it is decoration, and it stops dead under
+`prefers-reduced-motion`.
 
-The mood is blunt, legible and engineered: large, heavy, few elements, each one drawn with a straight line. Motion is nearly absent. A state change is an instant swap; the panel redraws from its top edge in 0.24s and the arrow on a transition link nudges 4px on hover, and both are removed under reduced motion.
+The redesign replaced an earlier language that is no longer here: Archivo, a vermilion accent,
+and a five-state chain as the home navigation. Nothing in this document describes that site.
+Two fonts now do the work — Mona Sans for words, Martian Mono for data — the accent is amber,
+and the navigation is a sticky bar with a case-study sub-nav.
 
-**Key Characteristics:**
-- A state diagram is the navigation: boxes, straight arrows, start dot, end ring.
-- One typeface, two widths: condensed 900 uppercase for display, regular width for text.
-- One accent, used only for the current state and the way out of it.
-- Flat and square: no shadows, no corner radius on any box, no filled content surfaces.
-- 2px lines carry all structure: box outlines, arrows, row rules, link underlines, focus ring.
-- Two-digit numbers (01 to 09) name every state and section.
+**Key characteristics:**
+- One frame, twelve columns, two hairlines, on every page.
+- Dark first: `:root` is the night panel and the light theme is a token swap, not an inversion.
+- One accent, amber, used for the live signal, the wordmark and the way forward.
+- Mono type wherever a number, label or system name appears; Sans for prose.
+- Flat and hairline: 1px rules, 6px radii, no shadows, no filled cards behind body copy.
+- The chart engine is part of the design language, so its rules are design rules (below).
 
 ## Colors
 
-A two-tone ground and ink with one hot accent; neutrals are slightly cool on the dark side and slightly warm on the paper side.
+Every value below is the token as it is named in `src/styles.css`. The dark values are on
+`:root`; the light values are the same token names re-declared under `:root[data-theme='light']`,
+which is why no component ever branches on theme.
 
-### Primary
-- **Signal Vermilion** (`accent`): the solid fill of the current state (home state box, current step in the case-study progress chain), the outline of the open panel and the connector into it, and transition links, meaning the links that move the visitor to another state or page. Large contact links turn vermilion on hover, and the text selection highlight uses it. In the light theme it deepens to **Fired Vermilion** (`light-accent`) so text and fills keep AA contrast on paper.
-- **On-accent** (`on-accent`): text set on a vermilion fill. Same value as the ground in each theme.
+### The night panel (`:root`)
+- **Ground** (`bg` `#0a0b0d`): the page. **Raised** (`bg-raised` `#0f1114`): the one step up —
+  the bar's band, cards, diagram boxes. There is no third elevation.
+- **Ink** (`ink` `#f2f1ec`) is body text and headings. **`ink-2`** (`#c4c7cd`) is the second
+  voice: ghost buttons, copy controls, quieter labels. **`muted`** (`#8b9099`) is tertiary —
+  captions, diagram labels, meta. Three text weights, no more.
+- **Rules** come in two strengths, and the distinction is load-bearing: `rule` `#23272d`
+  separates rows and closes the bar; `rule-strong` `#343941` outlines a control that can be
+  pressed. `grid` `#15181c` draws the column lines behind the introduction, deliberately
+  below `rule` so the frame never competes with content.
+- **Track** (`track` `#2c3138`) is the unfilled part of any track or rail, and `lamp-off` is
+  the same value: an unlit lamp and an empty track are the same darkness.
 
-### Neutral
-- **Carbon Ground** (`bg`): the page and the inside of every unselected box. Also the text colour of a hovered (inverted) state.
-- **Warm Ink** (`ink`): text, state box outlines, arrows, the start dot and end ring, the strong rule above a case-study entry or meta item, and the focus ring.
-- **Slate Muted** (`muted`): labels, section numbers, secondary descriptions, captions, footer text and the back/secondary text button at rest.
-- **Graphite Rule** (`rule`): the quiet 2px line above each row inside a panel or section, the line under each case-study section, and the footer line.
-- **Light theme**: ground and ink swap (`light-bg`, `light-ink`), with `light-muted` and `light-rule` taking the same roles. The theme is set by `data-theme` on the root element and the tokens keep their names, so components never branch on theme.
+### The signal
+- **Amber** (`accent` `#ffb340`) is the only saturated colour on the site: a lit lamp, the
+  live token on the track, the current nav item, the glow in a hero cell, the border of a
+  focused control. **`accent-hover`** (`#ffc56b`) is its hover. **`on-accent`** (`#1a1204`) is
+  text on an amber fill — a brown-black, not the ground, so amber stays legible as a button.
+- **`accent-text`** (`#ffb340`) exists separately from `accent` because the two jobs differ:
+  a fill needs a colour that reads as light, text needs one that passes contrast on the
+  ground. In the light theme they diverge — `#e09a12` for fills, `#7a4600` for text — because
+  amber text on paper fails AA at the fill colour.
+- **`lamp-edge`** is the hairline ring around a lit lamp; `#ffb340` at night, `#7a4600` on
+  paper so the lamp keeps an edge there.
+- **`fail`** (`#ff5b4a` night, `#c2321f` paper) is reserved for failure states in the
+  flowcharts' semantics. It is not a UI colour and never marks a section.
 
-### Named Rules
-**The Current State Rule.** Vermilion says "you are here" or "go there". It fills the one current state, outlines its panel, and colours transition links. It is never a heading colour, a background wash, or decoration.
+### The paper theme
+`bg` `#e8e5dd` and `ink` `#121417`, with `muted` `#5a5f68`, `rule` `#cdc7bb`, `rule-strong`
+`#b3ad9f`, `grid` `#dcd7cc`, `track` and `lamp-off` `#a8a294`/`#bab4a6`. The accent darkens
+rather than brightens (`#e09a12` fill, `#7a4600` text) so amber reads as a signal on paper
+instead of as a highlighter. `backdrop` is the only translucent value (`rgb(18 20 23 / 0.55)`
+on paper, `rgb(4 5 6 / 0.82)` at night) and it is used solely behind an overlay.
 
-**The Two Rules Rule.** A line in ink is part of the diagram or opens a major entry; a line in rule colour separates rows of content. Do not introduce a third line colour.
+### Named rules
+**The One Signal Rule.** Amber means live or go. It marks the current item, the lit lamp, the
+charge, the primary action, and the focused control. It is never a heading colour, a section
+background, or decoration.
+
+**The Two Rule Strengths Rule.** `rule` separates, `rule-strong` outlines something pressable.
+Do not reach for a third grey.
 
 ## Typography
 
-**Display Font:** Archivo Variable at width 62% (with Archivo, system-ui, sans-serif)
-**Body Font:** Archivo Variable at normal width (same stack)
-**Fallback:** `'Archivo Fallback'` sits between the two and the system stack. It is not a second typeface: it maps `local()` Liberation Sans (size-adjust 111%) and Liberation Sans Narrow at width 62% (size-adjust 87%) onto Archivo's metrics, with Archivo's own ascent 88% / descent 21% overrides. The web face is `font-display: optional` so the first paint never waits for it; the fallback makes a cold visit that misses the face lay out identically instead of clipping the name. Nothing extra is downloaded for it.
+**Sans:** Mona Sans Variable (`--font`), with `Mona Fallback` and the system stack behind it.
+**Mono:** Martian Mono Variable (`--mono`), with `Martian Fallback` and `ui-monospace`.
 
-**Character:** One family pushed to two extremes. The condensed 900 uppercase is loud and mechanical, like stencilled labelling on equipment; the regular width is plain and quiet so long case-study text reads without effort.
+Both faces are self-hosted and marked `font-display: optional`, and each has a metric-matched
+fallback face (`Mona Fallback` 103.7% size-adjust, `Martian Fallback` 116.6%) so a cold visit
+that misses the download lays out at the same size instead of reflowing. The diagram engine
+does not read font metrics at all — it advances by a constant per character
+(`CHAR * size` in `src/Diagram.tsx`) — so the chart's geometry cannot shift when a face
+arrives.
 
-### Hierarchy
-- **Display** (900, width 62%, uppercase, line-height 0.88, tracking -0.005em): the page title. Case-study and not-found titles use the `display` clamp; the owner's name on the home page is sized to the viewport so it fills one line (12.8vw, capped at 12.8rem from 100rem wide, and 24.5vw on two lines below 62rem).
-- **Headline** (same style, `headline` size): the heading inside a state panel. The next-case-study link at the foot of a case study steps up to clamp(3rem, 9vw, 9rem).
-- **Title** (same style, `title` size): case-study section headings, with the two-digit section number in muted in front, and case-study entry titles in the Projects panel.
-- **Subtitle** (same style, `subtitle` size): row titles inside a panel. Result figures in a case study use the same style at 2.5rem.
-- **State label** (same style, `state-label` size): the word inside a state box; 1.875rem in the narrow stacked list.
-- **Lede** (400, `lede` size, line-height 1.3, max 34em): one sentence under a title.
-- **Body** (400, 1.0625rem, line-height 1.55): default text. Row descriptions are capped at 36 to 44em.
-- **Body long** (400, 1.125rem, line-height 1.6, max 42rem): case-study prose.
-- **Fact** (600, 1.25rem, line-height 1.3): values in fact rows and skill lists.
-- **Small** (400, 0.9375rem): footer, diagram captions and notes. Diagram node text is this size at 700.
-- **Label** (600, 0.8125rem, tracking 0.1em, uppercase, muted): the term of a term/value pair, diagram lane names, the stack line under a case-study entry, and the "More projects" list heading.
-- **Action** (700, 0.9375rem, tracking 0.06em, uppercase, underlined): transition links and text buttons.
-- **State number** (700, 1.125rem, tracking 0.04em): the two-digit number in a state box. In the compact progress chain the whole step is 0.8125rem, 700, tracking 0.03em.
+**Character:** Mona Sans is a humanist sans used at fairly tight tracking and heavy weights for
+names and headings; Martian Mono appears only where something is a number, a station name, a
+label or a stack, and it is the visual signature that says this is an instrument panel.
 
-### Named Rules
-**The One Family Rule.** Archivo only. Hierarchy comes from width, weight and size, never from a second typeface.
+### Scale
+The scale is tokenised, not invented per section: `2xs` 0.6875rem, `xs` 0.75rem, `sm`
+0.875rem, `md` 0.9375rem, `body` 1.0625rem, `lg` 1.1875rem, `xl` 1.375rem, then five fluid
+`clamp()` sizes — `figure`, `motto`, `h2`, `case`, `email`, `title`, `name`.
 
-**The Condensed Means Heading Rule.** Width 62% is always 900 and uppercase, and only for names, headings, state labels, step counters and figures. Running text is never condensed and never uppercase.
+- **Name** (`name`, weight 680, tracking -0.045em): the home hero, clamped to 6rem.
+- **Title** (`title`): the case-study title. **Email** (`email`): the contact address.
+- **H2** (`h2`): section headings. **Case** (`case`): a work card's title. **Figure**:
+  a proof number. **Motto** (`motto`, weight 520): the hero statement.
+- **Body** 1.0625rem at weight 430 for prose; `md` and `sm` for secondary lines; `2xs` with
+  mono for labels and diagram text.
+- Weights are named tokens (`regular` 430, `medium` 520, `semibold` 600, `bold` 680) rather
+  than the usual 400/500/600/700, so headings sit a shade heavier than system defaults.
 
-**The Two Digits Rule.** States and sections are numbered 01, 02 and so on, shown inside the box or directly in front of the heading in the same line. A number is never a separate tag floating above a heading.
+### Named rules
+**The Mono Means Data Rule.** If it is a number, a station, a stack, a label or a system name,
+it is Martian Mono. If it is a sentence, it is Mona Sans. A line never mixes the two.
+
+**The Diagram Floor Rule.** No text in a flowchart may render below **12px**. The floor is
+measured from the rendered transform (`getScreenCTM().a`), not from the viewBox, because the
+chart is scaled to fit and the viewBox ratio lies about the type size. This is why the height
+clamp was removed rather than kept (see the flowchart section).
 
 ## Layout
 
-The page is a single column up to 100rem wide, centred, with fluid side padding (`pad`). There is no header bar: the name or the case-study title is the top of the page.
+**The frame.** `--frame` 84rem, centred, with `--frame-margin` outside it, two 1px hairlines on
+its edges, and a 12-column grid inside with `--col-gap`. `--pad` is the inner gutter. Prose is
+capped at `--measure` 40rem. The bar is `--bar-h` 4rem and sticky at `top: 0` with an
+opaque ground and a `rule` line beneath it; `--header-h` is overwritten at run time with the
+bar's measured height so anchors land below it.
 
-**Home.** The name spans the full width. Under it the chain is a five-column grid with a fluid gutter (`gap`); each gutter holds the arrow into the next state. The chain is inset 3rem on each side to seat the start dot and end ring, and all terminals and arrows sit on the vertical centre of the boxes (`box`, 7.5rem tall). The open panel spans all five columns, 3rem below the chain (`connector`), with a vertical connector dropping from the centre of the selected box. Each panel ends with a rule and the transitions out of that state: back on the left in muted, next on the right in vermilion.
+**Home.** A hero (`intro`) holding the name, role, the two hero facts and the statement, laid
+over the twelve column lines with eleven glow cells between them. Under it a ruled readout of
+two proof figures and the actions (Download CV as the primary, Email/GitHub/LinkedIn as
+ghosts). Then the Now panel, Work, the CV sections (Experience, Education, Achievements), Skills
+and Contact, each a `Section` with its `id`, and the footer.
 
-**Inside a panel.** Content is rows, each with a 2px line on top and 0.75 to 1.125rem of vertical padding. Rows are grids with a fixed first column (12rem for labels, 16rem for project names) and a 2.5rem column gap (`column`). Fact rows sit side by side with a 13rem minimum; case-study entries sit two across.
+**Sections.** `pageSections` in `src/nav.ts` is the single list: Work, Experience, Education,
+Achievements, Skills, Contact. Certificates are part of Achievements, and Education has no bar
+entry because the bar holds five links. Whatever the bar lists, the sections keep this order.
 
-**Case study.** Back link, title, lede, a row of meta facts ruled in ink, then the sticky progress chain, full bleed with a rule beneath. Each section is a 5fr/7fr grid: the heading sticks at 5rem from the top in the left column while the text scrolls on the right, capped at 42rem. Sections are separated by a rule and clamp(2.5rem, 6vw, 5rem) of vertical padding.
+**Case studies.** A `study-head` (back link, title, lede), then the sticky sub-nav, then the
+seven sections. The sub-nav is the bar's own `navbar` treatment applied to the case study's
+section list, and it lights **Work** while a case study is open — the owner asked for the two to
+be one design, not two.
 
-**Responsive.** Below 62rem the chain turns vertical: the five states become full-width bars 3.25rem tall (`box-compact`) with number and label on one line, joined by short vertical arrows, and the panel opens under the whole list so all five states stay in view. The connector is dropped, row grids collapse to one column, and case-study headings stop sticking. The progress chain scrolls sideways and keeps the current step in view. Below 40rem architecture lanes turn vertical with downward arrows.
+**Breakpoints.** `57rem` collapses the bar into a menu button; `48rem` stacks the Now lanes and
+the Work node structure. The flowcharts switch layout on *container* width, not viewport:
+`@container (max-width: 1171px)` for Ticket-Pipeline and `1155px` for RannaGhor, each one the
+study's measured viewBox width minus one. Those numbers are not arbitrary — they are where the
+desktop chart would drop below 1:1 and take every label under the 12px floor.
 
-## Elevation & Depth
+## The bar and the signal strip
 
-The system is flat. There are no shadows, no blur and no layered surfaces; nothing is lifted. The only stacking is the sticky progress chain and it is separated from the page by a 2px rule on an opaque ground, not by a shadow.
+The bar is sticky, `bg` with a `rule` underline, and holds the wordmark (the one amber text in
+the chrome, `accent-text`), the five nav links with a lamp each, and a CV action. Nav links are
+`muted` at rest and `ink` when current, with the lamp filling amber and taking a `lamp-edge`
+ring: **the lamp is the indicator, the text weight does not change.** The current item carries
+`aria-current`.
 
-State is shown by inversion and fill instead of depth: a hovered box inverts to ink on ground, the current box fills with vermilion. The one gradient in the build is a hard-edged radial used as geometry to draw the centre dot of the end ring; gradients are not a surface treatment here.
+The **signal strip** is a fixed, decorative layer of twelve strips on the frame's own column
+lines, `z-index: -1`, `pointer-events: none`. A ray — a 1px-wide soft gradient of `accent` —
+translates from above the fold to below it inside each strip, staggered by `--strip-step`
+120ms so the charge crosses the page as well as running down it. Cycle `--dur-pulse` 26s. It
+runs from the wordmark, which is where the charge is drawn from.
 
-### Named Rules
-**The Flat Rule.** No shadows and no translucent layers, at rest or on interaction. Hover and selection change fill and colour only.
+Hero cells: eleven cells between the column lines, each a vertical gradient of `accent` from
+transparent through the middle, inset 1px per side so the glow sits *between* the lines rather
+than on them. The wave (`--dur-wave` 9s) peaks at 0.03 opacity, staggered by the cell's grid
+index. Under a fine pointer the wave pauses and exactly three cells — the one under the pointer
+and its two nearest neighbours — light at 0.07 over `--dur-fade` 220ms.
 
-## Shapes
+## The Now panel
 
-Square and outlined. Every box (state, progress step, diagram node, panel) has a 2px outline and no corner radius. The only round forms are the two terminals of a chain: a filled start dot and an end ring with a centre dot. Arrows are a 2px straight line ending in an open chevron head that touches the box it leads into; the same chevron rotates to point down when a chain turns vertical. The arrow inside a transition link is the same drawing as an inline 24 by 12 SVG with a 2px stroke.
+Two lanes, **Study** and **Work**, sharing one year axis: a `tl-lane-title` heading per lane,
+year ticks drawn as decoration over the lists, and each stop a real list item, so the panel
+reads with no CSS and no script. Below 48rem the two lanes stack into one column and keep the
+same order. It is a timeline, not a card grid — the earlier two-cell version is gone.
 
-Line weights are two: 2px (`line`) for everything, 3px (`line-thick`) for the underline of large contact links and the focus ring offset.
+## The Work node diagram
 
-### Named Rules
-**The Box Means State Rule.** An outlined box is a state or a node in a diagram, and the only container is the panel of the current state. Content inside is never boxed again; it is separated by rules.
+Each Work card carries a small node diagram instead of prose about architecture: the study's
+modules as marked nodes with the breaks (`node-break`) that matter, at card scale, in mono at
+`2xs`. It is the case study's flowchart reduced to its skeleton, so a scanner sees the shape of
+the system before reading the summary. The card itself is `bg-raised` with a `rule` border and
+6px radius, and its only hover affordance is the title and the arrow.
 
-**The Round Means Terminal Rule.** A circle marks the start or end of a chain and nothing else.
+## Achievements, Certificates, Contact
 
-## Components
+**Achievements** keeps the readout (the figures) plus one line per item — a record sentence and
+the item, nothing more. **Certificates** live inside Achievements rather than as their own
+section: a grid of certificate cards that open a `CertificateDialog` with the preview image and
+its details; the dialog is a real modal with a backdrop token, focus trapped and Escape to close.
+**Contact** sets the address in the `email` clamp and puts a **Copy email** button beside it —
+a `copy-button` in mono `2xs`, `ink-2` on a `rule-strong` border, turning amber on hover, that
+copies to the clipboard and confirms in place. The address itself is owner-voice copy from
+`src/content.ts`; the design does not restate it.
 
-### State box
-The primary control: a square, outlined disclosure button that names one part of the owner.
-- **Shape:** square corners, 2px ink outline, 7.5rem tall, number top-left and label bottom-left. Below 62rem a 3.25rem bar with number and label side by side.
-- **Default:** ground fill, ink text.
-- **Hover:** inverts to ink fill with ground text. No transition.
-- **Current:** vermilion fill and outline, on-accent text; `aria-expanded="true"`.
-- **Behaviour:** click or Enter selects; arrow keys, Home and End move focus along the chain; the URL hash names the state.
+## Motion
 
-### Chain
-Start dot (1.125rem, filled ink), states joined by arrows drawn in each gutter, end ring (1.5rem, 2px outline with a centre dot). The first arrow runs from the dot and the last state runs a short line out to the ring.
+Motion is one idea: charge moving through a panel. It is slow, it is decoration, and it never
+carries information.
 
-### Panel
-The open state's content: a 2px vermilion outline with fluid padding, joined to its state by a 2px vermilion connector 3rem tall. It opens with a top-to-bottom clip reveal (0.24s, cubic-bezier(0.16, 1, 0.3, 1)). The heading comes first, with nothing above it. The last row is the transitions bar.
+- **The wave** (`--dur-wave` 9s, hero cells) and **the pulse** (`--dur-pulse` 26s, the strip
+  ray) are the signature. Both animate only `opacity` and `transform`, so they stay on the
+  compositor and cannot shift layout.
+- **The pointer's three cells** fade in over `--dur-fade` 220ms.
+- **Small transitions** use `--dur-fast` 160ms and `--ease-out`; the lamp uses `--dur-lamp`
+  120ms linear.
+- **Pausing is required, not optional.** The signature motion pauses when the hero is out of
+  view, when the tab is hidden, and while the page is being scrolled, and there is a visible
+  pause control. The `data-motion` attribute on the root carries `on` / `paused` / `scrolling`.
+- **Reduced motion removes it entirely:** under `@media (prefers-reduced-motion: reduce)` the
+  wave and the ray are `animation: none` and `opacity: 0`, and the flowchart shows its still
+  picture (the `still` edge and node set in `src/diagrams.ts`), not a paused mid-frame.
 
-### Transition link
-- **Style:** uppercase 700, 0.9375rem, tracking 0.06em, underlined 2px with a 0.35em offset, followed by the arrow drawing; at least 2.75rem tall.
-- **Colour:** vermilion.
-- **Hover:** text turns ink and the arrow moves 4px right in 0.2s. Also triggered when the link sits inside a larger linked entry that is hovered.
+## The flowchart engine
 
-### Text button
-Same type as the transition link, in muted, turning ink on hover. Used for going back (the arrow is mirrored and comes first) and for the theme switch in the footer.
+The two case studies draw a real graph (React/Vite/Postgres for Ticket-Pipeline; the RannaGhor
+request path), not a picture of one, and its rules are design rules because a wrong label
+changes what the diagram *says*.
 
-### Progress chain
-The home chain at small scale for case-study pages: sticky at the top, full bleed, opaque ground, rule beneath. Start dot 0.75rem, end ring 1rem, steps as small outlined boxes (number and section name, 0.8125rem 700 uppercase) joined by arrows that stretch to fill the row. Hover inverts; the step for the section in view is filled vermilion and marked `aria-current`.
+**Two layouts.** A desktop graph, and a vertical one used below the container thresholds above.
+The vertical layout is a complete picture of the same graph — spine, then each branch group as
+its own stacked cluster with a heading naming where it starts — not a crop. It switches on
+container width so each study keeps its own threshold.
 
-### Ruled rows
-The list pattern everywhere: a 2px rule-colour line on top, 0.75 to 1.125rem padding, a label or name in the first column and the value or description in the second. Variants: fact rows (label above a 600-weight value), numbered steps (condensed 900 counter at 1.75rem in a 3.25rem left column), results (condensed figure at 2.5rem beside a plain description), and lead-in points (bold first phrase). A row group that opens a major entry (case-study entries, case-study meta) uses an ink line instead.
+**What a label may and may not do.** These are enforced in `holds()` and by the tests, not by
+the eye:
+- A label's pill must enclose its own text (`F8-2`).
+- A pill may cover no other label's ink and must sit at least 4px from any node box (`F7-2`).
+- **Attribution (`ATTRIBUTION = 6`)** — a seat is legal only if the pill is at least 6 units
+  nearer its own painted edge than any other edge's stroke. A shared run can never satisfy
+  this, so a label is pushed onto a stretch of its own line that no other edge covers. That is
+  why `authorise` and `refuse` out of Role check no longer share a run: `edgePath` takes a
+  `sibling` index and staggers the departure so each edge owns a stretch. No label is
+  special-cased.
+- An edge's final approach runs at least one marker length straight, so the arrowhead lands on
+  a leg rather than on an elbow (`P2b-8`).
+- No height clamp exists and none may return. `Ruling 12`: the 12px floor outranks fitting in
+  one window, so the chart scrolls on short viewports rather than shrinking its labels. The
+  desktop Ticket-Pipeline chart *does* fit a 1440x900 window (`P2b-4`, row spacing tightened to
+  `GAP_Y` 30), and at 1440 the type renders above the floor; below that height it scrolls.
 
-### Case-study entry
-A whole-block link with an ink line on top: condensed title, summary, stack line in label style, and a transition link. Hovering the block underlines the title (0.07em thick) and activates the transition link.
+**Deliberately not done.** The vertical layout still places its labels with `labelPos`, not the
+`holds()` resolver, so it passes the attribution test as measured rather than as enforced
+(`P2b-6`, declined as structural). The shared 12-unit departure leg where two edges leave one
+box remains by construction before the sibling stagger separates them.
 
-### Contact link
-A condensed display link (clamp(1.75rem, 4.4vw, 3.5rem)) with a 3px underline beside a label. Turns vermilion on hover.
+## Do's and don'ts
 
-### Architecture diagram
-Lanes of outlined nodes (0.9375rem, 700) with a label-style lane name above and an optional muted note below. Nodes in sequence are joined by the same arrow as the chain; a lane of siblings has no arrows and a tighter gap. A caption in muted sits under a rule. Every diagram is real list markup with an accessible name.
+### Do
+- **Do** put every page inside the frame, with the 12 columns and both hairlines.
+- **Do** spend amber on the live signal only: current item, lit lamp, charge, primary action,
+  focus.
+- **Do** set numbers, labels, stacks and system names in Martian Mono, and prose in Mona Sans.
+- **Do** separate with a 1px `rule`; outline a pressable control with `rule-strong`.
+- **Do** keep targets at `--target` 2.75rem and keep the visible focus ring
+  (`--line-track`, offset `--focus-offset`).
+- **Do** stop all signature motion under reduced motion and give the flowchart its still picture.
+- **Do** hold every flowchart label to the invariants above — including the 12px floor read
+  from the rendered transform.
 
-### Focus and skip link
-Focus is a 2px ink outline offset by 3px on every interactive element. The skip link is an ink block with ground text that slides in from the top on focus.
-
-## Do's and Don'ts
-
-### Do:
-- **Do** draw every structural line at 2px: outlines, arrows, rules, underlines and the focus ring.
-- **Do** keep vermilion to the current state, its panel and connector, and transition links.
-- **Do** set every heading in Archivo at width 62%, weight 900, uppercase, line-height 0.88.
-- **Do** number states and sections with two digits, inside the box or inline before the heading.
-- **Do** separate content with a 2px line on top of each row and a 2.5rem column gap.
-- **Do** show hover by inversion (ink fill, ground text) and selection by vermilion fill.
-- **Do** use the theme tokens by name so the light theme follows without extra rules.
-- **Do** keep targets at least 2.75rem tall for links and buttons, and keep the visible 2px focus outline.
-- **Do** remove the panel reveal and arrow nudge under reduced motion.
-
-### Don't:
-- **Don't** add shadows, blur or translucent layers.
-- **Don't** round the corners of a box. Only the start dot and end ring of a chain are round.
-- **Don't** put a filled or outlined card around content. The panel of the current state is the only container.
-- **Don't** use a gradient as a surface or text fill.
-- **Don't** introduce a second typeface or a second accent colour.
-- **Don't** set running text in the condensed width or in uppercase.
-- **Don't** place a small label or tag above a heading. The heading comes first.
-- **Don't** animate a state change beyond the 0.24s panel reveal; the fill swap is instant.
-- **Don't** add a profile picture or decorative imagery.
+### Don't
+- **Don't** add a second accent, or use `fail` as a UI colour.
+- **Don't** put a filled card behind body copy; `bg-raised` is for controls and readouts.
+- **Don't** add shadows, blur or a third elevation step.
+- **Don't** introduce a third rule strength or a third text weight.
+- **Don't** let the chart shrink to fit: the floor wins and the panel scrolls.
+- **Don't** special-case a single label, and don't seat a label by eye where a rule decides.
+- **Don't** bring back the height clamp, or re-describe the pre-Signal-Box chain design.
+- **Don't** restate owner-voice copy (the address, the statement, the record sentence) in this
+  document; it lives in `src/content.ts`.
