@@ -111,6 +111,16 @@ const CHAR = 0.895;
    12px on screen or more, which is ruling 9's floor at every width. */
 const NAME = 12;
 const DETAIL = 12;
+
+/* The arrowhead is a `marker` inherited by every edge (`Marker` below): markerWidth 6 in
+   `strokeWidth` units (the default markerUnits), on a 2px track, with the path's point at
+   refX 7 of an 8-unit viewBox. Its ink therefore runs `MARKER_TIP` units past the path's
+   own endpoint — which means a path that stops 2 units short of a box draws its arrowhead
+   almost touching it. An edge stops `EDGE_STOP` short of its target so the *ink* clears by
+   a visible margin, and both numbers come from the marker rather than from eye. */
+const TRACK = 2;
+const MARKER_TIP = (6 * TRACK * (8 - 7)) / 8;
+const EDGE_STOP = 2 + MARKER_TIP * 2;
 const PAD = 13;
 const LINE = 17;
 
@@ -338,14 +348,15 @@ function edgePath(a: Placed, b: Placed, route: Route, bounds: Bounds, vertical =
        the next box down, or a link along the state rail. Nothing here can cross a box:
        an edge only ever spans the single gap between two neighbours. */
     if (b.y >= a.y + a.h) {
-      if (Math.abs(acx - bcx) < 1) return `M${acx} ${a.y + a.h} V${b.y - 2}`;
+      if (Math.abs(acx - bcx) < 1) return `M${acx} ${a.y + a.h} V${b.y - EDGE_STOP}`;
       const mid = (a.y + a.h + b.y) / 2;
-      return `M${acx} ${a.y + a.h} V${mid} H${bcx} V${b.y - 2}`;
+      return `M${acx} ${a.y + a.h} V${mid} H${bcx} V${b.y - EDGE_STOP}`;
     }
-    /* Along the rail: side to side, or down one row. */
-    if (Math.abs(a.y - b.y) < 1) return `M${a.x + a.w} ${a.y + a.h / 2} H${b.x - 2}`;
+    /* Along the rail: side to side, or down one row. The rail is the one place two boxes
+       share a row, so this is the horizontal join that was touching the pill borders. */
+    if (Math.abs(a.y - b.y) < 1) return `M${a.x + a.w} ${a.y + a.h / 2} H${b.x - EDGE_STOP}`;
     const mid = (a.y + a.h + b.y) / 2;
-    return `M${acx} ${a.y + a.h} V${mid} H${bcx} V${b.y - 2}`;
+    return `M${acx} ${a.y + a.h} V${mid} H${bcx} V${b.y - EDGE_STOP}`;
   }
   const acx = a.x + a.w / 2;
   const bcx = b.x + b.w / 2;
@@ -361,7 +372,7 @@ function edgePath(a: Placed, b: Placed, route: Route, bounds: Bounds, vertical =
   if (route === 'loop-side-left') {
     /* The left margin, for a branch that leaves a box whose neighbours are below it. */
     const lane = bounds.laneL ?? 8;
-    return `M${a.x} ${acy} H${lane} V${bcy} H${b.x - 2}`;
+    return `M${a.x} ${acy} H${lane} V${bcy} H${b.x - EDGE_STOP}`;
   }
   if (route === 'loop-bottom') {
     const lane = Math.min(bounds.h - 10, Math.max(a.y + a.h, b.y + b.h) + 30);
@@ -375,7 +386,7 @@ function edgePath(a: Placed, b: Placed, route: Route, bounds: Bounds, vertical =
        the outer edge of the two, so the horizontal run misses anything between. */
     const right = b.x > a.x;
     const lane = right ? Math.max(a.x + a.w, b.x + b.w) + 10 : Math.min(a.x, b.x) - 10;
-    return `M${acx} ${a.y + a.h} V${a.y + a.h + 12} H${lane} V${b.y - 12} H${b.x + b.w / 2} V${b.y - 2}`;
+    return `M${acx} ${a.y + a.h} V${a.y + a.h + 12} H${lane} V${b.y - 12} H${b.x + b.w / 2} V${b.y - EDGE_STOP}`;
   }
   /* Above the source: up the gap and in from the top. */
   if (b.y + b.h <= a.y) {
@@ -384,7 +395,7 @@ function edgePath(a: Placed, b: Placed, route: Route, bounds: Bounds, vertical =
     return `M${acx} ${a.y} V${above} H${bcx} V${b.y + b.h + 2}`;
   }
   /* Same band: side to side through the gap between them. */
-  if (b.x >= a.x + a.w) return `M${a.x + a.w} ${acy} H${b.x - 2}`;
+  if (b.x >= a.x + a.w) return `M${a.x + a.w} ${acy} H${b.x - EDGE_STOP}`;
   if (a.x >= b.x + b.w) return `M${a.x} ${acy} H${b.x + b.w + 2}`;
   /* Overlapping bands: go round the outside rather than through the box. */
   const lane = b.x >= a.x ? b.x + b.w + 12 : b.x - 12;
