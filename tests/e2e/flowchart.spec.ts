@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { diagrams } from '../../src/diagrams';
 
 /*
  * The case studies' flowcharts. Must-prove 3, as amended by A5 and A6: the
@@ -1636,4 +1637,108 @@ for (const d of DIAGRAMS) {
       });
     }
   });
+}
+
+/*
+ * F3-2, test first. Every earlier label test iterated the labels the DOM contained
+ * (`for (const t of svg.querySelectorAll('.flow-edge-label'))`), so none of them could
+ * see a label the engine never drew. That is exactly what F3-1 was: on RannaGhor's
+ * vertical layout a branch edge is skipped because a cluster heading stands in for it,
+ * so from 1156 to 1208px the refused branch — the study's whole subject — was drawn
+ * with no label at all, and the suite was green throughout because it was comparing
+ * three labels against three labels.
+ *
+ * So the expectation here comes from the spec, not from the render: `diagrams` is the
+ * data the engine draws from, and the set of label texts it defines is the set the
+ * page must show. A count assertion is what turns that vacuous pass into a failure.
+ *
+ * A `stub` edge is the one case where the spec's own label is not drawn: on the
+ * vertical layout it is replaced by the longer stub sentence, which is the same
+ * statement in more words, so the stub's text is accepted in its place.
+ */
+const labelSpec = (slug: 'ticket-pipeline' | 'rannaghor') => {
+  const edges = diagrams[slug].edges;
+  return {
+    labels: edges.filter((e) => e.label).map((e) => e.label as string),
+    /* A stub edge is drawn as a line plus its longer stub sentence on the vertical
+       layout, and with its own short label on the desktop one. Both say the same
+       thing, so the sentence stands in for the label rather than replacing it. */
+    stubLabels: edges.filter((e) => e.stub && e.label).map((e) => e.label as string),
+  };
+};
+
+const LABEL_SPEC = {
+  'ticket-pipeline': labelSpec('ticket-pipeline'),
+  rannaghor: labelSpec('rannaghor'),
+};
+
+/* The band F3-1 lives in, at the brief's step, plus the two widths the vertical
+   layout is designed for. 1000 is below every switch threshold; 1260 is above both,
+   so the desktop graph is covered too. */
+const LABEL_SWEEP = [
+  ...Array.from({ length: (1260 - 1000) / 2 + 1 }, (_, i) => 1000 + i * 2),
+  390,
+  834,
+];
+
+const norm = (s: string) => s.replace(/\s+/g, ' ').trim();
+
+for (const slug of ['ticket-pipeline', 'rannaghor'] as const) {
+  const d = DIAGRAMS.find((x) => x.slug === slug)!;
+  for (const theme of THEMES) {
+    test(`${slug}: every label the spec defines is drawn, ${theme}`, async ({ page }) => {
+      await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+      await page.goto(d.path);
+      await reveal(page, slug);
+
+      const want = LABEL_SPEC[slug];
+      const failures: string[] = [];
+
+      for (const width of LABEL_SWEEP) {
+        await page.setViewportSize({ width, height: 900 });
+        await page.waitForTimeout(60);
+        const rendered = await page.evaluate((s) => {
+          const svgs = [...document.querySelectorAll(`.flow-panel[data-diagram="${s}"] .flow-svg`)];
+          const svg = svgs.find((x) => x.getBoundingClientRect().width > 0);
+          if (!svg) return null;
+          return {
+            layout: svg.closest('.flow-v') ? 'vertical' : 'desktop',
+            labels: [...svg.querySelectorAll('.flow-edge-label')].map((t) => t.textContent ?? ''),
+            stubs: [...svg.querySelectorAll('.flow-stub')].map((t) => t.textContent ?? ''),
+          };
+        }, slug);
+
+        if (!rendered) {
+          failures.push(`${width}px: no layout is visible`);
+          continue;
+        }
+
+        const have = new Set(rendered.labels.map(norm));
+        const stubHave = new Set(rendered.stubs.map(norm));
+        const missing = want.labels.filter((l) => {
+          const text = norm(l);
+          if (have.has(text)) return false;
+          /* Its stub sentence is the label, in more words. */
+          if (want.stubLabels.includes(l)) return ![...stubHave].some((s) => s.length > 0);
+          return true;
+        });
+
+        /* Nothing may be invented: every drawn label is one the spec names. */
+        const named = new Set(want.labels.map(norm));
+        const extra = [...have].filter((l) => !named.has(l));
+
+        if (missing.length) {
+          failures.push(
+            `${width}px ${rendered.layout}: missing ${missing.map((m) => `"${m}"`).join(', ')}` +
+              ` (drew ${have.size} of ${want.labels.length} labels)`,
+          );
+        }
+        if (extra.length) {
+          failures.push(`${width}px ${rendered.layout}: not named by the spec: ${extra.map((e) => `"${e}"`).join(', ')}`);
+        }
+      }
+
+      expect(failures, `${slug} ${theme}: the drawn label set differs from the spec's`).toEqual([]);
+    });
+  }
 }
