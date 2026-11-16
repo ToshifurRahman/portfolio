@@ -121,6 +121,8 @@ const DETAIL = 12;
 const TRACK = 2;
 const MARKER_TIP = (6 * TRACK * (8 - 7)) / 8;
 const EDGE_STOP = 2 + MARKER_TIP * 2;
+/* The marker's full length: the straight run an arrowhead needs behind it. */
+const MARKER_LEN = 6 * TRACK;
 const PAD = 13;
 const LINE = 17;
 
@@ -324,8 +326,13 @@ function layoutVertical(spec: DiagramSpec) {
        thing that says so. At 8 units across and 12 down the dashed borders read as shared
        at 3x. The gaps are in viewBox units and the vertical layout draws at 1.358, so
        these are ~14 and ~27 screen pixels. */
-    const pillGapX = 14;
-    const pillGapY = 20;
+    /* The gap has to hold an edge's final straight run, or the arrowhead sits on the elbow
+       and reads as a kink (P2b-8: 5 and 9 units of run against a 12-unit marker at gaps of
+       14 and 20). A rail join turns at the midpoint, so the final leg is half the vertical
+       gap — hence the gap is twice `EDGE_STOP + MARKER_LEN`. Horizontally the last leg is the
+       whole gap, so it needs that sum once, plus a little air. */
+    const pillGapX = EDGE_STOP + MARKER_LEN + 6;
+    const pillGapY = 2 * (EDGE_STOP + MARKER_LEN);
     const pillH = 30;
     const pillW = (W - MARGIN * 2 - pillGapX) / 2;
     states.forEach((node, i) => {
@@ -356,7 +363,7 @@ function edgePath(a: Placed, b: Placed, route: Route, bounds: Bounds, vertical =
        an edge only ever spans the single gap between two neighbours. */
     if (b.y >= a.y + a.h) {
       if (Math.abs(acx - bcx) < 1) return `M${acx} ${a.y + a.h} V${b.y - EDGE_STOP}`;
-      const mid = (a.y + a.h + b.y) / 2;
+      const mid = Math.min((a.y + a.h + b.y) / 2, b.y - EDGE_STOP - MARKER_LEN);
       return `M${acx} ${a.y + a.h} V${mid} H${bcx} V${b.y - EDGE_STOP}`;
     }
     /* Along the rail: side to side, or down one row. The rail is the one place two boxes
@@ -377,9 +384,13 @@ function edgePath(a: Placed, b: Placed, route: Route, bounds: Bounds, vertical =
     return `M${a.x + a.w} ${acy} H${lane} V${bcy} H${b.x + b.w + 2}`;
   }
   if (route === 'loop-side-left') {
-    /* The left margin, for a branch that leaves a box whose neighbours are below it. */
+    /* The left margin, for a branch that leaves a box whose neighbours are below it.
+       The run into the target turns a whole marker above it, so the arrowhead lands on a
+       straight leg rather than on the elbow (P2b-8: this leg was 7 units, a 12-unit marker
+       long). */
     const lane = bounds.laneL ?? 8;
-    return `M${a.x} ${acy} H${lane} V${bcy} H${b.x - EDGE_STOP}`;
+    const approach = b.y - EDGE_STOP;
+    return `M${a.x} ${acy} H${lane} V${approach - MARKER_LEN} H${b.x - EDGE_STOP} V${approach}`;
   }
   if (route === 'loop-bottom') {
     const lane = Math.min(bounds.h - 10, Math.max(a.y + a.h, b.y + b.h) + 30);
@@ -388,12 +399,14 @@ function edgePath(a: Placed, b: Placed, route: Route, bounds: Bounds, vertical =
 
   /* Below the source: down through the gap under it, then across to the target. */
   if (b.y >= a.y + a.h) {
-    if (Math.abs(acx - bcx) < 1) return `M${acx} ${a.y + a.h} V${b.y - 2}`;
+    if (Math.abs(acx - bcx) < 1) return `M${acx} ${a.y + a.h} V${b.y - EDGE_STOP}`;
     /* To a box that is not directly below, the gap under the source is crossed at
        the outer edge of the two, so the horizontal run misses anything between. */
     const right = b.x > a.x;
     const lane = right ? Math.max(a.x + a.w, b.x + b.w) + 10 : Math.min(a.x, b.x) - 10;
-    return `M${acx} ${a.y + a.h} V${a.y + a.h + 12} H${lane} V${b.y - 12} H${b.x + b.w / 2} V${b.y - EDGE_STOP}`;
+    /* The second-to-last turn sits a whole marker above the target, so the final run is a
+       straight leg the arrowhead can sit on (P2b-8: this leg measured 7 units). */
+    return `M${acx} ${a.y + a.h} V${a.y + a.h + 12} H${lane} V${b.y - EDGE_STOP - MARKER_LEN} H${b.x + b.w / 2} V${b.y - EDGE_STOP}`;
   }
   /* Above the source: up the gap and in from the top. */
   if (b.y + b.h <= a.y) {
@@ -991,8 +1004,10 @@ function Graph({
           /* A pill over another edge's line reads as that line's label, so a position
              that covers one is not a legal position for this label. */
           if (coversOtherStroke(e.id, r)) return false;
+          /* Four units of horizontal air, and a full label height vertically: two pills a
+             hairline apart read as one block of text, which is what P2b-3 was about. */
           return !placedLabels.some(
-            (o) => r.x < o.x + o.w + 4 && o.x < r.x + r.w + 4 && r.y < o.y + o.h + 2 && o.y < r.y + r.h + 2,
+            (o) => r.x < o.x + o.w + 4 && o.x < r.x + r.w + 4 && r.y < o.y + o.h + 8 && o.y < r.y + r.h + 8,
           );
         };
         if (!holds(pos.x, pos.y)) {

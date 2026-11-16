@@ -1449,3 +1449,71 @@ for (const d of DIAGRAMS) {
     }
   });
 }
+
+/* ---------------------------------------------------------------- round P2b
+ *
+ * P2b-8. muse: "some arrowheads sit at the end of a sharp elbow (measured: t2d bends 81 deg
+ * in its last 30 units before a correctly oriented tip), which can read as a kinked head at
+ * small sizes". The tip is oriented by the marker, but a tip whose straight run is shorter
+ * than the marker itself has the bend inside the arrowhead.
+ *
+ * `t2d` (triaging -> drafting) measured a final run of 5 units after a 164-unit horizontal;
+ * the marker is 12 units long, so the whole head sat on the bend.
+ *
+ * The invariant: every edge's final straight run is at least one marker long. Parsed from the
+ * path's own commands, which is exact here — this engine emits only M, H and V.
+ */
+
+for (const d of DIAGRAMS) {
+  test.describe(`${d.slug}: arrowheads get a straight approach`, () => {
+    for (const w of [390, 834, 1280]) {
+      test(`every tip has a run at least one marker long at ${w}`, async ({ page }) => {
+        await page.setViewportSize({ width: w, height: 900 });
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        await page.goto(d.path);
+        await panel(page, d.slug).scrollIntoViewIfNeeded();
+
+        const short = await page.evaluate(() => {
+          const svg = [...document.querySelectorAll('.flow-svg')].find(
+            (s) => s.getBoundingClientRect().width > 0,
+          ) as SVGSVGElement;
+          /* The marker's length, resolved from its own attributes the same way P2b-9 does:
+             markerWidth in strokeWidth units. */
+          const marker = svg.querySelector('marker')!;
+          const sw = parseFloat(getComputedStyle(svg.querySelector('path.flow-edge')!).strokeWidth);
+          const markerLen = Number(marker.getAttribute('markerWidth')) * sw;
+
+          const out: string[] = [];
+          for (const el of [...svg.querySelectorAll('path[marker-end]')] as SVGPathElement[]) {
+            const toks = (el.getAttribute('d') ?? '').match(/[MHV][^MHV]*/g) ?? [];
+            let cx = 0;
+            let cy = 0;
+            let pts: [number, number][] = [];
+            for (const t of toks) {
+              const n = (t.slice(1).match(/-?[\d.]+/g) ?? []).map(Number);
+              if (t[0] === 'M') {
+                cx = n[0];
+                cy = n[1];
+                pts = [[cx, cy]];
+                continue;
+              }
+              if (t[0] === 'H') cx = n[0];
+              else cy = n[0];
+              pts.push([cx, cy]);
+            }
+            if (pts.length < 2) continue;
+            const [ax, ay] = pts[pts.length - 2];
+            const [bx, by] = pts[pts.length - 1];
+            const lastLen = Math.hypot(bx - ax, by - ay);
+            if (lastLen + 0.01 < markerLen) {
+              out.push(`${el.getAttribute('data-edge')}: final run ${lastLen.toFixed(1)} < marker ${markerLen}`);
+            }
+          }
+          return out;
+        });
+
+        expect(short, `edges whose arrowhead sits on a bend at ${w}px`).toEqual([]);
+      });
+    }
+  });
+}
