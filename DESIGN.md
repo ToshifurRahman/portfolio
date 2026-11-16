@@ -88,6 +88,10 @@ typography:
     fontSize: "0.6875rem"
     fontWeight: 600
     letterSpacing: "0.04em"
+  flow-label:
+    fontSize: "12px"
+    fontWeight: 600
+    letterSpacing: "0.03em"
   weights:
     regular: 430
     medium: 520
@@ -117,6 +121,7 @@ spacing:
   measure: "40rem"
   bar: "4rem"
   contents: "3.5rem"
+  target: "2.75rem"
 rounded:
   sm: "4px"
   default: "6px"
@@ -152,7 +157,7 @@ components:
     ring: "{lines.line} {colors.lamp-edge}"
   nav-link:
     textColor: "{colors.muted}"
-    typography: "{typography.md}"
+    typography: "{typography.sm}"
     height: "{spacing.target}"
   nav-link-current:
     textColor: "{colors.ink}"
@@ -164,29 +169,27 @@ components:
   button-hover:
     backgroundColor: "{colors.accent-hover}"
   ghost:
-    textColor: "{colors.ink-2}"
+    textColor: "{colors.ink}"
     border: "{lines.line} solid {colors.rule-strong}"
     rounded: "{rounded.default}"
     height: "2.75rem"
   ghost-hover:
-    borderColor: "{colors.accent}"
+    borderColor: "{colors.accent-text}"
     textColor: "{colors.accent-text}"
   case:
-    backgroundColor: "{colors.bg-raised}"
-    border: "{lines.line} solid {colors.rule}"
-    rounded: "{rounded.default}"
+    borderTop: "{lines.line} solid {colors.rule}"
   copy-button:
     textColor: "{colors.ink-2}"
     border: "{lines.line} solid {colors.rule-strong}"
     typography: "{typography.2xs}"
   flow-node:
-    backgroundColor: "{colors.bg-raised}"
+    backgroundColor: "{colors.bg}"
     border: "{lines.line} solid {colors.rule-strong}"
-    typography: "{typography.2xs}"
+    typography: "{typography.flow-label}"
   flow-edge:
-    stroke: "{colors.muted}"
+    stroke: "{colors.track}"
   flow-edge-branch:
-    stroke: "{colors.muted}"
+    stroke: "{colors.track}"
     dash: "4px 4px"
 ---
 
@@ -228,10 +231,12 @@ which is why no component ever branches on theme.
 
 ### The night panel (`:root`)
 - **Ground** (`bg` `#0a0b0d`): the page. **Raised** (`bg-raised` `#0f1114`): the one step up —
-  the bar's band, cards, diagram boxes. There is no third elevation.
-- **Ink** (`ink` `#f2f1ec`) is body text and headings. **`ink-2`** (`#c4c7cd`) is the second
-  voice: ghost buttons, copy controls, quieter labels. **`muted`** (`#8b9099`) is tertiary —
-  captions, diagram labels, meta. Three text weights, no more.
+  the bar's band and the flowcharts' label pills. There is no third elevation: a Work card is not
+  raised, it is ruled (see below), and a flowchart's node box is the page ground itself.
+- **Ink** (`ink` `#f2f1ec`) is body text, headings, and the label on a ruled control such as a
+  ghost button. **`ink-2`** (`#c4c7cd`) is the quieter second voice: copy controls, secondary
+  labels. **`muted`** (`#8b9099`) is tertiary — captions, bar links, diagram labels, meta. Three
+  text weights, no more.
 - **Rules** come in two strengths, and the distinction is load-bearing: `rule` `#23272d`
   separates rows and closes the bar; `rule-strong` `#343941` outlines a control that can be
   pressed. `grid` `#15181c` draws the column lines behind the introduction, deliberately
@@ -286,8 +291,9 @@ label or a stack, and it is the visual signature that says this is an instrument
 
 ### Scale
 The scale is tokenised, not invented per section: `2xs` 0.6875rem, `xs` 0.75rem, `sm`
-0.875rem, `md` 0.9375rem, `body` 1.0625rem, `lg` 1.1875rem, `xl` 1.375rem, then five fluid
-`clamp()` sizes — `figure`, `motto`, `h2`, `case`, `email`, `title`, `name`.
+0.875rem, `md` 0.9375rem, `body` 1.0625rem, `lg` 1.1875rem, `xl` 1.375rem, then seven fluid
+`clamp()` sizes — `figure`, `motto`, `h2`, `case`, `email`, `title`, `name` — and the flowchart's
+own `flow-label` 12px, which is a viewBox unit rather than a page step (see the flowchart section).
 
 - **Name** (`name`, weight 680, tracking -0.045em): the home hero, clamped to 6rem.
 - **Title** (`title`): the case-study title. **Email** (`email`): the contact address.
@@ -326,14 +332,16 @@ Achievements, Skills, Contact. Certificates are part of Achievements, and Educat
 entry because the bar holds five links. Whatever the bar lists, the sections keep this order.
 
 **Case studies.** A `study-head` (back link, title, lede), then the sticky sub-nav, then the
-seven sections. The sub-nav is the bar's own `navbar` treatment applied to the case study's
+six sections (`sectionOrder` in `src/content.ts`: Overview, Problem, Architecture, Tech
+decisions, Challenges and solutions, Results — Challenges and Solutions are one section). The sub-nav is the bar's own `navbar` treatment applied to the case study's
 section list, and it lights **Work** while a case study is open — the owner asked for the two to
 be one design, not two.
 
 **Breakpoints.** `57rem` collapses the bar into a menu button; `48rem` stacks the Now lanes and
 the Work node structure. The flowcharts switch layout on *container* width, not viewport:
-`@container (max-width: 1171px)` for Ticket-Pipeline and `1155px` for RannaGhor, each one the
-study's measured viewBox width minus one. Those numbers are not arbitrary — they are where the
+`@container (max-width: 1171px)` for Ticket-Pipeline and `1155px` for RannaGhor: each study's
+own viewBox width (1170.30 and 1154.44 units) rounded up, so the switch happens just before the
+desktop graph would scale below 1:1. Those numbers are not arbitrary — they are where the
 desktop chart would drop below 1:1 and take every label under the 12px floor.
 
 ## The bar and the signal strip
@@ -368,8 +376,9 @@ same order. It is a timeline, not a card grid — the earlier two-cell version i
 Each Work card carries a small node diagram instead of prose about architecture: the study's
 modules as marked nodes with the breaks (`node-break`) that matter, at card scale, in mono at
 `2xs`. It is the case study's flowchart reduced to its skeleton, so a scanner sees the shape of
-the system before reading the summary. The card itself is `bg-raised` with a `rule` border and
-6px radius, and its only hover affordance is the title and the arrow.
+the system before reading the summary. The card is not a card in the boxed sense: a ruled row,
+with a `rule` line on top, no background of its own and square corners, and its only hover
+affordance is the title and the arrow.
 
 ## Achievements, Certificates, Contact
 
@@ -394,8 +403,9 @@ carries information.
 - **Small transitions** use `--dur-fast` 160ms and `--ease-out`; the lamp uses `--dur-lamp`
   120ms linear.
 - **Pausing is required, not optional.** The signature motion pauses when the hero is out of
-  view, when the tab is hidden, and while the page is being scrolled, and there is a visible
-  pause control. The `data-motion` attribute on the root carries `on` / `paused` / `scrolling`.
+  view, when the tab is hidden, and while the page is being scrolled. The `data-motion` attribute
+  on the root carries `on` / `paused` / `scrolling`. It has no pause *control* of its own: the only
+  pause button on the site is the flowchart's, on a case study.
 - **Reduced motion removes it entirely:** under `@media (prefers-reduced-motion: reduce)` the
   wave and the ray are `animation: none` and `opacity: 0`, and the flowchart shows its still
   picture (the `still` edge and node set in `src/diagrams.ts`), not a paused mid-frame.
@@ -410,6 +420,15 @@ changes what the diagram *says*.
 The vertical layout is a complete picture of the same graph — spine, then each branch group as
 its own stacked cluster with a heading naming where it starts — not a crop. It switches on
 container width so each study keeps its own threshold.
+
+**A heading names a group; the edge into it keeps its label.** On the vertical layout the edge
+that enters a cluster is drawn as a short arrow in a 30-unit band between the heading and the
+group's first box, so the route or the failure that reaches the group still says which it is. The
+arrow cannot come from the edge's real source — that box may sit far up the spine, and a line from
+it would cross every group in between — so its path starts on the target's own centre line. The
+heading stays a heading; no edge loses its label to it. Without this the refused branch, the thing
+RannaGhor is about, was drawn with no label at all below the desktop threshold. One consequence
+worth knowing: the edge's source end touches the heading's row rather than a box.
 
 **What a label may and may not do.** These are enforced in `holds()` and by the tests, not by
 the eye:
@@ -428,10 +447,15 @@ the eye:
   desktop Ticket-Pipeline chart *does* fit a 1440x900 window (`P2b-4`, row spacing tightened to
   `GAP_Y` 30), and at 1440 the type renders above the floor; below that height it scrolls.
 
-**Deliberately not done.** The vertical layout still places its labels with `labelPos`, not the
-`holds()` resolver, so it passes the attribution test as measured rather than as enforced
-(`P2b-6`, declined as structural). The shared 12-unit departure leg where two edges leave one
-box remains by construction before the sibling stagger separates them.
+**Both layouts are held to it.** `holds()` (`src/Diagram.tsx`) has no layout guard: every seat on
+either layout goes through the same test, the same outward search and the same own-edge walk. What
+differs is only the *seed* the search starts from — `bestAnchor` on the desktop graph, `labelPos`
+on the vertical one — and the seed is a preference, not a permission: a label whose seed is illegal
+is moved like any other. So the attribution rule is enforced on the vertical layout too, not merely
+measured there.
+
+The shared 12-unit departure leg where two edges leave one box remains by construction before the
+sibling stagger separates them (the owner ruled to leave it).
 
 ## Do's and don'ts
 
@@ -449,7 +473,8 @@ box remains by construction before the sibling stagger separates them.
 
 ### Don't
 - **Don't** add a second accent, or use `fail` as a UI colour.
-- **Don't** put a filled card behind body copy; `bg-raised` is for controls and readouts.
+- **Don't** put a filled card behind body copy; `bg-raised` is the bar's band and the flowchart's
+  label pills, and a Work card is a ruled row rather than a raised box.
 - **Don't** add shadows, blur or a third elevation step.
 - **Don't** introduce a third rule strength or a third text weight.
 - **Don't** let the chart shrink to fit: the floor wins and the panel scrolls.

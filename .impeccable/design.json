@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-16T10:12:00Z",
+  "generatedAt": "2026-11-16T11:30:00Z",
   "title": "Design System: Toshifur Rahman Portfolio",
   "extensions": {
     "colorMeta": {
@@ -229,6 +229,14 @@
         "letterSpacing": "var(--tracking-mono)",
         "family": "mono",
         "description": "Mono labels, diagram text."
+      },
+      "flow-label": {
+        "displayName": "Flow label",
+        "fontSize": "var(--flow-label)",
+        "fontWeight": "var(--weight-semibold)",
+        "letterSpacing": "0.03em",
+        "family": "mono",
+        "description": "Flowchart text in viewBox units; 12px floor."
       }
     },
     "shadows": [],
@@ -320,7 +328,8 @@
       "labelFloorPx": 12,
       "gapY": 30,
       "heightClamp": false,
-      "note": "A label is legal only if its pill is 6 units nearer its own edge than any other stroke; no height clamp may return (Ruling 12)."
+      "note": "A label is legal only if its pill is 6 units nearer its own edge than any other stroke, on both layouts (only the seat search's seed differs). No height clamp may return (Ruling 12). A cluster's entry edge is drawn in a 30-unit band under its heading so it keeps its label.",
+      "entryBand": 30
     }
   },
   "components": [
@@ -330,7 +339,7 @@
       "refersTo": "bar",
       "description": "Sticky control bar: accent wordmark, five nav links with lamps, a CV action.",
       "html": "<header class=\"site-header\"><nav class=\"navbar frame grid12\"><a class=\"brand\" href=\"/\">Toshifur Rahman</a></nav></header>",
-      "css": ".site-header { position: sticky; top: 0; z-index: 20; background: var(--bg); border-bottom: var(--line) solid var(--rule); } .navbar { display: flex; align-items: center; gap: var(--space-6); min-height: var(--bar-h); padding-inline: var(--pad); } .brand { display: inline-flex; align-items: center; min-height: var(--target); margin-right: auto; color: var(--accent-text); white-space: nowrap; }"
+      "css": ".site-header {position: sticky; top: 0; z-index: 20; background: var(--bg); border-bottom: var(--line) solid var(--rule);}"
     },
     {
       "name": "Nav link",
@@ -338,7 +347,7 @@
       "refersTo": "nav-link",
       "description": "A bar or sub-nav entry; muted at rest, ink when current, its lamp lit amber.",
       "html": "<a href=\"#work\" aria-current=\"true\"><span class=\"lamp is-lit\"></span>Work</a>",
-      "css": ".nav-links a { display: inline-flex; align-items: center; gap: var(--space-2); min-height: var(--target); color: var(--muted); font-size: var(--text-md); } .nav-links a:hover, .nav-links a.is-current { color: var(--ink); } .lamp { width: var(--lamp); height: var(--lamp); border-radius: 50%; background: var(--lamp-off); } .lamp.is-lit { background: var(--accent); box-shadow: 0 0 0 var(--line) var(--lamp-edge); }"
+      "css": ".nav-links a {position: relative; z-index: 1; display: inline-flex; align-items: center; gap: var(--space-2); min-height: var(--target); padding-right: var(--space-4); padding-left: var(--space-3); color: var(--muted); font-size: var(--text-sm); font-weight: var(--weight-medium); white-space: nowrap; transition: color var(--dur-fast) var(--ease-out);}"
     },
     {
       "name": "Primary button",
@@ -346,23 +355,23 @@
       "refersTo": "button",
       "description": "An amber fill with on-accent text; Download CV in the hero.",
       "html": "<a class=\"button\" href=\"/cv.pdf\" download>Download CV</a>",
-      "css": ".button { display: inline-flex; align-items: center; gap: var(--space-2); min-height: var(--target); padding: 0 var(--space-5); border-radius: var(--radius); background: var(--accent); color: var(--on-accent); font-size: var(--text-md); font-weight: var(--weight-semibold); } .button:hover { background: var(--accent-hover); }"
+      "css": ".button {display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); min-height: var(--target); padding: 0 var(--space-5); background: var(--accent); color: var(--on-accent); font-size: var(--text-md); font-weight: var(--weight-semibold); border-radius: var(--radius); transition: background-color var(--dur-fast) var(--ease-out);}"
     },
     {
       "name": "Ghost button",
       "kind": "button",
       "refersTo": "ghost",
-      "description": "A ruled control: ink-2 text on a rule-strong outline, amber on hover.",
+      "description": "A ruled control: ink text on a rule-strong outline, accent text and border on hover.",
       "html": "<a class=\"ghost\" href=\"https://github.com/ToshifurRahman\">GitHub</a>",
-      "css": ".ghost { display: inline-flex; align-items: center; gap: var(--space-2); min-height: var(--target); padding: 0 var(--space-4); border: var(--line) solid var(--rule-strong); border-radius: var(--radius); color: var(--ink-2); } .ghost:hover { border-color: var(--accent); color: var(--accent-text); }"
+      "css": ".ghost {display: inline-flex; align-items: center; gap: var(--space-2); min-height: var(--target); padding: 0 var(--space-4); border: var(--line) solid var(--rule-strong); border-radius: var(--radius); font-size: var(--text-md); font-weight: var(--weight-medium); color: var(--ink); transition: border-color var(--dur-fast) var(--ease-out),\n    color var(--dur-fast) var(--ease-out);}"
     },
     {
       "name": "Case card",
       "kind": "card",
       "refersTo": "case",
-      "description": "A work card: raised ground, rule border, node diagram at its centre.",
+      "description": "A work card: a ruled row, one rule line on top, no background of its own, with a node diagram at its centre.",
       "html": "<article class=\"case\"><h3 class=\"case-title\"><a href=\"/work/rannaghor\">RannaGhor</a></h3></article>",
-      "css": ".case { background: var(--bg-raised); border: var(--line) solid var(--rule); border-radius: var(--radius); padding: var(--space-6); } .case-title { font-size: var(--text-case); font-weight: var(--weight-semibold); letter-spacing: var(--tracking-tight); }"
+      "css": ".case {position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-5) var(--col-gap); padding-block: var(--space-8); border-top: var(--line) solid var(--rule);}"
     },
     {
       "name": "Copy email button",
@@ -370,15 +379,15 @@
       "refersTo": "copy-button",
       "description": "Copies the address; mono 2xs on a strong rule, amber on hover.",
       "html": "<button class=\"copy-button\" type=\"button\">Copy email</button>",
-      "css": ".copy-button { display: inline-flex; align-items: center; min-height: var(--target); padding: 0 var(--space-4); border: var(--line) solid var(--rule-strong); border-radius: var(--radius); background: transparent; color: var(--ink-2); font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: var(--tracking-mono); text-transform: uppercase; } .copy-button:hover { border-color: var(--accent); color: var(--accent-text); }"
+      "css": ".copy-button {display: inline-flex; align-items: center; min-height: var(--target); padding: 0 var(--space-4); border: var(--line) solid var(--rule-strong); border-radius: var(--radius); background: transparent; color: var(--ink-2); font-family: var(--mono); font-size: var(--text-2xs); letter-spacing: var(--tracking-mono); text-transform: uppercase; cursor: pointer;}"
     },
     {
       "name": "Flow node",
       "kind": "diagram",
       "refersTo": "flow-node",
-      "description": "A box in a case study's flowchart.",
+      "description": "A box in a case study's flowchart, drawn on the page's own ground with a strong-rule outline.",
       "html": "<g class=\"flow-node\"><rect width=\"150\" height=\"44\" rx=\"6\"></rect><text class=\"flow-node-name\">PostgreSQL</text></g>",
-      "css": ".flow-node rect { fill: var(--bg-raised); stroke: var(--rule-strong); stroke-width: var(--line); } .flow-node-name { font-family: var(--mono); font-size: var(--flow-label); fill: var(--ink); }"
+      "css": ".flow-node text {font-family: var(--mono); font-size: var(--flow-label); letter-spacing: 0.03em; fill: var(--ink-2); text-transform: uppercase;} .flow-node rect {fill: var(--bg); stroke: var(--rule-strong); stroke-width: var(--line); transition: fill var(--dur-lamp) linear,\n    stroke var(--dur-lamp) linear;}"
     },
     {
       "name": "Flow edge label",
@@ -407,13 +416,13 @@
   ],
   "narrative": {
     "northStar": "The signal box",
-    "overview": "A control panel for a working engineer. Everything sits inside one 12-column frame drawn by two hairlines, and colour is spent on one thing: an amber signal that says where you are. The ground reads as an instrument panel at night; every section is a readout rather than a card. Charge runs from the wordmark down the page's strips to the footer, and cells between the strips glow as it passes. It is slow, it is decoration, and it stops under prefers-reduced-motion. This replaces an earlier language (Archivo, a vermilion accent, a five-state chain as navigation) that is no longer on the site.",
+    "overview": "A control panel for a working engineer. Everything sits inside one 12-column frame drawn by two hairlines, and colour is spent on one thing: an amber signal that says where you are. The ground reads as an instrument panel at night; every section is a readout rather than a boxed card, and a Work card is a ruled row. Charge runs from the wordmark down the page's strips to the footer, and cells between the strips glow as it passes. It is slow, it is decoration, and it stops under prefers-reduced-motion. This replaces an earlier language (Archivo, a vermilion accent, a five-state chain as navigation) that is no longer on the site.",
     "keyCharacteristics": [
       "One frame, twelve columns, two hairlines, on every page.",
       "Dark first: :root is the night panel and the light theme is a token swap, not an inversion.",
       "One accent, amber, for the live signal, the wordmark and the way forward.",
       "Mono type wherever a number, label or system name appears; Sans for prose.",
-      "Flat and hairline: 1px rules, 6px radii, no shadows, no filled cards behind body copy.",
+      "Flat and hairline: 1px rules, 6px radii, no shadows, no filled cards behind body copy, and a card is ruled rather than raised.",
       "The chart engine is part of the design language, so its rules are design rules."
     ],
     "rules": [
@@ -446,6 +455,11 @@
         "name": "The One Elevation Rule",
         "body": "There is bg and bg-raised and nothing above. No shadows, no blur, no translucent surfaces except an overlay backdrop.",
         "section": "elevation"
+      },
+      {
+        "name": "The Heading Names a Group Rule",
+        "body": "On the vertical flowchart layout a cluster heading names the group but does not stand in for the edge that enters it: that edge is drawn as a short arrow under the heading, so the route or the failure reaching the group keeps its label.",
+        "section": "flowchart"
       },
       {
         "name": "The Motion Is Decoration Rule",
