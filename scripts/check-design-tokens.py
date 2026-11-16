@@ -8,11 +8,14 @@ Four checks:
    declaration inside `:root[data-theme='light']`.
 
 2. Every type step in `typography:` matches what the CSS actually sets for it: `fontSize`
-   against `--text-<step>`, and — for a step whose every application overrides it — the
-   `fontWeight`, `letterSpacing` and `lineHeight` against those overrides. A step whose
-   applications disagree with one another, or leave the value to inheritance, is reported as a
-   note rather than a failure: the record's number is then a default, and a default cannot
-   contradict a page that never states the value.
+   against `--text-<step>`, and — for `fontWeight`, `letterSpacing` and `lineHeight`, as far as
+   the record states them — against the values its appliers use. A step usually has no single
+   weight: `.year` and `.copy-button` set a `2xs` size and inherit `body`'s weight, while
+   `.tl-lane-title` states 520. So the check is that the claim is *a value the page uses*
+   (stated by some applier, or the inherited default), not that the step is uniform. A claim of
+   600 for `2xs` fails because nothing uses 600 there; a claim matching one of the used values
+   passes and is reported as a note naming which applier carries what. Equality is compared on
+   resolved numbers, so a literal that happens to equal the token is not a defect.
 
 3. Every property declared under `components:` is resolved to the token reference the CSS should
    carry and compared with that component's declaration in `src/styles.css`. The comparison is
@@ -232,6 +235,17 @@ def appliers(step):
     ]
 
 
+def inherited_default(prop):
+    """The value a rule gets for `prop` when it sets none, read off `body`.
+
+    A step's weight is not always stated by every rule that applies it: `.year`, `.node` and
+    `.copy-button` set a `2xs` size and no weight, so they render `body`'s. That inherited value
+    is part of what the page uses, and a claim of 600 for `2xs` is false precisely because neither
+    the stated values nor the inherited one is 600.
+    """
+    return rules('body').get(prop)
+
+
 def normalise(value):
     """`var(--weight-bold)` -> 680, `-0.03em` -> (-0.03, 'em'), `4px 4px` -> '4 4'.
 
@@ -354,31 +368,54 @@ for step, decl in typography.items():
             continue
         applied = applications(step, css_prop)
         total = len(appliers(step))
+        inherited = inherited_default(css_prop)
         if not applied:
-            notes.append(
-                f'typography.{step}.{record_prop}: {claimed} is a default — no rule applying '
-                f'`{step}` sets `{css_prop}`'
-            )
+            # No rule states the property; the page renders `body`'s value. A claim equal to that
+            # value is true-but-implicit (a note); anything else is a wrong claim (a problem).
+            if inherited is not None and same(inherited, claimed):
+                notes.append(
+                    f'typography.{step}.{record_prop}: {claimed} is what the page inherits — no '
+                    f'rule applying `{step}` sets `{css_prop}`'
+                )
+            else:
+                problems.append(
+                    f'typography.{step}.{record_prop}: DESIGN.md {claimed}, but no rule applying '
+                    f'this step sets {css_prop} and the inherited value is {inherited}'
+                )
             continue
         distinct = sorted(applied)
-        # A step is only a single value when *every* rule applying it states one and they agree.
-        # Where some rules leave the property to inheritance, the record's number is the page's
-        # default rather than a contradiction, and calling it one would train a reader to ignore
-        # this check. It is reported as a note instead.
-        if len(distinct) > 1:
-            notes.append(
-                f'typography.{step}.{record_prop}: the record says {claimed}; the rules that apply '
-                f'this step disagree ({"; ".join(f"{v} on {s}" for v, s in applied.items())})'
+        stated = sum(len(v) for v in applied.values())
+
+        # What the page actually uses: every value a rule states, plus the inherited one for the
+        # rules that state none. A claim outside that set is false however uneven the step is —
+        # this is the branch that let `2xs fontWeight: 600` pass, because "the appliers disagree"
+        # was treated as a reason to stop checking rather than a reason to check the whole set.
+        used = {normalise(v) for v in distinct}
+        if stated < total and inherited is not None:
+            used.add(normalise(inherited))
+        if normalise(claimed) not in used:
+            problems.append(
+                f'typography.{step}.{record_prop}: DESIGN.md {claimed} is used by no rule applying '
+                f'this step (stated: {", ".join(distinct)}'
+                + (f'; inherited: {inherited}' if stated < total else '')
+                + ')'
             )
             continue
-        stated = sum(len(v) for v in applied.values())
-        if stated < total:
-            if not same(distinct[0], claimed):
-                notes.append(
-                    f'typography.{step}.{record_prop}: the record says {claimed}; '
-                    f'{", ".join(applied[distinct[0]])} sets {distinct[0]} and the other '
-                    f'{total - stated} rule(s) applying this step inherit'
+
+        # The claim is one of the page's values, so it is true of something. When the step has no
+        # single value, say which rules carry what rather than implying the step has one weight.
+        if len(distinct) > 1 or stated < total:
+            detail = '; '.join(f'{v} on {s}' for v, s in applied.items())
+            if stated < total:
+                detail += (
+                    f'; {total - stated} rule(s) inherit {inherited}'
+                    if inherited is not None
+                    else f'; {total - stated} rule(s) set nothing here'
                 )
+            notes.append(
+                f'typography.{step}.{record_prop}: the record says {claimed}; the step is not '
+                f'uniform ({detail})'
+            )
             continue
         if not same(distinct[0], claimed):
             problems.append(
