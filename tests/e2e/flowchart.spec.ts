@@ -967,3 +967,73 @@ for (const d of DIAGRAMS) {
     }
   });
 }
+
+/* ---------------------------------------------------------------- fix pass 8
+ *
+ * F8-2, test first. The pill check (F7-2) asks whether a *box* paints over a label. This
+ * asks whether the label's own ink is where its pill is, which is the other half: the pill
+ * and the text are two elements, and nothing in the suite required them to agree.
+ *
+ * They did not. Ticket-Pipeline's STAGE FAILS had its pill measured before the box and
+ * clash nudges moved the text, so the pill stayed 16-19px below its own words and painted
+ * over EACH STEP instead — 88x12px of another label's ink at 1440. Every geometry check
+ * passed, because a pill is not a box and a text is not a text.
+ */
+
+const PILL_WIDTHS = [390, 834, 1100, 1228, 1280, 1440, 1920];
+
+for (const d of DIAGRAMS) {
+  test.describe(`${d.slug}: label pills and their own text`, () => {
+    for (const width of PILL_WIDTHS) {
+      for (const theme of THEMES) {
+        test(`${width}px ${theme}: each pill holds its text, and covers no other`, async ({ page }) => {
+          await page.setViewportSize({ width, height: 900 });
+          await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+          await page.goto(d.path);
+          await panel(page, d.slug).scrollIntoViewIfNeeded();
+          await page.waitForTimeout(120);
+
+          const report = await page.evaluate(() => {
+            const svg = [...document.querySelectorAll('.flow-svg')].find(
+              (s) => s.getBoundingClientRect().width > 0,
+            ) as SVGSVGElement;
+            const labels = [...svg.querySelectorAll('.flow-edge-label')].map((t) => ({
+              id: t.getAttribute('data-edge-label') ?? '?',
+              text: (t.textContent ?? '').trim(),
+              t: t.getBoundingClientRect(),
+              p: (t.parentElement as Element).querySelector('.flow-edge-pill')?.getBoundingClientRect() ?? null,
+            }));
+            const unheld: string[] = [];
+            const covered: string[] = [];
+            for (const l of labels) {
+              if (!l.p) continue;
+              /* (a) The pill must enclose the words it belongs to. 1px of tolerance
+                 covers sub-pixel rounding of the text rect, nothing more. */
+              const dx = Math.max(l.p.left - l.t.left, l.t.right - l.p.right, 0);
+              const dy = Math.max(l.p.top - l.t.top, l.t.bottom - l.p.bottom, 0);
+              if (dx > 1 || dy > 1) {
+                unheld.push(
+                  `${l.id}: "${l.text}" pill misses its text by ${Math.round(Math.max(dx, dy) * 10) / 10}px`,
+                );
+              }
+              /* (b) No pill may sit over another label's words. */
+              for (const o of labels) {
+                if (o.id === l.id) continue;
+                const ox = Math.min(l.p.right, o.t.right) - Math.max(l.p.left, o.t.left);
+                const oy = Math.min(l.p.bottom, o.t.bottom) - Math.max(l.p.top, o.t.top);
+                if (ox >= 1 && oy >= 1) {
+                  covered.push(
+                    `${l.id} pill covers "${o.text}" by ${Math.round(ox)}x${Math.round(oy)}px`,
+                  );
+                }
+              }
+            }
+            return { unheld, covered };
+          });
+          expect(report.unheld, 'pills not enclosing their own text').toEqual([]);
+          expect(report.covered, 'pills painted over another label').toEqual([]);
+        });
+      }
+    }
+  });
+}
