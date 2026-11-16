@@ -83,10 +83,10 @@ typography:
     fontWeight: 430
   xs:
     fontSize: "0.75rem"
-    fontWeight: 520
+    fontWeight: 430
   "2xs":
     fontSize: "0.6875rem"
-    fontWeight: 600
+    fontWeight: 430
     letterSpacing: "0.04em"
   flow-label:
     fontSize: "12px"
@@ -220,7 +220,8 @@ and the navigation is a sticky bar with a case-study sub-nav.
 - Dark first: `:root` is the night panel and the light theme is a token swap, not an inversion.
 - One accent, amber, used for the live signal, the wordmark and the way forward.
 - Mono type wherever a number, label or system name appears; Sans for prose.
-- Flat and hairline: 1px rules, 6px radii, no shadows, no filled cards behind body copy.
+- Flat and hairline: 1px rules, 6px radii, no drop shadows — the only `box-shadow`s are zero-blur
+  lamp rings — and one filled card, a Tech decision.
 - The chart engine is part of the design language, so its rules are design rules (below).
 
 ## Colors
@@ -232,13 +233,14 @@ which is why no component ever branches on theme.
 ### The night panel (`:root`)
 - **Ground** (`bg` `#0a0b0d`): the page, and the sticky bar — the bar is the page ground with a
   `rule` underline, not a raised band. **Raised** (`bg-raised` `#0f1114`): the one step up, used
-  for things that sit *over* the page: the flowchart panel and its label pills, the certificate
-  dialog, work nodes and decision rows. There is no third elevation: a Work card is not raised, it
+  for things that sit *over* the page — the flowchart panel and its label pills, the certificate
+  dialog, and the Work node diagram's nodes — and for the Tech decision card, the one place a
+  raised ground sits behind body copy. There is no third elevation: a Work card is not raised, it
   is ruled (see below), and a flowchart's node box is the page ground itself.
 - **Ink** (`ink` `#f2f1ec`) is body text, headings, and the label on a ruled control such as a
   ghost button. **`ink-2`** (`#c4c7cd`) is the quieter second voice: copy controls, secondary
   labels. **`muted`** (`#8b9099`) is tertiary — captions, bar links, diagram labels, meta. Three
-  text weights, no more.
+  text colours, no more.
 - **Rules** come in two strengths, and the distinction is load-bearing: `rule` `#23272d`
   separates rows and closes the bar; `rule-strong` `#343941` outlines a control that can be
   pressed. `grid` `#15181c` draws the column lines behind the introduction, deliberately
@@ -260,7 +262,8 @@ which is why no component ever branches on theme.
 - **`lamp-edge`** is the hairline ring around a lit lamp; `#ffb340` at night, `#7a4600` on
   paper so the lamp keeps an edge there.
 - **`fail`** (`#ff5b4a` night, `#c2321f` paper) is reserved for failure states in the
-  flowcharts' semantics. It is not a UI colour and never marks a section.
+  flowcharts' semantics, plus the dev-only `.missing` notice that a required fact is unset. It is
+  not a UI colour and never marks a section.
 
 ### The paper theme
 `bg` `#e8e5dd` and `ink` `#121417`, with `muted` `#5a5f68`, `rule` `#cdc7bb`, `rule-strong`
@@ -271,8 +274,11 @@ on paper, `rgb(4 5 6 / 0.82)` at night) and it is used solely behind an overlay.
 
 ### Named rules
 **The One Signal Rule.** Amber means live or go. It marks the current item, the lit lamp, the
-charge, the primary action, and the focused control. It is never a heading colour, a section
-background, or decoration.
+charge, the primary action, and a focused control — that last one through `accent-text`, which is
+what a focus ring is drawn in, not `accent`. It is never a heading colour and never a section
+background. It *is* decoration in one narrow sense the CSS states plainly: `--accent` is the
+colour of the charge — the ray, the hero-cell glow, the lamp — and those carry no information, so
+the token is not held to the text contrast ratio.
 
 **The Two Rule Strengths Rule.** `rule` separates, `rule-strong` outlines something pressable.
 Do not reach for a third grey.
@@ -307,6 +313,13 @@ own `flow-label` 12px, which is a viewBox unit rather than a page step (see the 
   mono for labels and diagram text.
 - Weights are named tokens (`regular` 430, `medium` 520, `semibold` 600, `bold` 680) rather
   than the usual 400/500/600/700, so headings sit a shade heavier than system defaults.
+- **A step is a size, not a weight.** The front matter's `fontWeight` is the step's default,
+  and a step that a rule sets a weight on is the exception, named here so the number is not read
+  as universal: `2xs` defaults to 430 with `.tl-lane-title` the one 520; `sm` to 430 with
+  `.nav-links a` and `.contents a` at 520; `md` to 430 with `.button`, `.more-link`, `.brand` and
+  `.certificate-title` at 600 and `.ghost`, `.text-button`, `.next-lead` at 520; `xl` to 520 with
+  `.subhead` and `.entry-title` at 600. `lg` and `flow-label` are never given a weight, so what
+  they render is `body`'s 430.
 
 ### Named rules
 **The Mono Means Data Rule.** If it is a number, a station, a stack, a label or a system name,
@@ -418,10 +431,12 @@ carries information.
 - **The pointer's three cells** fade in over `--dur-fade` 220ms.
 - **Small transitions** use `--dur-fast` 160ms and `--ease-out`; the lamp uses `--dur-lamp`
   120ms linear.
-- **Pausing is required, not optional.** The signature motion pauses when the hero is out of
-  view, when the tab is hidden, and while the page is being scrolled. The `data-motion` attribute
-  on the root carries `on` / `paused` / `scrolling`. It has no pause *control* of its own: the only
-  pause button on the site is the flowchart's, on a case study.
+- **Pausing is required, not optional.** Both signature animations pause when the tab is hidden
+  and while the page is being scrolled — the root's `data-motion` carries `on` / `paused` /
+  `scrolling`. The hero cells additionally stop when the hero scrolls out of view
+  (`[data-inview='false']`); the rail does not, because it is fixed to the viewport. The motion
+  has no pause *control* of its own: the only pause button on the site is the flowchart's, on a
+  case study.
 - **Reduced motion removes it entirely:** under `@media (prefers-reduced-motion: reduce)` the
   wave and the ray are `animation: none` and `opacity: 0`, and the flowchart shows its still
   picture (the `still` edge and node set in `src/diagrams.ts`), not a paused mid-frame.
@@ -453,7 +468,12 @@ worth knowing: the edge's source end touches the heading's row rather than a box
 **What a label may and may not do.** These are enforced in `holds()` and by the tests, not by
 the eye:
 - A label's pill must enclose its own text (`F8-2`).
-- A pill may cover no other label's ink and must sit at least 4px from any node box (`F7-2`).
+- A pill may cover no other label's ink. What is enforced about node boxes is *no hidden ink*:
+  `touchesBox` rejects a seat only when the pill and a box overlap by a whole pixel on both axes
+  (`F7-2`, `flowchart.spec.ts`), because a label in a row gap sits a pixel or two from the boxes
+  either side and paints nothing over them. The 4 units of air are a *preference of the desktop
+  search*, not a rule: `clears()` rejects a seat within `Math.hypot(dx, dy) < 5` units, and the
+  vertical layout has no such search, so nothing there holds 4px.
 - **Attribution (`ATTRIBUTION = 6`)** — a seat is legal only if the pill is at least 6 units
   nearer its own painted edge than any other edge's stroke. A shared run can never satisfy
   this, so a label is pushed onto a stretch of its own line that no other edge covers. That is
@@ -495,11 +515,13 @@ sibling stagger separates them (the owner ruled to leave it).
 
 ### Don't
 - **Don't** add a second accent, or use `fail` as a UI colour.
-- **Don't** put a filled card behind body copy; `bg-raised` is the surface of things that sit over
-  the page (the flowchart's panel and label pills, the certificate dialog), not a card style and
-  not the bar — and a Work card is a ruled row rather than a raised box.
-- **Don't** add shadows, blur or a third elevation step.
-- **Don't** introduce a third rule strength or a third text weight.
+- **Don't** put a filled card behind body copy — the Tech decision card is the one exception, and
+  it earns it by being a short paired readout rather than prose. `bg-raised` is otherwise the
+  surface of things that sit over the page (the flowchart's panel and label pills, the certificate
+  dialog, the node diagram), never the bar; a Work card is a ruled row rather than a raised box.
+- **Don't** add a drop shadow, a blur, or a third elevation step; the only `box-shadow`s are the
+  zero-blur lamp rings.
+- **Don't** introduce a third rule strength or a fourth text weight.
 - **Don't** let the chart shrink to fit: the floor wins and the panel scrolls.
 - **Don't** special-case a single label, and don't seat a label by eye where a rule decides.
 - **Don't** bring back the height clamp, or re-describe the pre-Signal-Box chain design.
