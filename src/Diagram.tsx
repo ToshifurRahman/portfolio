@@ -432,30 +432,40 @@ function bestAnchor(
   d: string,
   labelW: number,
   boxes: { x: number; y: number; w: number; h: number }[],
+  bounds: Bounds,
 ): { x: number; y: number; horiz: boolean } | null {
+  /* A direct search for a position on the path where the label's own pill clears every
+     box and stays inside the drawing. Reasoning about which segment is best kept
+     producing anchors that were optimal by some score and still clipped or parked in a
+     gap too narrow for the pill — VENDOR ROUTE lost its "VE" that way. This asks the
+     only question that matters and samples the answer. */
+  const pillAt = (cx: number, cy: number, horiz: boolean) => {
+    const p = pillFor('x'.repeat(Math.round(labelW / adv(DETAIL))), cx, horiz ? cy - 8 : cy);
+    return { x1: cx - p.w / 2, y1: p.y - 1, x2: cx + p.w / 2, y2: p.y - 1 + p.h };
+  };
+  const clears = (cx: number, cy: number, horiz: boolean) => {
+    const r = pillAt(cx, cy, horiz);
+    if (r.x1 < 1 || r.x2 > bounds.w - 1 || r.y1 < 1) return false;
+    for (const b of boxes) {
+      const dx = Math.max(b.x - r.x2, 0, r.x1 - (b.x + b.w));
+      const dy = Math.max(b.y - r.y2, 0, r.y1 - (b.y + b.h));
+      /* Overlap or within 4 units on either axis: a box clipping a label's first letters
+         at a corner is hidden ink, and the pill reads as part of that box. */
+      if (Math.hypot(dx, dy) < 5) return false;
+      /* The reading test: inside a box's horizontal span one row gap away is a heading. */
+      const insideX = r.x1 >= b.x - 2 && r.x2 <= b.x + b.w + 2;
+      if (insideX && ((b.y - r.y2 >= -4 && b.y - r.y2 < 46) || (r.y1 - (b.y + b.h) >= -4 && r.y1 - (b.y + b.h) < 46))) {
+        return false;
+      }
+    }
+    return true;
+  };
+  /* Sample the drawn path. `getTotalLength` is not available at build time, but the path
+     is `M`/`H`/`V` only, so walk it and interpolate along each segment. */
   const tokens = d.match(/[MHV][^MHV]*/g) ?? [];
   let x = 0;
   let y = 0;
-  /* Clearance for a label centred here, above a horizontal run. An anchor whose label
-     would sit inside a box's own horizontal span, one row gap away, is disqualified: it
-     reads as that box's heading, which is the defect this replaced `labelPos` for. */
-  const clearance = (cx: number, cy: number) => {
-    let nearest = Infinity;
-    for (const b of boxes) {
-      const insideX = cx - labelW / 2 >= b.x - 2 && cx + labelW / 2 <= b.x + b.w + 2;
-      const gapUp = b.y - cy;
-      const gapDown = cy - 14 - (b.y + b.h);
-      if (insideX && ((gapUp >= -4 && gapUp < 46) || (gapDown >= -4 && gapDown < 46))) {
-        return -1;
-      }
-      const dx = Math.max(b.x - (cx + labelW / 2), 0, cx - labelW / 2 - (b.x + b.w));
-      const dy = Math.max(b.y - cy, 0, cy - 14 - (b.y + b.h));
-      nearest = Math.min(nearest, Math.hypot(dx, dy));
-    }
-    return nearest;
-  };
-  let best = -1;
-  let at: { x: number; y: number; horiz: boolean } | null = null;
+  const segs: { x1: number; y1: number; x2: number; y2: number; len: number }[] = [];
   for (const t of tokens) {
     const cmd = t[0];
     const nums = (t.slice(1).match(/-?[\d.]+/g) ?? []).map(Number);
@@ -464,65 +474,66 @@ function bestAnchor(
       y = nums[1];
       continue;
     }
-    /* A run of coordinates after one command letter: pairs for H/V are single values. */
-    for (const n of nums) {
-      if (cmd === 'H') {
-        const len = Math.abs(n - x);
-        /* The label has to fit along the run, and have room around it. */
-        if (len >= labelW + 6) {
-          const cx = (x + n) / 2;
-          const score = clearance(cx, y - 8);
-          if (score > best) {
-            best = score;
-            at = { x: cx, y, horiz: true };
-          }
+    let px = x;
+    let py = y;
+    const nx = cmd === 'H' ? (nums[0] ?? x) : x;
+    const ny = cmd === 'V' ? (nums[0] ?? y) : y;
+    segs.push({ x1: px, y1: py, x2: nx, y2: ny, len: Math.hypot(nx - px, ny - py) });
+    x = nx;
+    y = ny;
+  }
+  /* Prefer a horizontal run — the label reads best above a line — then a vertical one. */
+  for (const horiz of [true, false]) {
+    let fallback: { x: number; y: number; horiz: boolean; score: number } | null = null;
+    for (const g of segs) {
+      const isH = Math.abs(g.y2 - g.y1) < 0.5;
+      if (isH !== horiz) continue;
+      /* A run has to be long enough that the label relates to it. */
+      if (horiz ? g.len < labelW * 0.5 : g.len < 18) continue;
+      const steps = Math.max(2, Math.round(g.len / 6));
+      for (let k = 0; k <= steps; k++) {
+        const t = k / steps;
+        const bx = g.x1 + (g.x2 - g.x1) * t;
+        const by = g.y1 + (g.y2 - g.y1) * t;
+        /* A label on a horizontal run sits above it; one on a vertical run sits beside
+           it, which is the only room a narrow gap offers. Both are positions on or beside
+           the line, which is what a label is. */
+        const offsets = horiz ? [0] : [0, -labelW / 2 - 8, labelW / 2 + 8];
+        for (const off of offsets) {
+          const cx = bx + off;
+          const cy = by;
+          if (clears(cx, cy, horiz)) return { x: cx, y: cy, horiz };
         }
-        x = n;
-      } else if (cmd === 'V') {
-        const len = Math.abs(n - y);
-        if (len >= 24) {
-          const cy = (y + n) / 2;
-          const score = clearance(x, cy);
-          if (score > best) {
-            best = score;
-            at = { x, y: cy, horiz: false };
-          }
+        const cx = bx;
+        const cy = by;
+        /* Remember the roomiest invalid spot, so a path with no good seat still gets its
+           least-bad one rather than a far-away default. */
+        const r = pillAt(cx, cy, horiz);
+        let nearest = Infinity;
+        for (const b of boxes) {
+          const dx = Math.max(b.x - r.x2, 0, r.x1 - (b.x + b.w));
+          const dy = Math.max(b.y - r.y2, 0, r.y1 - (b.y + b.h));
+          nearest = Math.min(nearest, Math.hypot(dx, dy));
         }
-        y = n;
+        if (!fallback || nearest > fallback.score) fallback = { x: cx, y: cy, horiz, score: nearest };
       }
     }
+    if (fallback) return { x: fallback.x, y: fallback.y, horiz: fallback.horiz };
   }
-  if (at && best >= 0) return at;
-  /* No horizontal run qualified: every one of them passes over some box's span. Use a
-     vertical run instead — its label sits beside the line, between two rows. */
-  x = 0;
-  y = 0;
-  for (const t of tokens) {
-    const cmd = t[0];
-    const nums = (t.slice(1).match(/-?[\d.]+/g) ?? []).map(Number);
-    if (cmd === 'M' && nums.length >= 2) {
-      x = nums[0];
-      y = nums[1];
-      continue;
-    }
-    for (const n of nums) {
-      if (cmd === 'V' && Math.abs(n - y) >= 40) return { x, y: (y + n) / 2, horiz: false };
-      if (cmd === 'H') x = n;
-      else if (cmd === 'V') y = n;
-    }
-  }
-  return at;
+  return null;
 }
 
 /* Does a label's box overlap a node's box? */
 function touchesBox(lab: { x: number; y: number }, pill: { w: number; h: number }, nodes: Placed[]): boolean {
-  return nodes.some(
-    (n) =>
-      lab.x - pill.w / 2 < n.x + n.w - 2 &&
-      lab.x + pill.w / 2 > n.x + 2 &&
-      lab.y - pill.h < n.y + n.h - 2 &&
-      lab.y > n.y + 2,
-  );
+  const l = { x1: lab.x - pill.w / 2, y1: lab.y - pill.h, x2: lab.x + pill.w / 2, y2: lab.y };
+  return nodes.some((n) => {
+    /* Real overlap: both axes must lose a whole pixel. A label in a gap sits a pixel from
+       the boxes either side and hides no ink; the corner-clipping case that this was
+       widened for is rejected inside bestAnchor, where the desktop search lives. */
+    const ox = Math.min(l.x2, n.x + n.w) - Math.max(l.x1, n.x);
+    const oy = Math.min(l.y2, n.y + n.h) - Math.max(l.y1, n.y);
+    return ox >= 1 && oy >= 1;
+  });
 }
 
 /* The pill behind an edge label, sized from the label's own advance, so a label
@@ -834,8 +845,10 @@ function Graph({
               : 'branch'
           : e.route;
         const d = edgePath(a, b, route, bounds, vertical);
-        const labelW = (e.label?.length ?? 0) * adv(11);
-        const anchor = bestAnchor(d, labelW, placed);
+        const labelW = (e.label?.length ?? 0) * adv(DETAIL);
+        /* The vertical layout's seating is closed and its gaps are ~24 units wide;
+           this search is for the desktop graph, where the regression was. */
+        const anchor = vertical ? null : bestAnchor(d, labelW, placed, bounds);
         const lab = anchor
           ? /* Above a horizontal run and on a vertical one: the line stays visible and
                the label touches its own segment. */
@@ -845,15 +858,17 @@ function Graph({
         /* A label placed by geometry can still land on a box, so the final position is
            checked: text over text is the one thing a label may never do. */
         if (e.label && touchesBox(lab, pill, placed)) {
-          for (let step = 10; step <= 120; step += 10) {
-            if (!touchesBox({ x: lab.x, y: lab.y - step }, pill, placed)) {
-              lab.y -= step;
-              break;
+          /* The pill is re-measured at each candidate y: stepping away from a position
+             with the old pill tests a rectangle that is no longer where the label is. */
+          for (let step = 8; step <= 160; step += 8) {
+            for (const y of [lab.y - step, lab.y + step]) {
+              const p2 = pillFor(e.label, lab.x, y);
+              if (!touchesBox({ x: lab.x, y }, p2, placed)) {
+                lab.y = y;
+                break;
+              }
             }
-            if (!touchesBox({ x: lab.x, y: lab.y + step }, pill, placed)) {
-              lab.y += step;
-              break;
-            }
+            if (!touchesBox(lab, pillFor(e.label, lab.x, lab.y), placed)) break;
           }
         }
         /* Nudge this label clear of any already placed on the same band. */
