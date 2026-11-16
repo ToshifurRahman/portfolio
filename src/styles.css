@@ -436,21 +436,6 @@ textarea {
    The pulse period is 26s with a short lit slice, which is inside the owner's
    "at most one every 20 to 30 seconds" once the load pulse is counted. */
 
-.gridlines {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-}
-
-.gridlines span {
-  border-left: var(--line) solid var(--grid);
-}
-
-.gridlines span:first-child {
-  border-left-color: transparent;
-}
-
 /* The cell in each gap between strips: the thing the wave lights. */
 .hero-cells {
   position: absolute;
@@ -516,38 +501,6 @@ textarea {
     animation: none;
     opacity: 0.07;
   }
-}
-
-/* The pulse: one slow ray down the page's own strips, once on load and then
-   every 26s. It is drawn on the frame's edge, not behind body text. */
-.site-rail {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  display: grid;
-  width: min(100% - 2 * var(--frame-margin), var(--frame));
-  margin-inline: auto;
-  pointer-events: none;
-  overflow: hidden;
-}
-
-.site-rail span {
-  position: relative;
-  overflow: hidden;
-}
-
-/* The moving part: a soft length of accent inside its own strip, translated
-   from above the fold to below it. `--line` wide so it reads as a charge in the
-   column line, not a slab. */
-.site-rail i {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: var(--line);
-  background: linear-gradient(to bottom, transparent, var(--accent) 45%, var(--accent) 55%, transparent);
-  opacity: 0;
-  will-change: transform, opacity;
 }
 
 /* The pulse: one slow ray down the page's own strips, once on load and then
