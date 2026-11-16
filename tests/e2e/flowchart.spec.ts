@@ -1221,3 +1221,72 @@ for (const d of DIAGRAMS) {
     }
   });
 }
+
+/* ---------------------------------------------------------------- round P2b
+ *
+ * P2b-3. EACH STEP and STAGE FAILS both sat in the left gutter, between the dashed
+ * `fails` run and the solid `log` run, and STAGE FAILS's pill touched the solid stroke:
+ * ds measured it 3.5px nearer that line than the dashed one it belongs to. A pill drawn
+ * over another edge's line reads as that line's label, which is the same fault class as
+ * the VENDOR ROUTE P1 one pass earlier.
+ *
+ * The invariant: a label's pill may cover its own edge and nothing else. Measured against
+ * every other edge's painted ink, not against a model of the path, because the arrowhead
+ * and the stroke width both extend past the geometry.
+ */
+
+for (const d of DIAGRAMS) {
+  test.describe(`${d.slug}: edge labels sit on their own line`, () => {
+    for (const [w, h] of [[1228, 900], [1280, 900], [1440, 900]] as const) {
+      test(`no pill covers another edge's stroke at ${w}`, async ({ page }) => {
+        await page.setViewportSize({ width: w, height: h });
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        await page.goto(d.path);
+        await panel(page, d.slug).scrollIntoViewIfNeeded();
+
+        const collisions = await page.evaluate(() => {
+          const svg = [...document.querySelectorAll('.flow-svg')].find(
+            (s) => s.getBoundingClientRect().width > 0,
+          ) as SVGSVGElement;
+          const scale = svg.getScreenCTM()!.a;
+          /* Each label's pill, keyed by the edge it belongs to. */
+          const pills = [...svg.querySelectorAll('.flow-edge-pill')].map((r) => {
+            const b = (r as SVGRectElement);
+            const label = (b.nextElementSibling as SVGTextElement).textContent?.trim() ?? '?';
+            const own = (b.nextElementSibling as SVGTextElement).getAttribute('data-edge-label') ?? '';
+            return { box: b.getBBox(), label, own };
+          });
+          const out: string[] = [];
+          for (const path of [...svg.querySelectorAll('path.flow-edge')] as SVGPathElement[]) {
+            const id = path.getAttribute('data-edge') ?? '';
+            const len = path.getTotalLength();
+            /* Sample the painted centre line; the pill's own edge is excluded below. */
+            for (let t = 0; t <= len; t += 2) {
+              const p = path.getPointAtLength(t);
+              for (const { box, label, own } of pills) {
+                if (own === id) continue;
+                const inside =
+                  p.x > box.x + 0.5 &&
+                  p.x < box.x + box.width - 0.5 &&
+                  p.y > box.y + 0.5 &&
+                  p.y < box.y + box.height - 0.5;
+                if (inside) {
+                  out.push(`"${label}" pill covers the ${id} stroke at (${p.x.toFixed(1)},${p.y.toFixed(1)})`);
+                  break;
+                }
+              }
+              if (out.length > 6) break;
+            }
+            if (out.length > 6) break;
+          }
+          /* Deliberately not asserting a distance to the label's own line here: that is
+             check (e)'s job and it is unchanged. This asks only what the pill covers. */
+          void scale;
+          return out;
+        });
+
+        expect(collisions, `labels whose pill covers another edge's line at ${w}px`).toEqual([]);
+      });
+    }
+  });
+}

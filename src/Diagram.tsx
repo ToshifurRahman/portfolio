@@ -849,6 +849,70 @@ function Graph({
         /* Labels are placed once, in edge order, and remembered so a second label
            on the same band can be pushed clear of the first. */
         const placedLabels: { x: number; y: number; w: number; h: number }[] = [];
+        /* Every edge's path, worked out before any label is placed. A path depends only on
+           its endpoints, its route and the bounds — not on where labels go — so this is
+           the same string the render below will use, and the resolver can ask what a
+           candidate position would paint over. A pill lying across another edge's stroke
+           reads as that edge's label: that is how STAGE FAILS ended up touching the solid
+           `log` run while belonging to the dashed `fails` one. */
+        const pathOf = new Map<string, string>();
+        for (const e of spec.edges) {
+          const a0 = nodes.get(e.from);
+          const b0 = nodes.get(e.to);
+          if (!a0 || !b0) continue;
+          if (vertical && (headingFor.has(e.to) || e.stub)) continue;
+          const r0: Route = vertical
+            ? a0.state || b0.state
+              ? 'right'
+              : a0.vat.track === b0.vat.track
+                ? e.route === 'loop-side'
+                  ? 'loop-side'
+                  : 'down'
+                : 'branch'
+            : e.route;
+          pathOf.set(e.id, edgePath(a0, b0, r0, bounds, vertical));
+        }
+        /* The painted centre lines, as run segments. Paths here are only M/H/V, so this is
+           exact and cheap to test a rectangle against. */
+        const strokes = [...pathOf.entries()].flatMap(([id, d]) => {
+          const segs: { id: string; x1: number; y1: number; x2: number; y2: number }[] = [];
+          const nums = d.match(/-?[\d.]+/g)?.map(Number) ?? [];
+          const cmds = d.match(/[MHV]/g) ?? [];
+          let cx = 0;
+          let cy = 0;
+          let i = 0;
+          for (const c of cmds) {
+            if (c === 'M') {
+              cx = nums[i++];
+              cy = nums[i++];
+            } else if (c === 'H') {
+              const nx = nums[i++];
+              segs.push({ id, x1: cx, y1: cy, x2: nx, y2: cy });
+              cx = nx;
+            } else {
+              const ny = nums[i++];
+              segs.push({ id, x1: cx, y1: cy, x2: cx, y2: ny });
+              cy = ny;
+            }
+          }
+          return segs;
+        });
+        /* Does this pill lie across some other edge's line? Axis-aligned segments, so a
+           rectangle-versus-segment test is just a range overlap with a pixel of grace. */
+        const coversOtherStroke = (own: string, r: { x: number; y: number; w: number; h: number }) => {
+          const pad = 1;
+          for (const g of strokes) {
+            if (g.id === own) continue;
+            const minX = Math.min(g.x1, g.x2);
+            const maxX = Math.max(g.x1, g.x2);
+            const minY = Math.min(g.y1, g.y2);
+            const maxY = Math.max(g.y1, g.y2);
+            if (maxX < r.x + pad || minX > r.x + r.w - pad) continue;
+            if (maxY < r.y + pad || minY > r.y + r.h - pad) continue;
+            return g.id;
+          }
+          return null;
+        };
         return spec.edges.map((e) => {
         const a = nodes.get(e.from);
         const b = nodes.get(e.to);
@@ -869,7 +933,7 @@ function Graph({
                 : 'down'
               : 'branch'
           : e.route;
-        const d = edgePath(a, b, route, bounds, vertical);
+        const d = pathOf.get(e.id) ?? edgePath(a, b, route, bounds, vertical);
         /* One value decides where the label is, and both the words and the pill are
            rendered from it. The previous version measured a pill, moved the text with two
            nudges and then drew the pill from the stale rectangle: Ticket-Pipeline's STAGE
@@ -917,6 +981,9 @@ function Graph({
           const r = pillFor(label, x, y);
           if (r.x < 1 || r.x + r.w > bounds.w - 1 || r.y < 1 || r.y + r.h > bounds.h - 1) return false;
           if (touchesBox({ x, y }, r, placed)) return false;
+          /* A pill over another edge's line reads as that line's label, so a position
+             that covers one is not a legal position for this label. */
+          if (coversOtherStroke(e.id, r)) return false;
           return !placedLabels.some(
             (o) => r.x < o.x + o.w + 4 && o.x < r.x + r.w + 4 && r.y < o.y + o.h + 2 && o.y < r.y + r.h + 2,
           );
