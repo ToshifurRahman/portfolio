@@ -17,6 +17,16 @@ Four checks:
    passes and is reported as a note naming which applier carries what. Equality is compared on
    resolved numbers, so a literal that happens to equal the token is not a defect.
 
+   A step's applier set is built from **every** rule in the file, including rules inside
+   `@media` blocks: a breakpoint that swaps a step's size or weight makes that a value the page
+   uses. `css_base` drops media blocks, which is right for a component's base claim (a component
+   token describes the default paint, and a breakpoint override is reported separately) but wrong
+   here. The phone menu is why: `.nav-links a` takes `--text-lg` and 520 only under
+   `@media (max-width: 57rem)`. Reading only base rules, this script called `lg`'s 520 a value
+   from no rule and passed a record claiming `lg` is never given one — both backwards. A rule
+   that applies a step's size and states no value of its own is resolved through its own base
+   rule, so the two halves of a media pair are one applier.
+
 3. Every property declared under `components:` is resolved to the token reference the CSS should
    carry and compared with that component's declaration in `src/styles.css`. The comparison is
    made on *references*, not resolved numbers: `backgroundColor: "{colors.bg}"` must be painted
@@ -205,33 +215,76 @@ def var_name(step):
     return f'--{FLOW_TYPE[step]}' if step in FLOW_TYPE else f'--text-{step}'
 
 
+def all_rules():
+    """Every leaf rule in the file as `(selector_list, decls, media_condition_or_None)`.
+
+    `css_base` drops media blocks, which is right for a *component's* base claim but wrong for a
+    type step's: a step is applied by every rule that sets its size, wherever that rule lives. The
+    phone menu is the case that exposed this — `.nav-links a` takes `--text-lg` only inside
+    `@media (max-width: 57rem)`, so before this it had no `lg` applier at all and the record could
+    say `lg` is never given a weight.
+    """
+    spans = [
+        (m.start(), m.end(), ' '.join(m.group(0).split('{', 1)[0].split()))
+        for m in re.finditer(r'@media[^{]*\{(?:[^{}]|\{[^{}]*\})*\}', css)
+    ]
+    out = []
+    for m in re.finditer(r'([^{}]+)\{([^{}]*)\}', css):
+        selector = m.group(1)
+        if selector.lstrip().startswith('@media'):
+            continue
+        media = next(
+            (cond for start, end, cond in spans if start <= m.start() < end), None
+        )
+        decls = {k.strip(): v.strip() for k, v in re.findall(r'([\w-]+)\s*:\s*([^;]+);', m.group(2))}
+        selectors = [s.strip() for s in selector.split(',')]
+        out.append((selectors, decls, media))
+    return out
+
+
+RULES = all_rules()
+
+
+def base_decl(selectors, prop):
+    """The value `prop` takes from the base rule for any of `selectors`, if one states it."""
+    for sel in selectors:
+        got = rules(sel).get(prop)
+        if got is not None:
+            return got
+    return None
+
+
+def label(selectors, media):
+    sel = ', '.join(selectors)
+    return f'{sel} [in {media}]' if media else sel
+
+
 def applications(step, prop):
-    """Every value the CSS gives `prop` in a rule that applies type step `step`, with its rules.
+    """Every value the page uses for `prop` on rules that apply step `step`, with their rules.
 
     A type step is a size token, not a rule: `--text-h2` carries the clamp, and each rule that
-    uses it decides the weight and tracking. So the step's own weight is only a fact about the
-    page when every rule that applies the step agrees on it.
+    uses it decides the weight and tracking. A rule that applies the size and says nothing about
+    the weight takes the one its own base rule states, so both halves of a media pair count as
+    the same applier. No value at all means it inherits `body`, which the caller adds.
     """
     token = var_name(step)
     out = {}
-    for m in re.finditer(r'([^{}]+)\{([^{}]*)\}', css_base):
-        body = m.group(2)
-        if not re.search(r'font-size\s*:\s*var\(' + re.escape(token) + r'\)', body):
+    for selectors, decls, media in RULES:
+        size = decls.get('font-size')
+        if size != f'var({token})':
             continue
-        decl = re.search(prop + r'\s*:\s*([^;]+);', body)
-        if decl:
-            selector = ', '.join(s.strip() for s in m.group(1).split(','))
-            out.setdefault(decl.group(1).strip(), []).append(selector)
+        value = decls.get(prop) or base_decl(selectors, prop)
+        out.setdefault(value, []).append(label(selectors, media))
     return out
 
 
 def appliers(step):
-    """Every rule that applies type step `step` by setting its font-size."""
+    """Every rule that applies type step `step`, media blocks included."""
     token = var_name(step)
     return [
-        ', '.join(s.strip() for s in m.group(1).split(','))
-        for m in re.finditer(r'([^{}]+)\{([^{}]*)\}', css_base)
-        if re.search(r'font-size\s*:\s*var\(' + re.escape(token) + r'\)', m.group(2))
+        label(selectors, media)
+        for selectors, decls, media in RULES
+        if decls.get('font-size') == f'var({token})'
     ]
 
 
@@ -367,11 +420,18 @@ for step, decl in typography.items():
             # the rule, and `fontSize` is stated for every step so it is always checked.
             continue
         applied = applications(step, css_prop)
-        total = len(appliers(step))
+        # A rule that applies the step and states no value of its own takes the one its base rule
+        # states, so `applications` resolves that. What is left as `None` genuinely states nothing
+        # anywhere and inherits `body`, which is the same fact the `inherited` default expresses.
         inherited = inherited_default(css_prop)
+        inheriting = len(applied.pop(None, []))
+        stated = sum(len(v) for v in applied.values())
+        if not applied and not inheriting:
+            notes.append(
+                f'typography.{step}.{record_prop}: no rule applies `{step}`; not a step on the page'
+            )
+            continue
         if not applied:
-            # No rule states the property; the page renders `body`'s value. A claim equal to that
-            # value is true-but-implicit (a note); anything else is a wrong claim (a problem).
             if inherited is not None and same(inherited, claimed):
                 notes.append(
                     f'typography.{step}.{record_prop}: {claimed} is what the page inherits — no '
@@ -384,33 +444,32 @@ for step, decl in typography.items():
                 )
             continue
         distinct = sorted(applied)
-        stated = sum(len(v) for v in applied.values())
 
         # What the page actually uses: every value a rule states, plus the inherited one for the
         # rules that state none. A claim outside that set is false however uneven the step is —
         # this is the branch that let `2xs fontWeight: 600` pass, because "the appliers disagree"
         # was treated as a reason to stop checking rather than a reason to check the whole set.
         used = {normalise(v) for v in distinct}
-        if stated < total and inherited is not None:
+        if inheriting and inherited is not None:
             used.add(normalise(inherited))
         if normalise(claimed) not in used:
             problems.append(
                 f'typography.{step}.{record_prop}: DESIGN.md {claimed} is used by no rule applying '
                 f'this step (stated: {", ".join(distinct)}'
-                + (f'; inherited: {inherited}' if stated < total else '')
+                + (f'; inherited: {inherited}' if inheriting else '')
                 + ')'
             )
             continue
 
         # The claim is one of the page's values, so it is true of something. When the step has no
         # single value, say which rules carry what rather than implying the step has one weight.
-        if len(distinct) > 1 or stated < total:
+        if len(distinct) > 1 or inheriting:
             detail = '; '.join(f'{v} on {s}' for v, s in applied.items())
-            if stated < total:
+            if inheriting:
                 detail += (
-                    f'; {total - stated} rule(s) inherit {inherited}'
+                    f'; {inheriting} rule(s) inherit {inherited}'
                     if inherited is not None
-                    else f'; {total - stated} rule(s) set nothing here'
+                    else f'; {inheriting} rule(s) set nothing here'
                 )
             notes.append(
                 f'typography.{step}.{record_prop}: the record says {claimed}; the step is not '
