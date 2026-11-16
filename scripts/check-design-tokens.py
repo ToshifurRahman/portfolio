@@ -114,6 +114,7 @@ PROPERTIES = {
     'borderColor': 'border-color',
     'border': 'border',
     'borderBottom': 'border-bottom',
+    'borderTop': 'border-top',
     'rounded': 'border-radius',
     'stroke': 'stroke',
     'typography': None,
@@ -238,6 +239,15 @@ for comp, props in components.items():
 
         if prop == 'typography':
             key = value[1:-1].split('.')[-1]
+            if key in FLOW_TYPE:
+                got = rules(TEXT_SELECTORS.get(comp, selector)).get('font-size')
+                if got != f'var(--{FLOW_TYPE[key]})':
+                    problems.append(
+                        f'components.{comp}.typography: {value} != font-size {got}'
+                    )
+                else:
+                    checked += 1
+                continue
             if typography.get(key, {}).get('fontSize') is None:
                 problems.append(f'components.{comp}.typography: {value} does not name a type step')
                 continue
