@@ -374,24 +374,34 @@ for (const d of DIAGRAMS) {
             const detached: string[] = [];
             /* An edge stops a short distance short of the border so its arrowhead
                lands on it rather than over it: the tolerance is the arrowhead's own
-               length, scaled, not an arbitrary 6. */
+               length (MARKER_LEN, 12 viewBox units), scaled. */
             const gap = 12 * (view.width / svg.viewBox.baseVal.width);
             const headings = [...svg.querySelectorAll('.flow-cluster-heading')].map((h) => h.getBoundingClientRect());
             const nearBox = (x: number, y: number, b: DOMRect) =>
               x >= b.left - gap && x <= b.right + gap && y >= b.top - gap && y <= b.bottom + gap &&
               (Math.abs(x - b.left) <= gap || Math.abs(x - b.right) <= gap || Math.abs(y - b.top) <= gap || Math.abs(y - b.bottom) <= gap);
-            const nearNode = (x: number, y: number) => boxes.some((b) => nearBox(x, y, b));
-            /* A heading is a short left-aligned word, while the entry arrow descends from
-               that word's row into the middle of the column. So the anchor is the row the
-               heading starts on, across the drawing's width: the edge begins on the
-               heading's line and ends on the node below it. */
-            const nearHeading = (x: number, y: number) =>
-              headings.some((h) => y >= h.top - gap && y <= h.bottom + gap && x >= h.left - gap && x <= svg.getBoundingClientRect().right + gap);
+            /* The box the point belongs to, which is the one an end sits on. */
+            const boxAt = (x: number, y: number) => boxes.find((b) => nearBox(x, y, b)) ?? null;
+            const nearNode = (x: number, y: number) => boxAt(x, y) !== null;
+            /* An entry arrow leaves the heading's row and descends into the middle of the
+               group's first box. So the heading is the anchor for the *row* only; across the
+               page the start must sit on that box's centre line, within one arrowhead length
+               of it. Without the centre-line half a start may be displaced sideways by any
+               distance and still pass — the entry arrow would crawl along the row away from
+               its own box, which is the failure this exists to catch. */
+            const nearHeadingRow = (x: number, y: number, target: DOMRect | null) =>
+              target !== null &&
+              headings.some((h) => y >= h.top - gap && y <= h.bottom + gap) &&
+              Math.abs(x - (target.left + target.right) / 2) <= gap;
             for (const path of svg.querySelectorAll<SVGPathElement>('.flow-edge')) {
               const len = path.getTotalLength();
               const pa = toPage(path.getPointAtLength(0));
               const pb = toPage(path.getPointAtLength(len));
-              const startOk = nearNode(pa.x, pa.y) || nearHeading(pa.x, pa.y);
+              const target = boxAt(pb.x, pb.y);
+              /* A start near a node is fine as it is; one that is not has to be a heading
+                 entry, held to the target's centre line. The target end's requirement is
+                 unchanged. */
+              const startOk = nearNode(pa.x, pa.y) || nearHeadingRow(pa.x, pa.y, target);
               if (!startOk || !nearNode(pb.x, pb.y)) detached.push(path.getAttribute('data-edge') ?? '?');
             }
 
