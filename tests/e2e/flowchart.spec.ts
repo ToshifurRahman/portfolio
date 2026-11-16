@@ -1519,3 +1519,121 @@ for (const d of DIAGRAMS) {
     }
   });
 }
+
+/* ---------------------------------------------------------------- fix pass P2b-f1
+ *
+ * F-2. A label has to belong to its own line. The resolver has enforced since P2b-3 that a
+ * pill may not cover another edge's stroke, but covering is the crude case: a pill can sit
+ * equidistant between two parallel runs and still read as the nearer one's label.
+ *
+ * RannaGhor's VENDOR ROUTE did exactly that. `authorise` (solid) and `refuse` (dashed) leave
+ * Role check side by side and share a long horizontal run before forking, so the gap between
+ * them is a corridor that a label can sit in and belong to neither. Measured at 1280 on
+ * cc9c07e: VENDOR ROUTE 0.6px from its own dashed run and 0.6px from the solid allowed run —
+ * and because ALLOWED was pushed the other way, the solid line ended up carrying two labels
+ * while the refused branch lost its only one.
+ *
+ * The rule: a label is nearer its own painted edge than any other edge's, by 6px. That is
+ * enough that the eye assigns it without measuring, and it is a property of the drawing, not
+ * of any one label — so it catches STAGE FAILS sitting on the `log` run as well (3.1px own,
+ * 0px other at 1280), which is the same fault and was P2b-3's fix line.
+ *
+ * Measured from the pill rectangle to the painted stroke, sampling the path's own geometry.
+ * The stroke is what is drawn, so the stroke is what the label can be read against.
+ */
+
+const ATTRIBUTION_MARGIN = 6;
+
+for (const d of DIAGRAMS) {
+  test.describe(`${d.slug}: every label belongs to its own line`, () => {
+    /* Desktop and vertical widths, both themes: the vertical layout still places labels with
+       `labelPos`, so it is measured rather than assumed. */
+    for (const [w, h] of [[1228, 900], [1280, 900], [1440, 900], [1920, 900], [390, 844], [834, 900]] as const) {
+      test(`${w}px: every pill is nearest its own edge`, async ({ page }) => {
+        test.setTimeout(90_000);
+        const failures: string[] = [];
+        for (const theme of THEMES) {
+          await page.setViewportSize({ width: w, height: h });
+          await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: theme });
+          await page.goto(d.path);
+          await panel(page, d.slug).scrollIntoViewIfNeeded();
+
+          const rows = await page.evaluate(() => {
+            const svg = [...document.querySelectorAll('.flow-svg')].find(
+              (s) => s.getBoundingClientRect().width > 0,
+            ) as SVGSVGElement;
+            const m = svg.getScreenCTM()!;
+            /* Every edge's painted runs, in screen pixels. Paths are M/H/V. */
+            const segs: { id: string; x1: number; y1: number; x2: number; y2: number }[] = [];
+            for (const el of [...svg.querySelectorAll('path.flow-edge')] as SVGPathElement[]) {
+              const id = el.getAttribute('data-edge') ?? '';
+              const toks = (el.getAttribute('d') ?? '').match(/[MHV][^MHV]*/g) ?? [];
+              let cx = 0;
+              let cy = 0;
+              for (const t of toks) {
+                const n = (t.slice(1).match(/-?[\d.]+/g) ?? []).map(Number);
+                if (t[0] === 'M') {
+                  cx = n[0];
+                  cy = n[1];
+                  continue;
+                }
+                const nx = t[0] === 'H' ? n[0] : cx;
+                const ny = t[0] === 'V' ? n[0] : cy;
+                const a = new DOMPoint(cx, cy).matrixTransform(m);
+                const b = new DOMPoint(nx, ny).matrixTransform(m);
+                segs.push({ id, x1: a.x, y1: a.y, x2: b.x, y2: b.y });
+                cx = nx;
+                cy = ny;
+              }
+            }
+            const distTo = (r: DOMRect, g: (typeof segs)[number]) => {
+              const len = Math.hypot(g.x2 - g.x1, g.y2 - g.y1);
+              const steps = Math.max(2, Math.ceil(len));
+              let best = Infinity;
+              for (let i = 0; i <= steps; i++) {
+                const t = i / steps;
+                const px = g.x1 + (g.x2 - g.x1) * t;
+                const py = g.y1 + (g.y2 - g.y1) * t;
+                const dx = Math.max(r.left - px, 0, px - r.right);
+                const dy = Math.max(r.top - py, 0, py - r.bottom);
+                best = Math.min(best, Math.hypot(dx, dy));
+              }
+              return best;
+            };
+
+            const out: { label: string; own: number; other: number; who: string }[] = [];
+            for (const t of [...svg.querySelectorAll('.flow-edge-label')] as SVGTextElement[]) {
+              const id = t.getAttribute('data-edge-label');
+              const pill = t.previousElementSibling as SVGRectElement | null;
+              if (!id || !pill) continue;
+              const r = pill.getBoundingClientRect();
+              if (!r.width) continue;
+              let own = Infinity;
+              let other = Infinity;
+              let who = '';
+              for (const g of segs) {
+                const dd = distTo(r, g);
+                if (g.id === id) own = Math.min(own, dd);
+                else if (dd < other) {
+                  other = dd;
+                  who = g.id;
+                }
+              }
+              out.push({ label: t.textContent?.trim() ?? '?', own, other, who });
+            }
+            return out;
+          });
+
+          for (const r of rows) {
+            if (r.own + ATTRIBUTION_MARGIN > r.other) {
+              failures.push(
+                `${theme} ${w}px "${r.label}": own ${r.own.toFixed(1)}px, ${r.who} ${r.other.toFixed(1)}px`,
+              );
+            }
+          }
+        }
+        expect(failures, `labels nearer another edge than their own at ${w}px`).toEqual([]);
+      });
+    }
+  });
+}
