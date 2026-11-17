@@ -530,12 +530,17 @@ function bestAnchor(
      producing anchors that were optimal by some score and still clipped or parked in a
      gap too narrow for the pill — VENDOR ROUTE lost its "VE" that way. This asks the
      only question that matters and samples the answer. */
-  const pillAt = (cx: number, cy: number, horiz: boolean) => {
-    const p = pillFor('x'.repeat(Math.round(labelW / adv(DETAIL))), cx, horiz ? cy - 8 : cy);
+  const pillAt = (cx: number, cy: number) => {
+    /* The pill is built where the label is drawn: on the run, not lifted above it. The
+       `- 8` this used to apply was the old horizontal lift, which the render dropped when
+       labels moved onto their own lines; leaving it here made the clearance test reason
+       about a pill no label ever occupies. `horiz` no longer changes the geometry, only
+       which reading rule `clears` applies, so the parameter went with the lift. */
+    const p = pillFor('x'.repeat(Math.round(labelW / adv(DETAIL))), cx, cy);
     return { x1: cx - p.w / 2, y1: p.y - 1, x2: cx + p.w / 2, y2: p.y - 1 + p.h };
   };
   const clears = (cx: number, cy: number, horiz: boolean) => {
-    const r = pillAt(cx, cy, horiz);
+    const r = pillAt(cx, cy);
     if (r.x1 < 1 || r.x2 > bounds.w - 1 || r.y1 < 1) return false;
     for (const b of boxes) {
       const dx = Math.max(b.x - r.x2, 0, r.x1 - (b.x + b.w));
@@ -578,7 +583,8 @@ function bestAnchor(
     x = nx;
     y = ny;
   }
-  /* Prefer a horizontal run — the label reads best above a line — then a vertical one. */
+  /* Prefer a horizontal run, then a vertical one: a label on a horizontal stroke has the
+     whole gap to sit in, where a vertical one is boxed in on both sides. */
   for (const horiz of [true, false]) {
     let fallback: { x: number; y: number; horiz: boolean; score: number } | null = null;
     for (const g of segs) {
@@ -591,9 +597,9 @@ function bestAnchor(
         const t = k / steps;
         const bx = g.x1 + (g.x2 - g.x1) * t;
         const by = g.y1 + (g.y2 - g.y1) * t;
-        /* A label on a horizontal run sits above it; one on a vertical run sits beside
-           it, which is the only room a narrow gap offers. Both are positions on or beside
-           the line, which is what a label is. */
+        /* On the run for a horizontal one, and on it or just beside it for a vertical
+           one — a narrow gap offers no room above the stroke. Every position is on or
+           beside the line, which is what a label is; none is lifted clear of it. */
         const offsets = horiz ? [0] : [0, -labelW / 2 - 8, labelW / 2 + 8];
         for (const off of offsets) {
           const cx = bx + off;
@@ -604,7 +610,7 @@ function bestAnchor(
         const cy = by;
         /* Remember the roomiest invalid spot, so a path with no good seat still gets its
            least-bad one rather than a far-away default. */
-        const r = pillAt(cx, cy, horiz);
+        const r = pillAt(cx, cy);
         let nearest = Infinity;
         for (const b of boxes) {
           const dx = Math.max(b.x - r.x2, 0, r.x1 - (b.x + b.w));
@@ -1270,16 +1276,17 @@ function Graph({
             const own = strokes.filter((g) => g.id === e.id);
             const cands: { x: number; y: number; dist: number }[] = [];
             for (const g of own) {
-              const horizontal = Math.abs(g.y2 - g.y1) < 0.01;
               const len = Math.hypot(g.x2 - g.x1, g.y2 - g.y1);
               const steps = Math.max(2, Math.ceil(len / 6));
               for (let i = 0; i <= steps; i++) {
                 const t = i / steps;
                 const px = g.x1 + (g.x2 - g.x1) * t;
                 const py = g.y1 + (g.y2 - g.y1) * t;
-                /* Above a horizontal run, beside a vertical one: the line stays visible. */
-                const cx = horizontal ? px : px;
-                const cy = horizontal ? py - 8 : py;
+                /* On the run, horizontal or vertical, matching where the label is drawn:
+                   the fallback used to emit `py - 8` for a horizontal run, the old lift,
+                   which would have seated a fallback label off its own line. */
+                const cx = px;
+                const cy = py;
                 cands.push({ x: cx, y: cy, dist: Math.hypot(cx - pos.x, cy - pos.y) });
               }
             }
