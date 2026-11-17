@@ -700,7 +700,8 @@ export function Diagram({ spec }: { spec: DiagramSpec }) {
 
     /* The edges this run has finished crossing, oldest first. They stay lit; the newest
        keeps the glow and the rest step down so the direction the token came from is
-       readable. A restart empties it. */
+       readable. A restart empties the trail, and `reset()` also clears the inline opacity
+       that painted it. */
     let trail: string[] = [];
 
     /* Opacity the older trail edges step down through. Recorded here rather than in CSS
