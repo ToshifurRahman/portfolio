@@ -928,14 +928,17 @@ textarea {
 
 /* The Now panel ------------------------------------------------------------ */
 
-/* The home slot the animated track used to hold. Since 23:03 it draws two lanes,
-   Study and Work, on one shared year axis: the owner found the single row of
-   stations hard to read, and the two cells below it went too.
+/* Two lanes, Study and Work, on one shared year axis. Owner, 2026-11-17: the
+   graph was "disconnected & misguided", so the axis is every year from the first
+   to the last (2021 to 2026) at equal spacing, and each lane is one continuous
+   line rather than a row per stop.
  *
- * The axis is a grid of year columns shared by both lanes, so a stop sits in its
- * own year and two labels can never collide — a long label wraps inside its
- * column. Text first: with no CSS this reads as two ordered lists and a list of
- * years. */
+ * The axis is a grid of year columns shared by both lanes. Every stop is placed
+ * in its year's column and in the one row the lane line runs through, so its lamp
+ * sits on that line. Two stops in the same year keep their lamps on the line and
+ * stack their labels below: `--stack` is the stop's offset within its column,
+ * set by the component. Text first: with no CSS this reads as two ordered lists
+ * and a list of years. */
 .now {
   row-gap: var(--space-6);
   padding-block: var(--space-8);
@@ -991,19 +994,22 @@ textarea {
   text-transform: uppercase;
 }
 
-/* Stops are placed into the same year columns as the ticks; the lane's line is
-   drawn behind them. */
+/* Stops are placed into the same year columns as the ticks and share one row,
+   so the lane's line runs through every lamp. `--stack-step` is one label block:
+   a second stop on the same year starts its label below the first. */
 .tl-stops {
+  --stack-step: calc(var(--space-16) + var(--space-6));
+  --lamp-step: var(--space-3);
   position: relative;
   display: grid;
-  gap: var(--space-4) var(--space-3);
+  gap: 0 var(--space-3);
   padding-top: var(--space-2);
 }
 
 .tl-stops::before {
   content: '';
   position: absolute;
-  top: calc(var(--space-2) + 0.3125rem);
+  top: calc(var(--space-2) + var(--space-1) + var(--line));
   right: 0;
   left: 0;
   height: var(--line);
@@ -1023,10 +1029,11 @@ textarea {
   hyphens: none;
 }
 
-/* A span the source dates at both ends: a lit bar across its columns. */
+/* A span the source dates at both ends: a lit bar across its columns, level
+   with the lane line and the lamps. */
 .stop-span {
   position: absolute;
-  top: calc(var(--space-5) / 2 + 0.125rem);
+  top: calc(var(--space-1) + var(--line));
   left: 0;
   width: 100%;
   height: var(--line);
@@ -1037,7 +1044,9 @@ textarea {
 .stop .lamp {
   position: absolute;
   top: 0;
-  left: 0;
+  /* A second stop on the same year keeps its lamp on the line, a step to the
+     right, so both dots are visible. */
+  left: calc(var(--stack, 0) * var(--lamp-step));
   display: block;
   width: 0.625rem;
   height: 0.625rem;
@@ -1055,6 +1064,18 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
+  /* Zero for the first stop on a year; a stacked stop starts below the one
+     before it rather than on a disconnected row. */
+  margin-top: calc(var(--stack, 0) * var(--stack-step));
+}
+
+/* The far end of a span: the completion's own label at the bar's right end. */
+.stop-end {
+  position: absolute;
+  top: var(--space-5);
+  right: 0;
+  align-items: flex-end;
+  text-align: right;
 }
 
 .stop-label {
@@ -2667,10 +2688,12 @@ textarea {
     display: flex;
   }
 
+  /* No rule between rows either: the owner removed the lines that joined the
+     dots, and a full-width divider between stacked items reads as the same
+     connector. Each link keeps its own target height, so the rows stay apart. */
   .nav-links a {
     width: 100%;
     padding-inline: 0;
-    border-top: var(--line) solid var(--rule);
     font-size: var(--text-lg);
   }
 
@@ -2724,8 +2747,9 @@ textarea {
   }
 
   /* One vertical timeline, not two lanes squeezed into columns: the year axis
-     and both lanes become a single column with the year markers on it. Each
-     stop takes its own row, so a label reads in full and nothing overlaps. */
+     gives way and both lanes become a single column with the year markers on it.
+     Each stop takes its own row, so a label reads in full and nothing overlaps;
+     the span's two ends stay together in its row. */
   .timeline {
     gap: var(--space-4);
   }
@@ -2769,9 +2793,27 @@ textarea {
     left: calc(var(--space-5) * -1 + 0.03125rem);
   }
 
-  /* The span bar has no axis to sit on here, so the date carries that job. */
+  /* A same-year stack has no columns to collide in here: every stop is its own
+     row, so the labels flow naturally. */
+  .stop-body {
+    margin-top: 0;
+  }
+
+  /* The span bar has no axis to sit on here, so its two ends become one row:
+     the start and the completion read in order, connected by the list itself. */
+  .stop.is-span {
+    flex-wrap: wrap;
+  }
+
   .stop-span {
     display: none;
+  }
+
+  .stop.is-span .stop-end {
+    position: static;
+    flex-basis: 100%;
+    align-items: flex-start;
+    text-align: left;
   }
 
   .stop-child {

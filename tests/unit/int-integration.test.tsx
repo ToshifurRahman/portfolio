@@ -96,29 +96,46 @@ describe('introduction', () => {
   });
 });
 
+/* The hero's boxes in the gaps between the strips are gone (owner, 2026-11-17:
+   "in hero, remove animations & colors on strip gaps"). The orange ray down the
+   strips stays, and so do the column hairlines it runs beside. */
+describe('hero', () => {
+  it('renders no gap cells and keeps the strip rail', () => {
+    renderHome();
+    expect(document.querySelectorAll('.hero-cells')).toHaveLength(0);
+    expect(document.querySelectorAll('.hero-cell')).toHaveLength(0);
+    expect(document.querySelectorAll('.gridlines > span')).toHaveLength(12);
+    expect(document.querySelectorAll('.site-rail span')).toHaveLength(12);
+  });
+});
+
 /* The Now panel took the home slot where the track animation was (the owner
-   moved that into the case studies). Since 23:03 it draws two lanes, Study and
-   Work, on one shared year axis. It is still a real ordered list of text, not a
-   picture: readable with no CSS and no script. */
+   moved that into the case studies). It draws two lanes, Study and Work, on one
+   shared year axis from 2021 to 2026. It is still a real ordered list of text,
+   not a picture: readable with no CSS and no script. */
 describe('now panel', () => {
   it('is an ordered list of real text, not a picture', () => {
     renderHome();
     const panel = document.getElementById('now');
     expect(panel, 'the Now panel is missing').not.toBeNull();
     expect(panel!.querySelectorAll('ol.tl-stops')).toHaveLength(2);
-    /* Eight stops in total, each the stop's own label as text. */
+    /* One label per placed stop, plus the B.Sc. span's end label: the completion
+       is the bar's other end, not a second disconnected stop. */
+    const expected = path
+      .filter((p) => !p.parent)
+      .flatMap((p) => (p.endLabel ? [p.label, p.endLabel] : [p.label]));
     const labels = [...panel!.querySelectorAll('.stop-label')].map((el) => el.textContent);
-    expect(labels).toHaveLength(path.filter((p) => !p.parent).length);
-    for (const label of labels) expect(path.some((p) => p.label === label)).toBe(true);
+    expect(labels).toEqual(expected);
   });
 
   it('shows a date only where the source states one', () => {
     renderHome();
     const stops = [...document.querySelectorAll('#now .stop')];
     for (const li of stops) {
-      const label = li.querySelector('.stop-label')?.textContent;
+      const start = li.querySelector('.stop-body:not(.stop-end)')!;
+      const label = start.querySelector('.stop-label')?.textContent;
       const p = path.find((entry) => entry.label === label)!;
-      const date = li.querySelector('.stop-date');
+      const date = start.querySelector('.stop-date');
       if (p.date) expect(date?.textContent, p.label).toBe(p.date);
       else expect(date, `${p.label} should show no date`).toBeNull();
     }
@@ -142,17 +159,22 @@ describe('now panel', () => {
     }
   });
 
-  it('places a dated stop in its year column and leaves an undated one out of the axis', () => {
+  it('places a dated stop in its year column and leaves an undated role out of the axis', () => {
     renderHome();
     const years = [...document.querySelectorAll('#now .years li')].map((li) => li.textContent);
-    expect(years).toEqual(['2021', '2023', '2025', '2026']);
+    expect(years).toEqual(['2021', '2022', '2023', '2024', '2025', '2026']);
 
     /* A dated stop claims a column; an undated role claims none and is listed
-       under its parent instead. */
+       under its parent instead. The B.Sc. bar runs 2021 to 2025. */
     const bsc = [...document.querySelectorAll('#now .stop')].find((li) =>
       li.textContent?.includes('B.Sc. in CSE'),
     ) as HTMLElement | undefined;
-    expect(bsc?.style.gridColumn).toBe('1 / 4');
+    expect(bsc?.style.gridColumn).toBe('1 / 6');
+
+    const mengg = [...document.querySelectorAll<HTMLElement>('#now .stop')].filter(
+      (li) => li.getAttribute('data-year') === '2026',
+    );
+    expect(mengg.filter((li) => li.closest('.tl-lane-study'))).toHaveLength(2);
 
     const coordinator = [...document.querySelectorAll('#now .stop-child')].find((el) =>
       el.textContent?.includes('Bootcamp Coordinator'),

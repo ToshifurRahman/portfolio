@@ -1,12 +1,32 @@
 import { expect, test } from '@playwright/test';
 
-/* The Now panel's two-lane timeline. This replaces two specs whose subject the
-   owner removed on 2026-11-15: `now-cells.spec.ts` tested the "Latest system" and
-   "Problem solving" cells, and `now-path.spec.ts` tested the single rail of
-   eight stations. Both are gone, so the tests that pinned them are gone with
-   them rather than left failing against markup that no longer exists. */
+/* The Now panel's two-lane timeline on one shared year axis.
+ *
+ * Owner, 2026-11-17: "Now section graph is disconnected & misguided". The axis
+ * now shows every year from the first to the last year in the data (2021 to
+ * 2026) at equal spacing, each lane is one continuous line, and every stop sits
+ * at its own year on it. The B.Sc. is one bar from 2021 to 2025 with both ends
+ * labelled; both M.Engg. stops sit at 2026, the current one lit.
+ *
+ * It replaces the 2026-11-15 layout, whose tests pinned an axis that only held
+ * the years a stop happened to name and a row per stop. */
 
-const WIDTHS = [360, 390, 430, 768, 1024, 1280, 1600];
+const WIDTHS = [360, 390, 430, 768, 834, 1024, 1280, 1440, 1600];
+
+type Column = { text: string; left: number; right: number; width: number };
+
+const columns = (page: import('@playwright/test').Page) =>
+  page.locator('#now .years li').evaluateAll((items): Column[] =>
+    items.map((li) => {
+      const rect = li.getBoundingClientRect();
+      return {
+        text: (li.textContent ?? '').trim(),
+        left: rect.left,
+        right: rect.right,
+        width: rect.width,
+      };
+    }),
+  );
 
 test.describe('the Now timeline', () => {
   for (const width of WIDTHS) {
@@ -50,27 +70,177 @@ test.describe('the Now timeline', () => {
     await expect(page.locator('#now .now-cell')).toHaveCount(0);
   });
 
-  test('puts a dated stop in its year column and lists an undated role under its parent', async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 900 });
+  test('lists every year from the first to the last, once, in equal columns', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');
-    await expect(page.locator('#now .years li')).toHaveText(['2021', '2023', '2025', '2026']);
-    /* A dated stop claims a column; the two undated roles hang beneath Trainer
-       & Mentor rather than being pinned to a year nobody stated. */
+
+    const axis = await columns(page);
+    expect(axis.map((c) => c.text)).toEqual(['2021', '2022', '2023', '2024', '2025', '2026']);
+    expect(new Set(axis.map((c) => c.text)).size).toBe(axis.length);
+
+    const widths = axis.map((c) => c.width);
+    expect(Math.max(...widths) - Math.min(...widths)).toBeLessThanOrEqual(1);
+  });
+
+  test('draws each lane as one continuous line through every stop', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+
+    for (const lane of ['study', 'work'] as const) {
+      const line = await page.locator(`#now .tl-lane-${lane} .tl-stops`).evaluate((list) => {
+        const cs = getComputedStyle(list, '::before');
+        const box = list.getBoundingClientRect();
+        const lineTop = box.top + (parseFloat(cs.top) || 0);
+        const lineHeight = parseFloat(cs.height) || 0;
+        const lamps = [...list.querySelectorAll<HTMLElement>(':scope > li .lamp')].map((lamp) => {
+          const rect = lamp.getBoundingClientRect();
+          return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+        });
+        return {
+          content: cs.content,
+          left: cs.left,
+          right: cs.right,
+          lineCenter: lineTop + lineHeight / 2,
+          lamps,
+        };
+      });
+
+      expect(line.content, `${lane} has no lane line`).not.toBe('none');
+      expect(line.left).toBe('0px');
+      expect(line.right).toBe('0px');
+      expect(line.lamps.length).toBeGreaterThan(0);
+      /* Every lamp sits on the one line: the lane is connected, not a set of
+         rows with their own stubs. */
+      for (const lamp of line.lamps) {
+        expect(Math.abs(lamp.y - line.lineCenter), `${lane} lamp is off the line`).toBeLessThanOrEqual(1.5);
+      }
+    }
+  });
+
+  test('puts every dated stop in its own year column', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+
+    const axis = await columns(page);
+    const byYear = new Map(axis.map((c) => [c.text, c]));
+
+    const stops = await page.locator('#now .stop').evaluateAll((items) =>
+      items.map((li) => {
+        const rect = li.getBoundingClientRect();
+        return {
+          year: li.getAttribute('data-year'),
+          span: li.classList.contains('is-span'),
+          left: rect.left,
+          right: rect.right,
+          centre: rect.left + rect.width / 2,
+        };
+      }),
+    );
+
+    for (const stop of stops.filter((s) => s.year && !s.span)) {
+      const column = byYear.get(stop.year!)!;
+      expect(column, `no axis column for ${stop.year}`).toBeTruthy();
+      expect(stop.centre, `stop ${stop.year} is not in its column`).toBeGreaterThanOrEqual(column.left - 1);
+      expect(stop.centre, `stop ${stop.year} is not in its column`).toBeLessThanOrEqual(column.right + 1);
+    }
+  });
+
+  test('draws the B.Sc. as one bar from 2021 to 2025 with both ends labelled', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+
+    const axis = await columns(page);
+    const first = axis[0];
+    const last = axis[4];
+    expect(first.text).toBe('2021');
+    expect(last.text).toBe('2025');
+
+    const bar = await page.locator('#now .stop.is-span').evaluate((li) => {
+      const span = li.querySelector<HTMLElement>('.stop-span')!;
+      const rect = span.getBoundingClientRect();
+      const text = (li.textContent ?? '').replace(/\s+/g, ' ').trim();
+      return { left: rect.left, right: rect.right, text };
+    });
+
+    expect(bar.left, 'the bar does not start at 2021').toBeLessThanOrEqual(first.left + first.width);
+    expect(bar.right, 'the bar does not reach 2025').toBeGreaterThanOrEqual(last.right - 1);
+    expect(bar.text).toContain('B.Sc. in CSE, IIUC');
+    expect(bar.text).toContain('Aug 2021');
+    expect(bar.text).toContain('B.Sc. completed');
+    expect(bar.text).toContain('Dec 2025');
+  });
+
+  test('puts both M.Engg. stops at 2026 and lights the current one', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+
+    const axis = await columns(page);
+    const last = axis[5];
+    expect(last.text).toBe('2026');
+
+    const stops = await page.locator('#now .tl-lane-study .stop[data-year="2026"]').evaluateAll((items) =>
+      items.map((li) => {
+        const rect = li.getBoundingClientRect();
+        return {
+          text: (li.textContent ?? '').replace(/\s+/g, ' ').trim(),
+          current: li.classList.contains('is-current'),
+          lit: !!li.querySelector('.lamp.is-lit'),
+          centre: rect.left + rect.width / 2,
+        };
+      }),
+    );
+
+    expect(stops).toHaveLength(2);
+    expect(stops[0].text).toContain('Admitted to M.Engg., CUET');
+    expect(stops[1].text).toContain('M.Engg. in CSE, CUET');
+    for (const stop of stops) {
+      expect(stop.centre).toBeGreaterThanOrEqual(last.left - 1);
+      expect(stop.centre).toBeLessThanOrEqual(last.right + 1);
+    }
+
+    expect(stops.filter((s) => s.current)).toHaveLength(1);
+    expect(stops[1].lit).toBe(true);
+    expect(stops[0].lit).toBe(false);
+  });
+
+  test('lists the IIUCCPS sub-roles under their parent', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+
     const children = page.locator('#now .stop-child');
     await expect(children).toHaveCount(2);
     await expect(children.first()).toContainText('Bootcamp Coordinator');
+    await expect(children.nth(1)).toContainText('Finance Secretary');
   });
 
-  test('stacks into one vertical timeline on a phone', async ({ page }) => {
+  test('stacks into one readable timeline on a phone, in year order', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');
     await page.locator('#now').scrollIntoViewIfNeeded();
+
     /* The year ticks have no room to be an axis here, so they give way and each
        stop takes its own row. */
     await expect(page.locator('#now .years')).toBeHidden();
-    const columns = await page.locator('#now .tl-stops').evaluateAll((lists) =>
+    const directions = await page.locator('#now .tl-stops').evaluateAll((lists) =>
       lists.map((l) => getComputedStyle(l).flexDirection),
     );
-    expect(columns.every((d) => d === 'column')).toBe(true);
+    expect(directions.every((d) => d === 'column')).toBe(true);
+
+    /* Every stop is still listed, and the years never go backwards. */
+    for (const lane of ['study', 'work'] as const) {
+      const years = await page
+        .locator(`#now .tl-lane-${lane} .stop`)
+        .evaluateAll((items) => items.map((li) => Number(li.getAttribute('data-year'))));
+      expect(years.length).toBeGreaterThan(0);
+      for (let i = 1; i < years.length; i++) {
+        expect(years[i], `${lane} is out of year order`).toBeGreaterThanOrEqual(years[i - 1]);
+      }
+    }
+
+    /* Both ends of the B.Sc. survive the stacked layout. */
+    const bsc = page.locator('#now .stop.is-span');
+    await expect(bsc).toContainText('Aug 2021');
+    await expect(bsc).toContainText('B.Sc. completed');
+    await expect(bsc).toContainText('Dec 2025');
   });
 });

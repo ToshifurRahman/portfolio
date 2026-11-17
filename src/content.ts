@@ -207,18 +207,18 @@ export const contactLede = {
   rest: ' Email is the fastest way to reach me.',
 };
 
-/* The career path, drawn as the Now panel's static track on the home page.
+/* The career path, drawn as the Now panel's timeline on the home page.
  * Owner's own sequence (2026-11-15): "University -> Trainer & Mentor ->
  * Bootcamp Coordinator -> Finance Secretary -> Passed -> admitted to masters ->
  * Taibah Academy -> M.engg."
  *
  * Every label and date is taken from a fact already in this file, never typed
- * fresh here: stops 1 and 5 come from `education` (B.Sc. at IIUC, Aug 2021 to
- * Dec 2025), stops 2-4 from `experience` (Trainer & Mentor, Aug 2023, and its
- * own bullet "Also served as Bootcamp Coordinator and Finance Secretary"),
- * stops 7 and 8 from `experience` (Taibah Academy) and `education` (M.Engg.,
- * CUET). Stop 6 is the admission those dates imply; the owner's words name it.
- * A fact with no date in the source shows none here.
+ * fresh here: the B.Sc. comes from `education` (IIUC, Aug 2021 to Dec 2025),
+ * Trainer & Mentor from `experience` (Aug 2023, and its own bullet "Also served
+ * as Bootcamp Coordinator and Finance Secretary"), and the current work and
+ * master's from `experience` (Taibah Academy) and `education` (M.Engg., CUET).
+ * The admission is the step those dates imply; the owner's words name it. A
+ * fact with no date in the source shows none here.
  */
 export type PathStop = {
   label: string;
@@ -234,38 +234,55 @@ export type PathStop = {
      date in the source: it takes no position of its own and is listed under its
      parent. */
   year?: number;
-  /* A span the source dates at both ends (B.Sc. Aug 2021 to Dec 2025) may be
-     drawn as a bar from `year` to `yearEnd`. */
+  /* A span the source dates at both ends (B.Sc. Aug 2021 to Dec 2025) is drawn
+     as a bar from `year` to `yearEnd`. Its end carries the completion, so the
+     bar has two labelled ends rather than a second stop floating beside it. */
   yearEnd?: number;
+  endLabel?: string;
+  endDate?: string;
 };
 
 /*
  * The Now panel's two lanes, on one shared year axis. Owner, 2026-11-15:
  * "In Now, timeline chart not looking good, research to make it look good. drop
  * latest system & problem solving", and the answer: "the Now timeline becomes
- * two lanes, Study and Work".
+ * two lanes, Study and Work". Owner, 2026-11-17: the graph was "disconnected &
+ * misguided", so the axis is every year from the first to the last and the
+ * M.Engg. sits at 2026 (owner's ruling).
  *
  * Years are read off the dates the stops already carry; no new fact is stated.
- * B.Sc. runs Aug 2021 to Dec 2025, so it is drawn as a bar; the completion is
- * its end, not a section of its own. The admission to the master's has no date
- * in the source, so it sits with the M.Engg. that follows it rather than
- * claiming a year.
+ * B.Sc. runs Aug 2021 to Dec 2025, so it is one bar whose ends read "Aug 2021"
+ * and "B.Sc. completed / Dec 2025". The admission's text stays undated; the
+ * owner placed it at 2026 alongside the master's.
  */
 export const path: PathStop[] = [
-  { label: 'B.Sc. in CSE, IIUC', date: 'Aug 2021', lane: 'study', year: 2021, yearEnd: 2025 },
-  { label: 'B.Sc. completed', date: 'Dec 2025', lane: 'study', year: 2025 },
-  { label: 'Admitted to M.Engg., CUET', date: '', lane: 'study' },
-  { label: 'M.Engg. in CSE, CUET', date: 'In progress', lane: 'study', current: true },
+  {
+    label: 'B.Sc. in CSE, IIUC',
+    date: 'Aug 2021',
+    lane: 'study',
+    year: 2021,
+    yearEnd: 2025,
+    endLabel: 'B.Sc. completed',
+    endDate: 'Dec 2025',
+  },
+  { label: 'Admitted to M.Engg., CUET', date: '', lane: 'study', year: 2026 },
+  { label: 'M.Engg. in CSE, CUET', date: 'In progress', lane: 'study', year: 2026, current: true },
   { label: 'Trainer & Mentor, IIUCCPS', date: 'Aug 2023', lane: 'work', year: 2023 },
   { label: 'Bootcamp Coordinator, IIUCCPS', date: '', lane: 'work', parent: 'Trainer & Mentor, IIUCCPS' },
   { label: 'Finance Secretary, IIUCCPS', date: '', lane: 'work', parent: 'Trainer & Mentor, IIUCCPS' },
   { label: 'Web Developer, Taibah Academy', date: 'Aug 2026', lane: 'work', year: 2026, current: true },
 ];
 
-/* The year the axis ends at: the latest year any stop names. */
-export const pathYears = Array.from(
-  new Set(path.flatMap((stop) => [stop.year, stop.yearEnd]).filter((y): y is number => typeof y === 'number')),
-).sort((a, b) => a - b);
+/* The axis is every year between the first and the last year the stops state:
+   some years are real positions even when no stop sits on them, so distance on
+   the axis never lies. Derived from the data, never a hand-written list. */
+const statedYears = path
+  .flatMap((stop) => [stop.year, stop.yearEnd])
+  .filter((year): year is number => typeof year === 'number');
+const firstYear = Math.min(...statedYears);
+const lastYear = Math.max(...statedYears);
+
+export const pathYears = Array.from({ length: lastYear - firstYear + 1 }, (_, i) => firstYear + i);
 
 export type Certificate = {
   slug: string;
