@@ -426,9 +426,14 @@ function edgePath(
     const lane0 = right ? Math.max(a.x + a.w, b.x + b.w) + 10 : Math.min(a.x, b.x) - 10;
     const lane = right ? lane0 + sibling * 12 : lane0 - sibling * 12;
     const drop = a.y + a.h + 12 + sibling * 16;
+    /* The departure point itself is staggered: two edges that leave one box from the
+       same point share that vertical leg for 12 units before the lanes separate, which
+       is a visible overlap even though the endpoint is legitimately shared. Keep each
+       departure inside the box's own bottom edge. */
+    const sx = Math.min(a.x + a.w - 6, Math.max(a.x + 6, acx + (right ? 1 : -1) * sibling * 12));
     /* The second-to-last turn sits a whole marker above the target, so the final run is a
        straight leg the arrowhead can sit on (P2b-8: this leg measured 7 units). */
-    return `M${acx} ${a.y + a.h} V${drop} H${lane} V${b.y - EDGE_STOP - MARKER_LEN} H${b.x + b.w / 2} V${b.y - EDGE_STOP}`;
+    return `M${sx} ${a.y + a.h} V${drop} H${lane} V${b.y - EDGE_STOP - MARKER_LEN} H${b.x + b.w / 2} V${b.y - EDGE_STOP}`;
   }
   /* Above the source: up the gap and in from the top. */
   if (b.y + b.h <= a.y) {
@@ -617,6 +622,11 @@ export function Diagram({ spec }: { spec: DiagramSpec }) {
   const [playing, setPlaying] = useState(true);
   const [animated, setAnimated] = useState(false);
   const playingRef = useRef(true);
+  const [speed, setSpeed] = useState(1);
+  const speedRef = useRef(1);
+  /* Reset lives inside the animation effect, which owns the clock and the trail. The
+     control outside it asks for a reset through this ref. */
+  const resetRef = useRef<() => void>(() => {});
 
   const desktop = layoutDesktop(spec);
   const vertical = layoutVertical(spec);
@@ -624,6 +634,10 @@ export function Diagram({ spec }: { spec: DiagramSpec }) {
   useEffect(() => {
     playingRef.current = playing;
   }, [playing]);
+
+  useEffect(() => {
+    speedRef.current = speed;
+  }, [speed]);
 
   useEffect(() => {
     const root = svg.current;
@@ -639,11 +653,14 @@ export function Diagram({ spec }: { spec: DiagramSpec }) {
        twice, with its own length in its own viewBox, so every copy is kept and every
        copy is driven. Step timing comes from the first copy found (the desktop one),
        which is the feel the desktop layout already had. */
+    /* Every edge is two paths: a base track that is always drawn, and a lit overlay
+       whose visible length is the stretch the token has covered. The overlay is what
+       the clock drives; the track never changes. */
     const lit = new Map<string, SVGPathElement[]>();
     const len = new Map<string, number>();
     const pathLen = new Map<SVGPathElement, number>();
-    for (const el of figure.querySelectorAll<SVGPathElement>('[data-edge]')) {
-      const id = el.dataset.edge as string;
+    for (const el of figure.querySelectorAll<SVGPathElement>('[data-edge-lit]')) {
+      const id = el.dataset.edgeLit as string;
       const l = el.getTotalLength();
       pathLen.set(el, l);
       lit.set(id, [...(lit.get(id) ?? []), el]);
@@ -681,13 +698,49 @@ export function Diagram({ spec }: { spec: DiagramSpec }) {
       if (status.current) status.current.dataset.tone = tone;
     };
 
+    /* The edges this run has finished crossing, oldest first. They stay lit; the newest
+       keeps the glow and the rest step down so the direction the token came from is
+       readable. A restart empties it. */
+    let trail: string[] = [];
+
+    /* Opacity the older trail edges step down through. Recorded here rather than in CSS
+       because the count is per run, not per edge class. */
+    const TRAIL_OPACITY = [1, 0.55, 0.38, 0.26, 0.18];
+
+    const paintTrail = () => {
+      for (const paths of lit.values()) {
+        for (const p of paths) {
+          p.classList.remove('is-trail', 'is-newest');
+          p.style.opacity = '';
+        }
+      }
+      trail.forEach((id, i) => {
+        const rank = trail.length - 1 - i;
+        for (const p of lit.get(id) ?? []) {
+          p.classList.add('is-trail');
+          if (rank === 0) p.classList.add('is-newest');
+          p.style.opacity = `${TRAIL_OPACITY[Math.min(rank, TRAIL_OPACITY.length - 1)]}`;
+        }
+      });
+    };
+
+    const crossed = (edge: string) => {
+      if (trail[trail.length - 1] === edge) return;
+      const seen = trail.indexOf(edge);
+      if (seen >= 0) trail.splice(seen, 1);
+      trail.push(edge);
+      paintTrail();
+    };
+
     const reset = () => {
+      trail = [];
       lit.forEach((paths) => {
         for (const p of paths) {
           const l = pathLen.get(p) ?? 0;
           p.style.strokeDasharray = `${l} ${l}`;
           p.style.strokeDashoffset = `${l}`;
-          p.classList.remove('is-fail');
+          p.style.opacity = '';
+          p.classList.remove('is-fail', 'is-trail', 'is-newest');
         }
       });
       for (const n of spec.nodes) setNode(n.id, 'off');
@@ -725,10 +778,14 @@ export function Diagram({ spec }: { spec: DiagramSpec }) {
       last = now;
       if (!playingRef.current || !visible || document.hidden) return;
       const steps = spec.runs[run];
-      elapsed += dt;
+      elapsed += dt * speedRef.current;
       let s = steps[step];
       while (elapsed >= duration(s)) {
-        if (s.edge) place(s.edge, 1);
+        if (s.edge) {
+          place(s.edge, 1);
+          /* Finished crossing: it joins the trail and stays lit for the rest of the run. */
+          crossed(s.edge);
+        }
         elapsed -= duration(s);
         step += 1;
         if (step >= steps.length) {
@@ -747,6 +804,17 @@ export function Diagram({ spec }: { spec: DiagramSpec }) {
     const first = spec.runs[0][0];
     if (first.edge) place(first.edge, 0);
 
+    /* Back to the first step of the first run, with an empty trail. The caller resumes
+       playback; the clock only owns the position. */
+    resetRef.current = () => {
+      run = 0;
+      step = 0;
+      elapsed = 0;
+      reset();
+      enter(spec.runs[0][0]);
+      if (spec.runs[0][0].edge) place(spec.runs[0][0].edge, 0);
+    };
+
     const io =
       typeof IntersectionObserver === 'function'
         ? new IntersectionObserver(([entry]) => {
@@ -758,6 +826,7 @@ export function Diagram({ spec }: { spec: DiagramSpec }) {
     return () => {
       cancelAnimationFrame(frame);
       io?.disconnect();
+      resetRef.current = () => {};
     };
   }, [spec]);
 
@@ -780,11 +849,40 @@ export function Diagram({ spec }: { spec: DiagramSpec }) {
           <span ref={statusText}>{[...spec.runs[0]].reverse().find((s) => s.status)?.status ?? ''}</span>
         </span>
         {animated && (
-          <button type="button" className="flow-pause" onClick={() => setPlaying(!playing)}>
-            <PlayPauseIcon playing={playing} />
-            {playing ? 'Pause' : 'Play'}
-            <span className="visually-hidden"> the diagram</span>
-          </button>
+          <>
+            <button type="button" className="flow-pause" onClick={() => setPlaying(!playing)}>
+              <PlayPauseIcon playing={playing} />
+              {playing ? 'Pause' : 'Play'}
+              <span className="visually-hidden"> the diagram</span>
+            </button>
+            {!playing && (
+              <button
+                type="button"
+                className="flow-reset"
+                onClick={() => {
+                  resetRef.current();
+                  setPlaying(true);
+                }}
+              >
+                <ResetIcon />
+                Reset
+                <span className="visually-hidden"> the diagram</span>
+              </button>
+            )}
+            <div className="flow-speed" role="group" aria-label="Diagram speed">
+              {[0.75, 1, 1.5].map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  className="flow-speed-option"
+                  aria-pressed={speed === v}
+                  onClick={() => setSpeed(v)}
+                >
+                  {v}x
+                </button>
+              ))}
+            </div>
+          </>
         )}
       </div>
       <div className="flow-window">
@@ -1054,6 +1152,7 @@ function Graph({
                 style={!animated && !spec.still.edges.includes(e.id) ? { opacity: 0.45 } : undefined}
                 markerEnd={`url(#${marker})`}
               />
+              <path className="flow-edge-lit" d={d} data-edge-lit={e.id} />
             </g>
           );
         }
@@ -1163,6 +1262,7 @@ function Graph({
               style={!animated && !spec.still.edges.includes(e.id) ? { opacity: 0.45 } : undefined}
               markerEnd={`url(#${marker})`}
             />
+            <path className="flow-edge-lit" d={d} data-edge-lit={e.id} />
             {(() => {
               /* The pill and the words are rendered from the same `pos`. This is the
                  whole fix: they cannot disagree, because neither is stored. */
@@ -1287,6 +1387,23 @@ function PlayPauseIcon({ playing }: { playing: boolean }) {
       ) : (
         <path d="M5 3.2v9.6L12.5 8z" fill="currentColor" />
       )}
+    </svg>
+  );
+}
+
+/* Reset: an arrow turning back on itself, in the same one-stroke style as the
+   play/pause icon. */
+function ResetIcon() {
+  return (
+    <svg className="icon" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
+      <path
+        d="M3.2 8a4.8 4.8 0 1 0 1.5-3.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      <path d="M2.6 3.2v3.2h3.2" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   );
 }

@@ -1194,7 +1194,9 @@ textarea {
   width: 100vw;
   margin-inline: calc(50% - 50vw);
   border-block: var(--line) solid var(--rule);
-  background: var(--bg-raised);
+  /* No surface of its own: the page's ground shows through the chart, and the label
+     pills are cut from the same ground so they still hide the line under a label. */
+  background: transparent;
 }
 
 .flow-head {
@@ -1256,13 +1258,17 @@ textarea {
   background: var(--accent);
 }
 
-.flow-pause {
+.flow-pause,
+.flow-reset,
+.flow-speed-option {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  /* The full tap target, not `--target-sm`: this is the one control on the chart
-     and on a phone it is pressed with a thumb. */
+  /* The full tap target, not `--target-sm`: these are the chart's controls and on a
+     phone they are pressed with a thumb. */
   min-height: var(--target);
+  /* `0.75x` is narrower than a thumb, so the target is square as well as tall. */
+  min-width: var(--target);
   padding-inline: var(--space-3);
   border: var(--line) solid var(--rule-strong);
   border-radius: var(--radius-sm);
@@ -1270,9 +1276,24 @@ textarea {
   font-size: var(--text-sm);
 }
 
-.flow-pause:hover {
+.flow-pause:hover,
+.flow-reset:hover,
+.flow-speed-option:hover {
   border-color: var(--accent-text);
   color: var(--accent-text);
+}
+
+.flow-speed {
+  display: inline-flex;
+  gap: var(--space-1);
+}
+
+/* The selected speed is the one state the buttons have to show: a border and ink in
+   the accent's text tone, the same signal the Pause control uses on hover. */
+.flow-speed-option[aria-pressed='true'] {
+  border-color: var(--accent-text);
+  color: var(--accent-text);
+  font-weight: var(--weight-medium);
 }
 
 /* The window is the space the chart is drawn into. The SVG keeps its own aspect ratio and
@@ -1414,6 +1435,37 @@ textarea {
   stroke: var(--fail);
 }
 
+/* The lit layer over the track. The track path underneath is always drawn end to end,
+   so an edge is never invisible; this overlay grows along the edge as the token travels
+   and then stays as the run's trail. The newest finished edge keeps the glow, older ones
+   step down in opacity (set per edge by the engine, because it depends on the run). */
+.flow-edge-lit {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: var(--line-track);
+  stroke-linecap: round;
+  opacity: 1;
+  transition: opacity var(--dur-lamp) linear;
+}
+
+.flow-edge-lit.is-newest {
+  filter: drop-shadow(0 0 3px var(--accent));
+}
+
+.flow-edge-lit.is-fail {
+  stroke: var(--fail);
+}
+
+.flow-edge-lit.is-fail.is-newest {
+  filter: drop-shadow(0 0 3px var(--fail));
+}
+
+/* The still picture has no lit layer: it is the finished-run drawing, not a frame with
+   a trail frozen in it. The prerender and reduced motion both land here. */
+.flow-panel[data-still='true'] .flow-edge-lit {
+  opacity: 0;
+}
+
 .flow-edge-label {
   font-family: var(--mono);
   font-size: var(--flow-detail);
@@ -1426,7 +1478,7 @@ textarea {
    pill keeps the line from reading through the text (review ruling 10: an edge
    never crosses a label it does not own). */
 .flow-edge-pill {
-  fill: var(--bg-raised);
+  fill: var(--bg);
 }
 
 /* The heading above a stacked branch cluster on the vertical layout. It names where the
