@@ -264,7 +264,7 @@ const WIDTHS = [1440, 1280, 1024, 834, 390];
 for (const d of DIAGRAMS) {
   test.describe(`${d.slug}: no two edges run together`, () => {
     for (const width of WIDTHS) {
-      test(`${width}px: no edge shares a segment with another`, async ({ page }) => {
+      test(`${width}px: no edge shares a segment with another, or crosses one`, async ({ page }) => {
         await page.setViewportSize({ width, height: 900 });
         await page.emulateMedia({ reducedMotion: 'reduce' });
         await page.goto(d.path);
@@ -309,10 +309,63 @@ for (const d of DIAGRAMS) {
               if (run > 8) out.push(`${A.id} ~ ${B.id}, ${best.toFixed(1)}px apart for >8px`);
             }
           }
+
+          /* A perpendicular crossing is the other way two edges collide: one
+             horizontal run passes through another's vertical leg. Paths here are only
+             `M`, `H` and `V`, so axis-aligned segments are exact. A crossing at a
+             shared endpoint (a box border two edges both leave or enter) is not a
+             collision, so the point has to be clear of both segments' ends. */
+          const segs: { id: string; x1: number; y1: number; x2: number; y2: number }[] = [];
+          for (const path of svg.querySelectorAll<SVGPathElement>('path.flow-edge')) {
+            const id = path.getAttribute('data-edge') ?? '?';
+            const d = path.getAttribute('d') ?? '';
+            const cmds = d.match(/[MHV]/g) ?? [];
+            const nums = (d.match(/-?[\d.]+/g) ?? []).map(Number);
+            let cx = 0;
+            let cy = 0;
+            let i = 0;
+            for (const c of cmds) {
+              if (c === 'M') {
+                cx = nums[i++];
+                cy = nums[i++];
+              } else if (c === 'H') {
+                const nx = nums[i++];
+                segs.push({ id, x1: cx, y1: cy, x2: nx, y2: cy });
+                cx = nx;
+              } else {
+                const ny = nums[i++];
+                segs.push({ id, x1: cx, y1: cy, x2: cx, y2: ny });
+                cy = ny;
+              }
+            }
+          }
+          const nearEnd = (n: number, lo: number, hi: number) =>
+            Math.abs(n - lo) < 3 || Math.abs(n - hi) < 3;
+          for (let i = 0; i < segs.length; i++) {
+            for (let j = i + 1; j < segs.length; j++) {
+              const A = segs[i];
+              const B = segs[j];
+              if (A.id === B.id) continue;
+              const aH = Math.abs(A.y2 - A.y1) < 0.01;
+              const bH = Math.abs(B.y2 - B.y1) < 0.01;
+              if (aH === bH) continue;
+              const H = aH ? A : B;
+              const V = aH ? B : A;
+              const hLo = Math.min(H.x1, H.x2);
+              const hHi = Math.max(H.x1, H.x2);
+              const vLo = Math.min(V.y1, V.y2);
+              const vHi = Math.max(V.y1, V.y2);
+              const y = H.y1;
+              const x = V.x1;
+              if (x <= hLo || x >= hHi || y <= vLo || y >= vHi) continue;
+              if (nearEnd(x, hLo, hHi) && nearEnd(y, vLo, vHi)) continue;
+              out.push(`${H.id} crosses ${V.id} at (${x.toFixed(0)},${y.toFixed(0)})`);
+            }
+          }
           return out;
         });
 
-        expect(shared, 'edges sharing a segment').toEqual([]);
+        expect(shared, 'edges sharing a segment or crossing').toEqual([]);
       });
     }
 
@@ -345,6 +398,89 @@ for (const d of DIAGRAMS) {
         });
 
         expect(uneven, 'rows with uneven gaps').toEqual([]);
+      });
+    }
+  });
+
+  /* Owner, 2026-11-17: in the Architecture section the "sub heading containing
+     pause, speed button, diagram" is "breaking design pattern by not maintaining
+     gaps". The toolbar is one row of controls, so it takes one gap. Measured on
+     the children of `.flow-head`: the toolbar's boxes are not adjacent (title
+     pushes status away with `margin-right: auto`, Pause sits `--space-4` from
+     status while the speed options sit `--space-1` from each other), so the row
+     shows three rhythms — 460px, 16px and 4px on one line at 1440.
+
+     The gap is read from the row itself rather than restated as a literal, so
+     this asserts "one gap" rather than "this many pixels": it takes the toolbar's
+     own `column-gap` and requires every neighbour pair to be that. */
+  test.describe(`${d.slug}: the toolbar keeps one gap`, () => {
+    for (const width of [1440, 1280, 1024, 834, 390]) {
+      test(`${width}px: every gap in the toolbar is the same, inside the frame`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        await page.goto(d.path);
+        await panel(page, d.slug).scrollIntoViewIfNeeded();
+        await page.waitForTimeout(250);
+
+        const report = await panel(page, d.slug).evaluate((el) => {
+          const head = el.querySelector('.flow-head') as HTMLElement;
+          const cs = getComputedStyle(head);
+          const hr = head.getBoundingClientRect();
+          const inner = {
+            left: hr.left + parseFloat(cs.paddingLeft),
+            right: hr.right - parseFloat(cs.paddingRight),
+          };
+          /* The row's own items: the title block, the status line, the Pause
+             button, the Reset button (while paused) and the speed group. The speed
+             options are one group, so the group's own gap is checked separately. */
+          const items = [...head.children].map((c) => {
+            const r = c.getBoundingClientRect();
+            return { cls: c.className.toString(), left: r.left, right: r.right, top: r.top, bottom: r.bottom };
+          });
+          /* Group by row. Items on one line share vertical space even when their
+             boxes differ in height (the title block is taller than the speed group),
+             so a row is a set of items whose vertical spans overlap. A wrapped
+             toolbar is more than one line, and the gap applies within a line, so
+             pairs are only compared against a neighbour on their own row. */
+          const rows: (typeof items)[] = [];
+          for (const it of items) {
+            const row = rows.find((r) => r.some((o) => Math.min(o.bottom, it.bottom) - Math.max(o.top, it.top) > 1));
+            if (row) row.push(it);
+            else rows.push([it]);
+          }
+          const gaps: number[] = [];
+          const labels: string[] = [];
+          for (const row of rows) {
+            const sorted = [...row].sort((a, b) => a.left - b.left);
+            for (let i = 1; i < sorted.length; i++) {
+              gaps.push(sorted[i].left - sorted[i - 1].right);
+              labels.push(`${sorted[i - 1].cls}→${sorted[i].cls}`);
+            }
+          }
+          const speed = el.querySelector('.flow-speed') as HTMLElement;
+          const options = speed ? [...speed.children].map((c) => c.getBoundingClientRect()) : [];
+          const optionGaps = options.slice(1).map((r, i) => r.left - options[i].right);
+          const outside = items.filter((it) => it.left < inner.left - 0.5 || it.right > inner.right + 0.5);
+          return { gaps, labels, optionGaps, outside: outside.map((o) => o.cls), inner, rows: rows.length };
+        });
+
+        /* One rhythm: every neighbour pair on the row is the same distance apart.
+           The value is whatever the design tokens give it; what is asserted is that
+           there is exactly one. Before this, three sat on one line: 460px, 16px
+           and 4px. */
+        const all = [...report.gaps.map((g) => Math.round(g * 10) / 10), ...report.optionGaps.map((g) => Math.round(g * 10) / 10)];
+        if (all.length > 1) {
+          const spread = Math.max(...all) - Math.min(...all);
+          expect(
+            spread,
+            `toolbar gaps are not one rhythm: ${report.gaps
+              .map((g, i) => `${g.toFixed(1)} (${report.labels[i]})`)
+              .join(', ')}; speed options ${report.optionGaps.map((g) => g.toFixed(1)).join(', ')}`,
+          ).toBeLessThanOrEqual(0.5);
+        }
+        /* And it is a real gap, not zero. */
+        if (all.length) expect(Math.min(...all), 'the toolbar has no gap').toBeGreaterThan(0);
+        /* The row stays inside the section frame's inner edge at every width. */
+        expect(report.outside, 'toolbar items past the frame').toEqual([]);
       });
     }
   });
