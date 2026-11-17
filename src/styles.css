@@ -2246,6 +2246,15 @@ textarea {
   letter-spacing: var(--tracking-display);
 }
 
+.study-title a {
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.study-title a:hover,
+.study-title a:focus-visible {
+  color: var(--accent-text);
+}
+
 .study-lede {
   grid-column: 1 / span 9;
   max-width: 34em;
@@ -2267,8 +2276,15 @@ textarea {
 
 .meta {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.2fr) minmax(0, 2.4fr) minmax(0, 1fr);
+  /* Type and Stack get the room; Source takes the last column. */
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 2.4fr) minmax(0, 1fr);
   padding-inline: var(--pad);
+}
+
+/* A Live entry adds a fourth cell. It gets a track of its own so Live and
+   Source sit side by side; without this the fourth cell would wrap under Type. */
+.meta:has(> :nth-child(4)) {
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 2.2fr) minmax(0, 1fr) minmax(0, 1fr);
 }
 
 .meta > div {
@@ -2291,6 +2307,13 @@ textarea {
 .meta dd {
   font-size: var(--text-md);
   color: var(--ink);
+}
+
+/* Source and Live are the header's exits, so they carry the filled button with
+   a slightly tighter pad than the page's primary CTA. */
+.meta .meta-link {
+  padding-inline: var(--space-4);
+  font-size: var(--text-sm);
 }
 
 .meta dd a {
@@ -2646,6 +2669,16 @@ textarea {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  /* The Live variant keeps a clean 2x2; without it the third entry owns the
+     whole second row, so no empty quadrant sits under Stack. */
+  .meta:has(> :nth-child(4)) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .meta > div:nth-child(3):last-child {
+    grid-column: 1 / -1;
+  }
+
   .meta > div:nth-child(3) {
     padding-left: 0;
     border-left: 0;
@@ -2899,6 +2932,10 @@ textarea {
   }
 
   .meta {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .meta:has(> :nth-child(4)) {
     grid-template-columns: minmax(0, 1fr);
   }
 

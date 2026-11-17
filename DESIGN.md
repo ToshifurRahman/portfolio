@@ -355,7 +355,9 @@ and Contact, each a `Section` with its `id`, and the footer.
 Achievements, Skills, Contact. Certificates are part of Achievements, and Education has no bar
 entry because the bar holds five links. Whatever the bar lists, the sections keep this order.
 
-**Case studies.** A `study-head` (back link, title, lede), then the sticky sub-nav, then the
+**Case studies.** A `study-head` (back link, a title that links to the study's Live site or else
+its repo, lede), then the meta row (`Type` and `Stack` as plain facts, with Source and any Live
+site as highlighted link-buttons), then the sticky sub-nav, then the
 six sections (`sectionOrder` in `src/content.ts`: Overview, Problem, Architecture, Tech
 decisions, Challenges and solutions, Results — Challenges and Solutions are one section). The sub-nav is the bar's own `navbar` treatment applied to the case study's
 section list, and it lights **Work** while a case study is open — the owner asked for the two to
