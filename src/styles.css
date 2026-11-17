@@ -2309,11 +2309,32 @@ textarea {
   color: var(--ink);
 }
 
-/* Source and Live are the header's exits, so they carry the filled button with
-   a slightly tighter pad than the page's primary CTA. */
+/* Source Code and Live are the header's exits, and they wear the same chip as a
+   Skills item (owner, 2026-11-17: "remove bg of github & create same design as
+   Skills sections button"). The declarations are the `.skill-list li` ones rather
+   than copies of their values, so the two cannot drift: same mono face, same
+   `--text-xs`, same hairline `--rule-strong` border, no fill. The chip's own box is
+   below, in the `.meta dd a` rule that gives it the full target height. */
 .meta .meta-link {
-  padding-inline: var(--space-4);
-  font-size: var(--text-sm);
+  padding: var(--space-1) var(--space-2);
+  border: var(--line) solid var(--rule-strong);
+  border-radius: var(--radius-sm);
+  color: var(--ink-2);
+  font-family: var(--mono);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  transition:
+    color var(--dur-fast) linear,
+    border-color var(--dur-fast) linear;
+}
+
+/* The Skills chip's hover: text and border take the accent's text tone, which is
+   the darker amber that passes AA in the light theme. */
+@media (hover: hover) {
+  .meta .meta-link:hover {
+    color: var(--accent-text);
+    border-color: var(--accent);
+  }
 }
 
 .meta dd a {

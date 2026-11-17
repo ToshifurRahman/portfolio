@@ -68,12 +68,20 @@ describe('the case studies’ header', () => {
       expect(container.querySelector('.meta')!.textContent).not.toContain('Timeline');
     });
 
-    it(`${slug}: renders Source as a highlighted link-button`, () => {
+    it(`${slug}: renders Source Code as a Skills chip link`, () => {
+      /* Owner, 2026-11-17: "remove bg of github & create same design as Skills
+         sections button, write Source Code instead of source". The cell is a label
+         and a link, and the label now says what the link is. */
       const container = renderAt(`/work/${slug}`);
       const source = container.querySelector(`.meta a.meta-link[href="${repos[slug]}"]`);
-      expect(source, `${slug} has no highlighted Source link`).not.toBeNull();
+      expect(source, `${slug} has no Source Code link`).not.toBeNull();
       expect(source!.textContent).toBe('GitHub');
       expect(source!.getAttribute('rel')).toBe('noopener noreferrer');
+      /* Not the filled button: the chip look is asserted on the painted page, in
+         tests/e2e/case-study-meta.spec.ts. Here the class says it is not a button. */
+      expect(source!.classList.contains('button'), 'the chip is still the filled button').toBe(false);
+      const cell = source!.closest('.meta > div')!;
+      expect(cell.querySelector('dt')!.textContent).toBe('Source Code');
     });
 
     it(`${slug}: links the title to the repo when there is no Live entry`, () => {
@@ -88,16 +96,16 @@ describe('the case studies’ header', () => {
     });
   }
 
-  it('renders a Live button next to Source and points the title at Live', () => {
+  it('renders a Live chip next to Source Code and points the title at Live', () => {
     const base = caseStudies.find((s) => s.slug === 'ticket-pipeline')!;
     /* A test-only study: no Live URL exists in the source facts, so the real
        content must not gain one. */
     const study: CaseStudy = {
       ...base,
       meta: [
-        ...base.meta.filter((m) => m.label !== 'Source' && m.label !== 'Live'),
+        ...base.meta.filter((m) => m.label !== 'Source Code' && m.label !== 'Live'),
         { label: 'Live', value: 'ticket.example.com', href: 'https://ticket.example.com' },
-        { label: 'Source', value: 'GitHub', href: repos['ticket-pipeline'] },
+        { label: 'Source Code', value: 'GitHub', href: repos['ticket-pipeline'] },
       ],
     };
     const { container } = render(
@@ -120,7 +128,7 @@ describe('the case studies’ header', () => {
     const base = caseStudies.find((s) => s.slug === 'ticket-pipeline')!;
     const study: CaseStudy = {
       ...base,
-      meta: base.meta.filter((m) => m.label !== 'Live' && m.label !== 'Source'),
+      meta: base.meta.filter((m) => m.label !== 'Live' && m.label !== 'Source Code'),
     };
     const { container } = render(
       <MemoryRouter>
