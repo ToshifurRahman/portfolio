@@ -234,16 +234,18 @@ study at `/work/<slug>`, plus the home page and the 404. A new study needs no
 change there. `head()` and `applyHead()` give each document its own title and
 description from the study's `title` and `summary`.
 
-A new route does need one edit: add its line to `public/_redirects`, before the
-catch-all:
+A new route needs no host-rule edit. The build writes the study's own document
+to `dist/work/<slug>/index.html`, and `wrangler.jsonc` tells the host to serve
+the `dist` folder with `html_handling` set to `drop-trailing-slash`. That rule
+serves each pre-rendered folder at its address, so `/work/<slug>` gets the new
+document and `/work/<slug>/` redirects to it. The rule covers every study, so a
+third one is served with no change to the host config. `not_found_handling` is
+set to `404-page`, which keeps an unknown path on the 404 document with a 404
+status.
 
-```
-/work/<slug>  /work/<slug>/index.html  200
-```
-
-The catch-all stays last, so every unknown path keeps getting the 404 document
-with a 404 status. `vite.config.ts` needs no change: the `prerenderedRoutes`
-plugin serves any pre-rendered document and sends the rest to the 404.
+`vite.config.ts` needs no change either: the `prerenderedRoutes` plugin serves
+any pre-rendered document and sends the rest to the 404, which is what the host
+does in production.
 
 ## 8. Extend the tests that name the studies
 
@@ -291,6 +293,5 @@ env LH_PORT=4193 bun run e2e
 - [ ] `DiagramSpec` added to `diagrams`, with `clusters`, `runs` and `still`.
 - [ ] Container threshold added to `src/styles.css`.
 - [ ] `CHAINS` entry for the Work card.
-- [ ] Line added to `public/_redirects`.
 - [ ] Study and route lists in the tests extended.
 - [ ] Build, unit and e2e pass, and the new study is in the flowchart spec's list.
