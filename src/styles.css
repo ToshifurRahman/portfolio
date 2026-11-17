@@ -2441,6 +2441,17 @@ textarea {
   line-height: 1.2;
 }
 
+/* The Architecture section's heading does not stick. Its diagram is a full-width
+   band, so a sticky heading ends up sliding across the drawing: measured at 24-26px
+   of overlap at 26 of 31 scroll positions on both studies (owner, 2026-11-17:
+   "while scrolling, Architecture shows at bg overlapping diagram"). The heading
+   scrolls with its section instead, which is the only way the word and the chart
+   cannot occupy the same pixels. Every other section keeps the sticky heading: it
+   holds prose, and there it is useful and harmless. */
+.study .section:has(> .section-diagram) .section-heading {
+  position: static;
+}
+
 .prose {
   display: grid;
   gap: var(--space-8);

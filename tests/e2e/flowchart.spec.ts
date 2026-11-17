@@ -1867,3 +1867,61 @@ for (const d of DIAGRAMS) {
     }
   });
 }
+
+/* ---------------------------------------------------------------- case-polish
+ *
+ * Owner, 2026-11-17: "in architecture ... while scrolling, Architecture shows at
+ * bg overlapping diagram".
+ *
+ * The heading sticks under the sub-nav (`position: sticky`), and the diagram is a
+ * full-width band. Scrolling through the section therefore slid the sticky word
+ * "Architecture" across the drawing: 24-26px of overlap at 26 of 31 sampled
+ * scroll positions, on both studies, at 1440 and 1280.
+ *
+ * The assertion is the owner's own: while scrolling through the Architecture
+ * section, the heading's box and the diagram's box must never intersect. It is
+ * sampled across the section's whole scroll range rather than at one offset,
+ * because the overlap only appears between them and would pass at rest.
+ */
+for (const d of DIAGRAMS) {
+  test.describe(`${d.slug}: the Architecture heading stays off the diagram`, () => {
+    for (const width of [1440, 1280, 1024, 834]) {
+      test(`${width}px: the heading never overlaps the diagram while scrolling`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        await page.goto(d.path);
+
+        const report = await page.evaluate(async () => {
+          const section = document.getElementById('architecture') as HTMLElement;
+          const heading = section.querySelector('.section-heading') as HTMLElement;
+          const figure = section.querySelector('.flow-panel') as HTMLElement;
+          const start = section.getBoundingClientRect().top + scrollY;
+          const hits: string[] = [];
+          let samples = 0;
+          /* From a screen above the section to a screen past its bottom: every
+             offset a reader can stop at. */
+          for (let y = start - 300; y <= start + section.offsetHeight + 300; y += 50) {
+            scrollTo(0, Math.max(0, y));
+            /* Two frames: a sticky heading moves on the scroll event, and the
+               measurement has to be of the settled frame. */
+            await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+            const h = heading.getBoundingClientRect();
+            const f = figure.getBoundingClientRect();
+            samples += 1;
+            const ox = Math.min(h.right, f.right) - Math.max(h.left, f.left);
+            const oy = Math.min(h.bottom, f.bottom) - Math.max(h.top, f.top);
+            if (ox > 0 && oy > 0) {
+              hits.push(`scrollY ${Math.round(y - start)}: ${Math.round(ox)}x${Math.round(oy)}px`);
+            }
+          }
+          return { hits, samples };
+        });
+
+        /* Guards the guard: the sweep must actually cover the section, or this
+           passes by measuring nowhere. */
+        expect(report.samples, 'too few scroll positions sampled').toBeGreaterThan(10);
+        expect(report.hits, 'the heading box intersects the diagram').toEqual([]);
+      });
+    }
+  });
+}
