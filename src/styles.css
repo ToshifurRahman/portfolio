@@ -2224,10 +2224,15 @@ textarea {
 
 .meta {
   display: grid;
-  /* Type and Stack get the room; the Source button takes the last column, and a
-     study with a Live exit puts it in a fourth column sized to its own content. */
+  /* Type and Stack get the room; Source takes the last column. */
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 2.4fr) minmax(0, 1fr);
   padding-inline: var(--pad);
+}
+
+/* A Live entry adds a fourth cell. It gets a track of its own so Live and
+   Source sit side by side; without this the fourth cell would wrap under Type. */
+.meta:has(> :nth-child(4)) {
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 2.2fr) minmax(0, 1fr) minmax(0, 1fr);
 }
 
 .meta > div {
@@ -2612,6 +2617,16 @@ textarea {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  /* The Live variant keeps a clean 2x2; without it the third entry owns the
+     whole second row, so no empty quadrant sits under Stack. */
+  .meta:has(> :nth-child(4)) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .meta > div:nth-child(3):last-child {
+    grid-column: 1 / -1;
+  }
+
   .meta > div:nth-child(3) {
     padding-left: 0;
     border-left: 0;
@@ -2865,6 +2880,10 @@ textarea {
   }
 
   .meta {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .meta:has(> :nth-child(4)) {
     grid-template-columns: minmax(0, 1fr);
   }
 
