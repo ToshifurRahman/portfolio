@@ -58,20 +58,14 @@ describe('the case studies’ Architecture section', () => {
 });
 
 describe('the case studies’ header', () => {
-  it('has no Timeline line', () => {
-    /* Owner, 2026-11-17: "remove timeline" now covers the header's meta row as
-       well, reversing the 2026-11-15 ruling that kept the line. */
-    const container = renderAt('/work/ticket-pipeline');
-    const meta = container.querySelector('.meta');
-    expect(meta).not.toBeNull();
-    expect(meta!.textContent).not.toContain('Timeline');
-  });
-
   for (const slug of ['ticket-pipeline', 'rannaghor'] as const) {
     it(`${slug}: has no Timeline entry`, () => {
+      /* Owner, 2026-11-17: "remove timeline" now covers the header's meta row as
+         well, reversing the 2026-11-15 ruling that kept the line. */
       const container = renderAt(`/work/${slug}`);
       const labels = [...container.querySelectorAll('.meta dt')].map((dt) => dt.textContent);
       expect(labels).not.toContain('Timeline');
+      expect(container.querySelector('.meta')!.textContent).not.toContain('Timeline');
     });
 
     it(`${slug}: renders Source as a highlighted link-button`, () => {
@@ -120,6 +114,24 @@ describe('the case studies’ header', () => {
     expect(titleLink).not.toBeNull();
     expect(titleLink!.getAttribute('href')).toBe('https://ticket.example.com');
     expect(titleLink!.getAttribute('rel')).toBe('noopener noreferrer');
+  });
+
+  it('keeps the title plain when a study has neither Live nor Source', () => {
+    const base = caseStudies.find((s) => s.slug === 'ticket-pipeline')!;
+    const study: CaseStudy = {
+      ...base,
+      meta: base.meta.filter((m) => m.label !== 'Live' && m.label !== 'Source'),
+    };
+    const { container } = render(
+      <MemoryRouter>
+        <StudyHeader study={study} />
+      </MemoryRouter>,
+    );
+
+    const title = container.querySelector('h1.study-title');
+    expect(title).not.toBeNull();
+    expect(title!.querySelector('a'), 'the title links with no destination').toBeNull();
+    expect(container.querySelector('.meta .meta-link'), 'an exit rendered with no href').toBeNull();
   });
 
   it('invents no Live URL in the real content', () => {
