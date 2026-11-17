@@ -2684,12 +2684,12 @@ textarea {
     display: flex;
   }
 
-  /* No rule between rows either: the owner removed the lines that joined the
-     dots, and a full-width divider between stacked items reads as the same
-     connector. Each link keeps its own target height, so the rows stay apart. */
+  /* The owner removed the lines joining the dots, not the horizontal dividers
+     between stacked menu rows: those stay. */
   .nav-links a {
     width: 100%;
     padding-inline: 0;
+    border-top: var(--line) solid var(--rule);
     font-size: var(--text-lg);
   }
 

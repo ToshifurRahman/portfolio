@@ -62,7 +62,7 @@ test.describe('the top nav has no line between its lamps', () => {
     });
   }
 
-  test('at 390 px: the open phone menu has no connector either', async ({ page }) => {
+  test('at 390 px: the open phone menu keeps its row dividers and no connector', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');
     await page.getByRole('button', { name: /menu/i }).click();
@@ -77,21 +77,26 @@ test.describe('the top nav has no line between its lamps', () => {
         const height = parseFloat(cs.height) || 0;
         return cs.content !== 'none' && (width > 0 || height > 0);
       };
-      const anchorBorders = items.map((li) => {
+      /* The owner removed the lines *joining the dots*, not the horizontal
+         dividers between the stacked menu rows: those stay. */
+      const dividers = items.map((li) => {
         const cs = getComputedStyle(li.querySelector('a')!);
-        return (parseFloat(cs.borderTopWidth) || 0) + (parseFloat(cs.borderBottomWidth) || 0);
+        return { width: parseFloat(cs.borderTopWidth) || 0, style: cs.borderTopStyle };
       });
       return {
         count: items.length,
         draws: items.filter((li) => line(li, '::before') || line(li, '::after')).length,
-        anchorBorders: anchorBorders.filter((n) => n > 0).length,
+        dividers,
         lamps: items.filter((li) => li.querySelector('.lamp')?.getClientRects().length).length,
       };
     });
 
     expect(result.count).toBeGreaterThan(2);
-    expect(result.draws).toBe(0);
-    expect(result.anchorBorders, 'a border still separates two menu rows').toBe(0);
+    expect(result.draws, 'a connector between dots is still drawn').toBe(0);
+    expect(
+      result.dividers.filter((d) => d.style !== 'solid' || d.width < 0.5 || d.width > 1.5),
+      'a phone-menu row lost its divider',
+    ).toEqual([]);
     expect(result.lamps).toBe(result.count);
   });
 
