@@ -974,10 +974,6 @@ textarea {
   letter-spacing: var(--tracking-mono);
 }
 
-.year:last-child {
-  text-align: right;
-}
-
 .tl-lane {
   display: flex;
   flex-direction: column;

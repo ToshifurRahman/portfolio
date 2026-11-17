@@ -82,6 +82,45 @@ test.describe('the Now timeline', () => {
     expect(Math.max(...widths) - Math.min(...widths)).toBeLessThanOrEqual(1);
   });
 
+  test('aligns every year tick with its column and its stops', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+
+    const axis = await page.locator('#now .years li').evaluateAll((items) =>
+      items.map((li) => {
+        const range = document.createRange();
+        range.selectNodeContents(li);
+        const text = range.getBoundingClientRect();
+        const column = li.getBoundingClientRect();
+        return {
+          text: (li.textContent ?? '').trim(),
+          columnLeft: column.left,
+          columnRight: column.right,
+          textLeft: text.left,
+        };
+      }),
+    );
+
+    /* Each tick label starts at its column's start, like the stops do. A
+       right-aligned last tick put 2026's label at the column's end while both
+       2026 lamps sat at its start, so the stops read as sitting on 2025. */
+    for (const tick of axis) {
+      expect(tick.textLeft - tick.columnLeft, `${tick.text} tick is not at its column start`).toBeGreaterThanOrEqual(-1);
+      expect(tick.textLeft - tick.columnLeft, `${tick.text} tick is not at its column start`).toBeLessThanOrEqual(1);
+    }
+
+    /* The 2026 tick and the 2026 stops share that start line. */
+    const lamps = await page.locator('#now .stop[data-year="2026"] .lamp').evaluateAll((items) =>
+      items.map((lamp) => lamp.getBoundingClientRect().left),
+    );
+    const last = axis[axis.length - 1];
+    expect(last.text).toBe('2026');
+    expect(lamps.length).toBeGreaterThan(0);
+    expect(Math.min(...lamps) - last.textLeft, 'the 2026 tick is not above its stops').toBeLessThanOrEqual(1.5);
+    expect(Math.min(...lamps)).toBeGreaterThanOrEqual(last.columnLeft - 1);
+    expect(Math.max(...lamps)).toBeLessThanOrEqual(last.columnRight + 1);
+  });
+
   test('draws each lane as one continuous line through every stop', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');
