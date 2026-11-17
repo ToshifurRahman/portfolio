@@ -1247,7 +1247,11 @@ for (const d of DIAGRAMS) {
 
 for (const d of DIAGRAMS) {
   test.describe(`${d.slug}: the state rail`, () => {
-    for (const [w, h] of [[390, 844], [834, 900]] as const) {
+    /* The clearance is a rule about the join, not about the layout, so it holds at every
+       width the rail is drawn at. It was only checked at the two vertical ones, and the
+       desktop branches of `edgePath` never read `RAIL_STOP`: at 1440 the three state joins
+       on Ticket-Pipeline touched the dashed capsules (gap 0 units, 3.5 on 40a1256). */
+    for (const [w, h] of [[1440, 900], [1024, 900], [834, 900], [390, 844]] as const) {
       test(`connectors end clear of the pills at ${w}`, async ({ page }) => {
         await page.setViewportSize({ width: w, height: h });
         await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -1277,7 +1281,6 @@ for (const d of DIAGRAMS) {
           const pills = [...svg.querySelectorAll('.flow-node.is-state rect')].map((r) =>
             (r as SVGRectElement).getBBox(),
           );
-          if (!pills.length) return null;
 
           let minGapPx = Infinity;
           let where = '';
@@ -1300,11 +1303,16 @@ for (const d of DIAGRAMS) {
               }
             }
           }
-          return { px: minGapPx * scale, where, overhangU, scale };
+          return { px: minGapPx * scale, where, overhangU, scale, pills: pills.length };
         });
 
-        /* A study with no state rail has no rail connector to measure. */
-        if (!worst) return;
+        /* A study with no state rail has to say so, or the run passes by measuring
+           nothing: the earlier version returned early, so RannaGhor asserted nothing
+           at all. The count comes from the spec, so a study that gains a rail is
+           measured rather than skipped. */
+        const marked = diagrams[d.slug].nodes.filter((n) => n.state).length;
+        expect(worst.pills, `${d.slug} drew ${worst.pills} rail pills, spec has ${marked}`).toBe(marked);
+        if (!marked) return;
         /* The connector should stop at the cell edge, not touch it. One marker width of
            clearance is the smallest gap that reads as a deliberate join rather than a
            collision at 3x. */
