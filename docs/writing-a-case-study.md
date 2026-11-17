@@ -253,7 +253,6 @@ These files list the studies or the routes by hand. Add the new slug or route, a
 update any count that is pinned per study.
 
 - `tests/unit/prerender.test.ts`: add `work/<slug>/index.html` to the `routes` array.
-- `tests/unit/redirects.test.ts`: add the new route to the "serves each pre-rendered route" case.
 - `tests/unit/case-study-density.test.tsx`: it pins six decision cards and five or four pairs per study. Extend both expectations for the new slug.
 - `tests/unit/card-chain.test.ts` and `tests/unit/node-diagram.test.ts`: add the chain, if you added one.
 - `tests/e2e/flowchart.spec.ts`: the study is named in three places. Add it to `DIAGRAMS`, to `LABEL_SPEC`, and to the label-draw loop under `LABEL_SPEC` that draws every label the spec defines. The `labelSpec` helper narrows its argument to a union of the study slugs, so widen that too.
