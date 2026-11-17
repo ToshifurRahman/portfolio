@@ -409,6 +409,14 @@ export type Pair = { challenge: { lead: string; text: string }; solution: { lead
 
 export type Section = { id: string; title: string; blocks: Block[] };
 
+/* A header meta entry. The page understands four labels: `Type` and `Stack`
+   are plain facts, `Source` is the repo (an href is required for it to render),
+   and `Live` is the deployed site, shaped `{ label: 'Live', value: <host shown>,
+   href: <url> }`. Source and Live render as highlighted link-buttons, Live
+   first when both are present; every other label stays plain text. There is no
+   Timeline label: the owner removed it on 2026-11-17. */
+export type MetaEntry = { label: string; value: string; href?: string };
+
 export type CaseStudy = {
   slug: string;
   title: string;
@@ -418,7 +426,7 @@ export type CaseStudy = {
      the test pins the two together, so the card cannot claim something the
      page does not. */
   outcome: string;
-  meta: { label: string; value: string; href?: string }[];
+  meta: MetaEntry[];
   sections: Section[];
 };
 
@@ -446,7 +454,6 @@ const ticketPipeline: CaseStudy = {
     'A ticket goes from submission to a drafted reply without a staff member touching it, and the customer watches each step happen live.',
   meta: [
     { label: 'Type', value: 'Backend system with a web app' },
-    { label: 'Timeline', value: 'April to November 2026' },
     { label: 'Stack', value: 'Bun, Hono, PostgreSQL, Redis, AWS SQS, Socket.io, React' },
     { label: 'Source', value: 'GitHub', href: 'https://github.com/ToshifurRahman/ticket-pipe' },
   ],
@@ -646,7 +653,6 @@ const rannaghor: CaseStudy = {
     'The platform covers the full path from sign-up to a managed order, with a vendor dashboard and an admin panel.',
   meta: [
     { label: 'Type', value: 'Full-stack web app' },
-    { label: 'Timeline', value: 'January to March 2026' },
     { label: 'Stack', value: 'Bun, React 19, TanStack Router, Hono, Better Auth, Drizzle, PostgreSQL' },
     {
       label: 'Source',

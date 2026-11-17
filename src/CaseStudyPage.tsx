@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
-import { caseStudies, solutionsAnchor, type Block } from './content';
+import { caseStudies, solutionsAnchor, type Block, type CaseStudy, type MetaEntry } from './content';
 import { diagrams } from './diagrams';
 import { Diagram } from './Diagram';
 import { Footer } from './Footer';
@@ -60,33 +60,7 @@ export function CaseStudyPage() {
   return (
     <>
       <main id="main" className="page study">
-        <header className="frame grid12 study-head">
-          <p className="back">
-            <Link className="text-button" to="/#work">
-              <Arrow /> All work
-            </Link>
-          </p>
-          <h1 className="study-title">{study.title}</h1>
-          <p className="study-lede">
-            <Lede text={study.summary} />
-          </p>
-        </header>
-        <dl className="frame ruled meta">
-          {study.meta.map((m) => (
-            <div key={m.label}>
-              <dt>{m.label}</dt>
-              <dd>
-                {m.href ? (
-                  <a className="inline-link" href={m.href} rel="noopener noreferrer">
-                    {m.value}
-                  </a>
-                ) : (
-                  m.value
-                )}
-              </dd>
-            </div>
-          ))}
-        </dl>
+        <StudyHeader study={study} />
 
         <nav className="contents" aria-label="Case study sections">
           <ol ref={nav} className="frame">
@@ -141,6 +115,61 @@ export function CaseStudyPage() {
         </div>
       </main>
       <Footer />
+    </>
+  );
+}
+
+/* The study's title and meta row. Source and Live are the page's exits, so they
+   are the only entries drawn as highlighted link-buttons: Live first, then
+   Source, each in its own meta cell. The title links to Live when the study has
+   one, else to its repo, and stays plain text when it has neither. */
+export function StudyHeader({ study }: { study: CaseStudy }) {
+  const isExit = (m: MetaEntry) => (m.label === 'Source' || m.label === 'Live') && Boolean(m.href);
+  const facts = study.meta.filter((m) => !isExit(m));
+  const live = study.meta.find((m) => m.label === 'Live' && m.href);
+  const source = study.meta.find((m) => m.label === 'Source' && m.href);
+  const exits = [live, source].filter((m): m is MetaEntry => Boolean(m));
+  const titleHref = live?.href ?? source?.href;
+
+  return (
+    <>
+      <header className="frame grid12 study-head">
+        <p className="back">
+          <Link className="text-button" to="/#work">
+            <Arrow /> All work
+          </Link>
+        </p>
+        <h1 className="study-title">
+          {titleHref ? (
+            <a href={titleHref} rel="noopener noreferrer">
+              {study.title}
+            </a>
+          ) : (
+            study.title
+          )}
+        </h1>
+        <p className="study-lede">
+          <Lede text={study.summary} />
+        </p>
+      </header>
+      <dl className="frame ruled meta">
+        {facts.map((m) => (
+          <div key={m.label}>
+            <dt>{m.label}</dt>
+            <dd>{m.value}</dd>
+          </div>
+        ))}
+        {exits.map((m) => (
+          <div key={m.label}>
+            <dt>{m.label}</dt>
+            <dd>
+              <a className="button meta-link" href={m.href} rel="noopener noreferrer">
+                {m.value}
+              </a>
+            </dd>
+          </div>
+        ))}
+      </dl>
     </>
   );
 }

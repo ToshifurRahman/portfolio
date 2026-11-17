@@ -2194,6 +2194,15 @@ textarea {
   letter-spacing: var(--tracking-display);
 }
 
+.study-title a {
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.study-title a:hover,
+.study-title a:focus-visible {
+  color: var(--accent-text);
+}
+
 .study-lede {
   grid-column: 1 / span 9;
   max-width: 34em;
@@ -2215,7 +2224,9 @@ textarea {
 
 .meta {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.2fr) minmax(0, 2.4fr) minmax(0, 1fr);
+  /* Type and Stack get the room; the Source button takes the last column, and a
+     study with a Live exit puts it in a fourth column sized to its own content. */
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 2.4fr) minmax(0, 1fr);
   padding-inline: var(--pad);
 }
 
@@ -2239,6 +2250,13 @@ textarea {
 .meta dd {
   font-size: var(--text-md);
   color: var(--ink);
+}
+
+/* Source and Live are the header's exits, so they carry the filled button with
+   a slightly tighter pad than the page's primary CTA. */
+.meta .meta-link {
+  padding-inline: var(--space-4);
+  font-size: var(--text-sm);
 }
 
 .meta dd a {
