@@ -179,9 +179,9 @@ line into the group. Do not repeat a box's own label or sublabel in the heading:
 - `edge`: travel this edge, then light it.
 - `dur`: dwell this long, in milliseconds, with `status`.
 - `status`: the sentence in the chart's status line.
-- `tone`: `'run'`, `'fail'` or `'done'`, the run's colour.
+- `tone`: `'run'`, `'fail'` or `'done'`, the run's color.
 - `nodes`: the lamp states to set, as a record from node id to `LampState`.
-- `failEdge`: mark the edge just travelled as a failure.
+- `failEdge`: mark the edge just traveled as a failure.
 
 ### The 12px floor
 
@@ -254,10 +254,12 @@ update any count that is pinned per study.
 - `tests/unit/redirects.test.ts`: add the new route to the "serves each pre-rendered route" case.
 - `tests/unit/case-study-density.test.tsx`: it pins six decision cards and five or four pairs per study. Extend both expectations for the new slug.
 - `tests/unit/card-chain.test.ts` and `tests/unit/node-diagram.test.ts`: add the chain, if you added one.
-- `tests/e2e/flowchart.spec.ts`: add the study to `DIAGRAMS`.
+- `tests/e2e/flowchart.spec.ts`: the study is named in three places. Add it to `DIAGRAMS`, to `LABEL_SPEC`, and to the label-draw loop under `LABEL_SPEC` that draws every label the spec defines. The `labelSpec` helper narrows its argument to a union of the study slugs, so widen that too.
 - `tests/e2e/case-study-mobile.spec.ts`: add the route to `STUDIES`.
 - `tests/e2e/prerender.spec.ts`: add the pre-rendered study document.
 - `tests/e2e/a11y.spec.ts`: add the route to `pages` if you want axe on the new study.
+- `tests/e2e/footer-year.spec.ts`: add the route to its path list, so the footer year is checked on the new page.
+- `tests/e2e/dotted-path.spec.ts`: add the route to its study list, so the route serves its own pre-rendered document.
 
 `tests/unit/int-content.test.ts` loops `caseStudies`, so it covers the new study
 with no edit.
