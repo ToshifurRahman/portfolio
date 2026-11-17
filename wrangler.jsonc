@@ -1,0 +1,24 @@
+/*
+ * Cloudflare Workers static-assets config. The site is fully pre-rendered, so
+ * there is no Worker script: Cloudflare serves the dist folder directly.
+ *
+ * - html_handling "drop-trailing-slash": /work/x is served dist/work/x/index.html
+ *   and /work/x/ redirects to /work/x, the canonical address (vite preview's
+ *   prerenderedRoutes middleware does the same locally).
+ * - not_found_handling "404-page": an unknown path gets dist/404.html with a real
+ *   404 status. Never "single-page-application": that sends every unknown path
+ *   to the home page with a 200, a soft 404 that hides pages from crawlers.
+ *
+ * Committing this file also stops `wrangler deploy` from auto-configuring the
+ * project on each deploy (it otherwise generates an SPA config).
+ */
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "portfolio",
+  "compatibility_date": "2026-11-16",
+  "assets": {
+    "directory": "./dist",
+    "html_handling": "drop-trailing-slash",
+    "not_found_handling": "404-page"
+  }
+}
