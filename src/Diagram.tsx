@@ -394,29 +394,36 @@ function edgePath(
        an edge only ever spans the single gap between two neighbours. */
     /* The state pills keep their clearance (P2b-9) on their chain joins too: they are a
        set of dashed capsules, and ink on the border reads as a collision. */
-    const stop = a.state || b.state ? RAIL_STOP : EDGE_STOP;
+    const stop = b.state ? RAIL_STOP : EDGE_STOP;
     if (b.y >= a.y + a.h) {
       if (Math.abs(acx - bcx) < 1) return `M${acx} ${a.y + a.h} V${b.y - stop}`;
       const mid = Math.min((a.y + a.h + b.y) / 2, b.y - stop - MARKER_LEN);
       return `M${acx} ${a.y + a.h} V${mid} H${bcx} V${b.y - stop}`;
     }
-    /* Along the rail: side to side, or down one row. The rail is the one place two boxes
-       share a row, and it is the one join that ends clear rather than touching, so it uses
-       `RAIL_STOP` (P2b-9). */
-    if (Math.abs(a.y - b.y) < 1) return `M${a.x + a.w} ${a.y + a.h / 2} H${b.x - RAIL_STOP}`;
+    /* Along the rail: side to side, or down one row. Same stop rule as every other join:
+       the target's own kind decides (`P2b-9`). */
+    if (Math.abs(a.y - b.y) < 1) return `M${a.x + a.w} ${a.y + a.h / 2} H${b.x - stop}`;
     const mid = (a.y + a.h + b.y) / 2;
-    return `M${acx} ${a.y + a.h} V${mid} H${bcx} V${b.y - RAIL_STOP}`;
+    return `M${acx} ${a.y + a.h} V${mid} H${bcx} V${b.y - stop}`;
   }
   const acx = a.x + a.w / 2;
   const bcx = b.x + b.w / 2;
   const acy = a.y + a.h / 2;
   const bcy = b.y + b.h / 2;
+  /* The stop belongs to the join, not the layout. A state pill is one of a set of dashed
+     capsules, and ink landing on its border reads as a collision (P2b-9), so it takes
+     `RAIL_STOP` here exactly as it does on the vertical rail. This branch lives in the
+     desktop half of `edgePath`, and it used to read `RAIL_STOP` only under `if (vertical)`,
+     which left the three desktop state joins on Ticket-Pipeline touching their capsules:
+     gap 0 units at 1440, where 40a1256 had 3.5. The target decides, because the target is
+     the border the arrowhead's ink reaches. */
+  const stop = b.state ? RAIL_STOP : EDGE_STOP;
   /* Out to the outer margin, up to the target's own height, and in from the side:
      the margin is reserved and no box reaches into it. */
   if (route === 'loop-side') {
     const lane = bounds.laneR ?? bounds.w - 10;
-    if (bcy < acy) return `M${a.x + a.w} ${acy} H${lane} V${bcy} H${b.x + b.w + EDGE_STOP}`;
-    return `M${a.x + a.w} ${acy} H${lane} V${bcy} H${b.x + b.w + EDGE_STOP}`;
+    if (bcy < acy) return `M${a.x + a.w} ${acy} H${lane} V${bcy} H${b.x + b.w + stop}`;
+    return `M${a.x + a.w} ${acy} H${lane} V${bcy} H${b.x + b.w + stop}`;
   }
   if (route === 'loop-side-left') {
     /* The left margin, for a branch that leaves a box whose neighbours are below it.
@@ -424,12 +431,12 @@ function edgePath(
        straight leg rather than on the elbow (P2b-8: this leg was 7 units, a 12-unit marker
        long). */
     const lane = bounds.laneL ?? 8;
-    const approach = b.y - EDGE_STOP;
-    return `M${a.x} ${acy} H${lane} V${approach - MARKER_LEN} H${b.x - EDGE_STOP} V${approach}`;
+    const approach = b.y - stop;
+    return `M${a.x} ${acy} H${lane} V${approach - MARKER_LEN} H${b.x - stop} V${approach}`;
   }
   if (route === 'loop-bottom') {
     const lane = Math.min(bounds.h - 10, Math.max(a.y + a.h, b.y + b.h) + 30);
-    return `M${acx} ${a.y + a.h} V${lane} H${bcx} V${b.y + b.h + EDGE_STOP}`;
+    return `M${acx} ${a.y + a.h} V${lane} H${bcx} V${b.y + b.h + stop}`;
   }
 
   /* Below the source: down through the gap under it, then across to the target. */
@@ -438,7 +445,7 @@ function edgePath(
        down the earlier one's leg. The offset stays inside the box's own bottom edge, and
        the target shares the column, so the leg still lands on its border. */
     const stagger = acx + Math.min(a.w / 2 - 6, sibling * 14);
-    if (Math.abs(acx - bcx) < 1) return `M${stagger} ${a.y + a.h} V${b.y - EDGE_STOP}`;
+    if (Math.abs(acx - bcx) < 1) return `M${stagger} ${a.y + a.h} V${b.y - stop}`;
     /* To a box that is not directly below, the gap under the source is crossed at
        the outer edge of the two, so the horizontal run misses anything between. */
     const right = b.x > a.x;
@@ -458,20 +465,20 @@ function edgePath(
     const drop = Math.max(a.y + a.h + 2, a.y + a.h + 10 - sibling * 6);
     /* The second-to-last turn sits a whole marker above the target, so the final run is a
        straight leg the arrowhead can sit on (P2b-8: this leg measured 7 units). */
-    return `M${sx} ${a.y + a.h} V${drop} H${lane} V${b.y - EDGE_STOP - MARKER_LEN} H${b.x + b.w / 2} V${b.y - EDGE_STOP}`;
+    return `M${sx} ${a.y + a.h} V${drop} H${lane} V${b.y - stop - MARKER_LEN} H${b.x + b.w / 2} V${b.y - stop}`;
   }
   /* Above the source: up the gap and in from the top. */
   if (b.y + b.h <= a.y) {
     const above = b.y + b.h + (a.y - (b.y + b.h)) / 2;
-    if (Math.abs(acx - bcx) < 1) return `M${acx} ${a.y} V${b.y + b.h + EDGE_STOP}`;
-    return `M${acx} ${a.y} V${above} H${bcx} V${b.y + b.h + EDGE_STOP}`;
+    if (Math.abs(acx - bcx) < 1) return `M${acx} ${a.y} V${b.y + b.h + stop}`;
+    return `M${acx} ${a.y} V${above} H${bcx} V${b.y + b.h + stop}`;
   }
   /* Same band: side to side through the gap between them. */
-  if (b.x >= a.x + a.w) return `M${a.x + a.w} ${acy} H${b.x - EDGE_STOP}`;
-  if (a.x >= b.x + b.w) return `M${a.x} ${acy} H${b.x + b.w + EDGE_STOP}`;
+  if (b.x >= a.x + a.w) return `M${a.x + a.w} ${acy} H${b.x - stop}`;
+  if (a.x >= b.x + b.w) return `M${a.x} ${acy} H${b.x + b.w + stop}`;
   /* Overlapping bands: go round the outside rather than through the box. */
   const lane = b.x >= a.x ? b.x + b.w + 12 : b.x - 12;
-  return `M${a.x + a.w} ${acy} H${lane} V${bcy} H${b.x + b.w + EDGE_STOP}`;
+  return `M${a.x + a.w} ${acy} H${lane} V${bcy} H${b.x + b.w + stop}`;
 }
 
 /* A label's anchor: the middle of the gap its edge crosses. */
