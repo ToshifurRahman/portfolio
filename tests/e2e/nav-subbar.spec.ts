@@ -1,26 +1,20 @@
 import { expect, test } from '@playwright/test';
 
-/* Owner, 2026-11-15, owner at 23:03: "navbar design will be same as works page sub
-   navbar". The top bar now uses the sub-navbar's own language — a lamp per item
-   with a rail between them, its type, and its active treatment — and every
-   behaviour it had is kept. */
+/* Owner, 2026-11-15: "navbar design will be same as works page sub navbar".
+   Owner, 2026-11-17: "in nav, remove lines connected with dots" — the top bar
+   keeps the sub-navbar's lamps, type and active treatment, but no rail joins its
+   items. The sub-navbar's own rail is guarded in nav-rail.spec.ts. */
 
 test.describe('the navbar in the sub-navbar language', () => {
-  test('draws a rail between the items and a lamp on each', async ({ page }) => {
+  test('puts a lamp on every item and no line between them', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto('/');
     const links = page.locator('.nav-links a');
     const count = await links.count();
     expect(count).toBeGreaterThan(2);
 
-    /* Every visible item has a lamp, and every item but the first a rail joining
-       it to the one before. A hidden item contributes neither. */
+    /* Every visible item has a lamp, and none draws a connector. */
     await expect(page.locator('.nav-links a .lamp')).toHaveCount(count);
-    /* The rail is a pseudo-element, and a pseudo-element's painted box cannot be
-       read back through the DOM. What a viewer can check is asserted instead:
-       the items are flush (the rail occupies the gap the old `gap` used to
-       leave) and each one carries a lamp. The rail's own styling is covered by
-       SCSS-free CSS and is not worth a brittle probe. */
     const boxes = await page.locator('.nav-links li').evaluateAll((items) =>
       items
         .filter((li) => getComputedStyle(li).display !== 'none')
