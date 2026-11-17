@@ -234,10 +234,11 @@ one component that branches at all, and they switch `display`, not paint.)
 ### The night panel (`:root`)
 - **Ground** (`bg` `#0a0b0d`): the page, and the sticky bar — the bar is the page ground with a
   `rule` underline, not a raised band. **Raised** (`bg-raised` `#0f1114`): the one step up, used
-  for things that sit *over* the page — the flowchart panel and its label pills, the certificate
-  dialog and its thumbnail, and the Work node diagram's nodes — and for the Tech decision card,
-  the one place a raised ground sits behind body copy. There is no third elevation: a Work card is
-  not raised, it is ruled (see below), and a flowchart's node box is the page ground itself.
+  for things that sit *over* the page — the certificate dialog and its thumbnail, and the Work
+  node diagram's nodes — and for the Tech decision card, the one place a raised ground sits
+  behind body copy. There is no third elevation: a Work card is not raised, it is ruled (see
+  below), a flowchart's node box is the page ground itself, and the flowchart panel sits on the
+  page ground with ground-filled label pills.
 - **Ink** (`ink` `#f2f1ec`) is body text, headings, and the label on a ruled control such as a
   ghost button. **`ink-2`** (`#c4c7cd`) is the quieter second voice: copy controls, secondary
   labels. **`muted`** (`#8b9099`) is tertiary — captions, bar links, diagram labels, meta. Three
@@ -543,9 +544,9 @@ border is the only thing two edges have in common.
 - **Don't** add a second accent, or use `fail` as a UI colour.
 - **Don't** put a filled card behind body copy — the Tech decision card is the one exception, and
   it earns it by being a short paired readout rather than prose. `bg-raised` is otherwise the
-  surface of things that sit over the page (the flowchart's panel and label pills, the certificate
-  dialog and its thumbnail, the node diagram), never the bar; a Work card is a ruled row rather
-  than a raised box.
+  surface of things that sit over the page (the certificate dialog and its thumbnail, the node
+  diagram), never the bar; the flowchart panel sits on the page ground with ground-filled pills,
+  and a Work card is a ruled row rather than a raised box.
 - **Don't** add a drop shadow, a blur, or a third elevation step; the only `box-shadow`s are the
   zero-blur lamp rings.
 - **Don't** introduce a third rule strength or a fourth text weight.
