@@ -32,24 +32,16 @@ function Statement() {
   );
 }
 
-/* The column lines behind the introduction, one per grid column, with a cell in
-   each gap between them. The cells are what the owner's slow wave lights ("boxes
-   between strips glow up to down"); they are decorative and inert, so they are
-   hidden from assistive tech and never take a pointer. */
+/* The column lines behind the introduction, one per grid column. They are
+   decorative and inert, so they are hidden from assistive tech and never take a
+   pointer. The boxes that used to sit in the gaps between them were removed on
+   2026-11-17 (owner: "in hero, remove animations & colors on strip gaps"). */
 function Gridlines() {
   return (
     <div className="gridlines grid12" aria-hidden="true">
       {Array.from({ length: 12 }, (_, i) => (
         <span key={i} />
       ))}
-      <div className="hero-cells grid12">
-        {Array.from({ length: 11 }, (_, i) => (
-          /* `--cell-index` is what the wave's stagger reads. Without it every cell
-             reported `animation-delay: 0s` and the whole row lit at once, so the
-             light never travelled down the page (R4a-ds-2). */
-          <span key={i} className="hero-cell" style={{ gridColumn: i + 2, '--cell-index': i } as CSSProperties} />
-        ))}
-      </div>
     </div>
   );
 }
@@ -58,7 +50,7 @@ const meta = (c: CaseStudy, label: string) => c.meta.find((m) => m.label === lab
 
 export function Home() {
   useTitle();
-  const hero = useSignatureMotion();
+  useSignatureMotion();
   const { hash } = useLocation();
 
   /* A hash link lands on its section without hiding the heading under the
@@ -87,7 +79,7 @@ export function Home() {
         ))}
       </div>
       <main id="main" className="page home">
-        <header className="frame grid12 intro" ref={hero}>
+        <header className="frame grid12 intro">
           <Gridlines />
           <div className="intro-id">
             <h1 className="name">
