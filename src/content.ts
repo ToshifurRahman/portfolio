@@ -410,11 +410,11 @@ export type Pair = { challenge: { lead: string; text: string }; solution: { lead
 export type Section = { id: string; title: string; blocks: Block[] };
 
 /* A header meta entry. The page understands four labels: `Type` and `Stack`
-   are plain facts, `Source` is the repo (an href is required for it to render),
-   and `Live` is the deployed site, shaped `{ label: 'Live', value: <host shown>,
-   href: <url> }`. Source and Live render as highlighted link-buttons, Live
-   first when both are present; every other label stays plain text. There is no
-   Timeline label: the owner removed it on 2026-11-17. */
+   are plain facts, `Source` is the repo, and `Live` is the deployed site,
+   shaped `{ label: 'Live', value: <host shown>, href: <url> }`. An href makes
+   Source or Live a highlighted link-button (Live first when both are present);
+   without one, either renders as plain text, as every other label always does.
+   There is no Timeline label: the owner removed it on 2026-11-17. */
 export type MetaEntry = { label: string; value: string; href?: string };
 
 export type CaseStudy = {
