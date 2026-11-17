@@ -234,10 +234,11 @@ one component that branches at all, and they switch `display`, not paint.)
 ### The night panel (`:root`)
 - **Ground** (`bg` `#0a0b0d`): the page, and the sticky bar — the bar is the page ground with a
   `rule` underline, not a raised band. **Raised** (`bg-raised` `#0f1114`): the one step up, used
-  for things that sit *over* the page — the flowchart panel and its label pills, the certificate
-  dialog and its thumbnail, and the Work node diagram's nodes — and for the Tech decision card,
-  the one place a raised ground sits behind body copy. There is no third elevation: a Work card is
-  not raised, it is ruled (see below), and a flowchart's node box is the page ground itself.
+  for things that sit *over* the page — the certificate dialog and its thumbnail, and the Work
+  node diagram's nodes — and for the Tech decision card, the one place a raised ground sits
+  behind body copy. There is no third elevation: a Work card is not raised, it is ruled (see
+  below), a flowchart's node box is the page ground itself, and the flowchart panel sits on the
+  page ground with ground-filled label pills.
 - **Ink** (`ink` `#f2f1ec`) is body text, headings, and the label on a ruled control such as a
   ghost button. **`ink-2`** (`#c4c7cd`) is the quieter second voice: copy controls, secondary
   labels. **`muted`** (`#8b9099`) is tertiary — captions, bar links, diagram labels, meta. Three
@@ -464,6 +465,22 @@ The vertical layout is a complete picture of the same graph — spine, then each
 its own stacked cluster with a heading naming where it starts — not a crop. It switches on
 container width so each study keeps its own threshold.
 
+**Surface and motion.** The panel has no ground of its own: the page's background shows
+through, the panel keeps only its top and bottom rules, and the edge-label pills are cut from
+`--bg` so they still hide the line under a label. Every edge is drawn as two paths — a base
+track in `--track`, always visible end to end, and a lit overlay in `--accent` whose visible
+length is the stretch the token has covered. Edges the run has finished crossing stay lit:
+the newest keeps a soft accent glow at full strength and older ones step down (0.55, 0.38,
+0.26, 0.18), so the trail shows where the glow came from. A run's restart clears every
+overlay. Failure and refusal edges stay `--fail`. The still picture (prerender, reduced
+motion) is the finished-run drawing: the overlays are invisible there.
+
+**Controls.** Pause/Play is joined by a speed control (0.75x, 1x, 1.5x; default 1x, three
+`aria-pressed` buttons sharing the Pause control's shape) that multiplies the clock, so the
+change takes effect on the next frame without a jump. While paused, a Reset button restarts
+the first step of the first run, clears the trail and resumes playback. Under reduced motion
+none of the three controls is rendered.
+
 **A heading names a group; the edge into it keeps its label.** On the vertical layout the edge
 that enters a cluster is drawn as a short arrow in a 30-unit band between the heading and the
 group's first box, so the route or the failure that reaches the group still says which it is. The
@@ -504,8 +521,10 @@ on the vertical one — and the seed is a preference, not a permission: a label 
 is moved like any other. So the attribution rule is enforced on the vertical layout too, not merely
 measured there.
 
-The shared 12-unit departure leg where two edges leave one box remains by construction before the
-sibling stagger separates them (the owner ruled to leave it).
+The shared departure leg where two edges leave one box is staggered at the box edge itself:
+`edgePath`'s `sibling` index moves both the departure point and the lane, so two edges out of
+one box never share a segment, not even the first 12 units. A shared endpoint on the box
+border is the only thing two edges have in common.
 
 ## Do's and don'ts
 
@@ -525,9 +544,9 @@ sibling stagger separates them (the owner ruled to leave it).
 - **Don't** add a second accent, or use `fail` as a UI colour.
 - **Don't** put a filled card behind body copy — the Tech decision card is the one exception, and
   it earns it by being a short paired readout rather than prose. `bg-raised` is otherwise the
-  surface of things that sit over the page (the flowchart's panel and label pills, the certificate
-  dialog and its thumbnail, the node diagram), never the bar; a Work card is a ruled row rather
-  than a raised box.
+  surface of things that sit over the page (the certificate dialog and its thumbnail, the node
+  diagram), never the bar; the flowchart panel sits on the page ground with ground-filled pills,
+  and a Work card is a ruled row rather than a raised box.
 - **Don't** add a drop shadow, a blur, or a third elevation step; the only `box-shadow`s are the
   zero-blur lamp rings.
 - **Don't** introduce a third rule strength or a fourth text weight.
