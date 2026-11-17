@@ -1199,11 +1199,21 @@ textarea {
   background: transparent;
 }
 
+/* The toolbar is one row of controls, so it takes one gap. It used to run three
+   rhythms at once: the title pushed the status away with `margin-right: auto`
+   (460px at 1440), Pause sat `--space-4` from the status, and the speed options sat
+   `--space-1` from each other. The owner read that as the design pattern broken
+   ("sub heading containing pause, speed button, diagram are breaking design pattern
+   by not maintaining gaps"). One `column-gap` now sets every neighbour pair,
+   including the options inside `.flow-speed`, and the auto margin is gone: the
+   row's items sit at that one rhythm and the speed group is just the last of them.
+   `--space-3` is the gap: the largest token that still fits the whole row on one
+   line at 1024, which is the narrowest width the desktop toolbar is shown at. */
 .flow-head {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-2) var(--space-4);
+  gap: var(--space-3);
   padding: var(--space-4) max(var(--frame-margin), calc((100vw - var(--frame)) / 2));
   border-bottom: var(--line) solid var(--rule);
 }
@@ -1213,7 +1223,6 @@ textarea {
   flex-wrap: wrap;
   align-items: baseline;
   gap: var(--space-1) var(--space-3);
-  margin-right: auto;
   font-size: var(--text-md);
 }
 
@@ -1285,7 +1294,8 @@ textarea {
 
 .flow-speed {
   display: inline-flex;
-  gap: var(--space-1);
+  /* The same gap as the toolbar row: the group is not a tighter rhythm of its own. */
+  gap: var(--space-3);
 }
 
 /* The selected speed is the one state the buttons have to show: a border and ink in
