@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
-const pages = ['/', '/work/ticket-pipeline'];
+const pages = ['/', '/work/relay'];
 const themes = ['dark', 'light'] as const;
 const widths = [390, 1280];
 

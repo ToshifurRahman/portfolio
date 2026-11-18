@@ -255,8 +255,8 @@ describe('certificates', () => {
 });
 
 describe('case-study facts checked against the repositories', () => {
-  const ticketPipeline = caseStudies.find((s) => s.slug === 'ticket-pipeline')!;
-  const results = ticketPipeline.sections.find((s) => s.id === 'results')!;
+  const relay = caseStudies.find((s) => s.slug === 'relay')!;
+  const results = relay.sections.find((s) => s.id === 'results')!;
   const text = JSON.stringify(results);
 
   it('states the Lighthouse gate in plain words, with no command name', () => {

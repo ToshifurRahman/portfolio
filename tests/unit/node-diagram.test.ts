@@ -8,11 +8,11 @@ import { chainFor } from '../../src/NodeDiagram';
 const study = (slug: string) => caseStudies.find((c) => c.slug === slug)!;
 
 describe('the card node diagram', () => {
-  it('draws Ticket-Pipeline from the React app to the primary model', () => {
+  it('draws Relay from the React app to the primary model', () => {
     /* R4a-ds-3: the chain used to start at the API, because it was derived from
        the longest lane and that lane leaves the app out. The card starts at the
        app the customer uses. */
-    expect(chainFor(study('ticket-pipeline')).filter((n) => !n.branch).map((n) => n.label)).toEqual([
+    expect(chainFor(study('relay')).filter((n) => !n.branch).map((n) => n.label)).toEqual([
       'React app',
       'Hono API',
       'SQS queue',
@@ -23,7 +23,7 @@ describe('the card node diagram', () => {
   });
 
   it('branches to the backup model, because the lane note says the gateway switches', () => {
-    const chain = chainFor(study('ticket-pipeline'));
+    const chain = chainFor(study('relay'));
     const branch = chain.filter((n) => n.branch);
     expect(branch.map((n) => n.label)).toEqual(['Backup model']);
     /* The fork comes after the gateway it leaves from, not before it. */
@@ -38,8 +38,7 @@ describe('the card node diagram', () => {
     const chain = chainFor(study('rannaghor'));
     expect(chain.every((n) => !n.branch)).toBe(true);
     expect(chain.map((n) => n.label)).toEqual([
-      'Security and CSRF',
-      'Rate limit',
+      'Security headers',
       'Session',
       'Role check',
       'Route handler',

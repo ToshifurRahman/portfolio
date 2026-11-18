@@ -7,7 +7,7 @@ const sections = pageSections.map((section) => section.id);
 
 test.describe('navbar', () => {
   test('is sticky and present on every route', async ({ page }) => {
-    for (const path of ['/', '/work/ticket-pipeline', '/no-such-page']) {
+    for (const path of ['/', '/work/relay', '/no-such-page']) {
       await page.goto(path);
       const header = page.locator('header.site-header');
       await expect(header).toBeVisible();
@@ -17,7 +17,7 @@ test.describe('navbar', () => {
   });
 
   test('links to every home section from a case study page', async ({ page }) => {
-    await page.goto('/work/ticket-pipeline');
+    await page.goto('/work/relay');
     const nav = page.getByRole('navigation', { name: 'Primary' });
     await nav.getByRole('link', { name: 'Skills' }).click();
     await expect(page).toHaveURL(/\/#skills$/);

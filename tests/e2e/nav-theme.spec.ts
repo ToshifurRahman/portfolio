@@ -59,7 +59,7 @@ test.describe('theme', () => {
     await page.emulateMedia({ colorScheme: 'dark' });
     await page.goto('/');
     await toggle(page).click();
-    await page.getByRole('link', { name: /Ticket-Pipeline/ }).first().click();
+    await page.getByRole('link', { name: /Relay/ }).first().click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   });
 });

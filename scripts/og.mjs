@@ -39,7 +39,7 @@ const figures = proof
   .map((p) => `<li><span class="value">${escape(p.value)}</span><span class="label">${escape(p.label)}</span></li>`)
   .join('');
 
-/* Ticket-Pipeline's main line, as the home page's track draws it, completed. */
+/* Relay's main line, as the home page's track draws it, completed. */
 const stations = ['Queued', 'Triaging', 'Drafting', 'Completed'];
 const track = stations
   .map((name, i) => {

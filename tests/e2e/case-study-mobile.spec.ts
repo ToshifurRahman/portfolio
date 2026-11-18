@@ -5,7 +5,7 @@ import { expect, test } from '@playwright/test';
    sub-navbar, which is the one thing these pages have and `/` does not. */
 
 const WIDTHS = [360, 390, 430];
-const STUDIES = ['/work/ticket-pipeline', '/work/rannaghor'];
+const STUDIES = ['/work/relay', '/work/rannaghor'];
 
 for (const path of STUDIES) {
   for (const width of WIDTHS) {

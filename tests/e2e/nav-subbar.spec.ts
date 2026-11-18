@@ -39,7 +39,7 @@ test.describe('the navbar in the sub-navbar language', () => {
     const size = await links.first().evaluate((el) => getComputedStyle(el).fontSize);
     expect(size).toBe('14px');
 
-    await page.goto('/work/ticket-pipeline');
+    await page.goto('/work/relay');
     const subnavSize = await page
       .locator('.contents a')
       .first()

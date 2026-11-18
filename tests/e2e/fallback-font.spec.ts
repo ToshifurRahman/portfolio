@@ -51,7 +51,7 @@ for (const theme of ['dark', 'light'] as const) {
 test('fallback font: the case study page does not overflow either', async ({ page }) => {
   await blockFont(page);
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/work/ticket-pipeline');
+  await page.goto('/work/relay');
   await expect(page.locator('.study-title')).toBeVisible();
   const m = await page.evaluate(() => ({
     scrollWidth: document.documentElement.scrollWidth,

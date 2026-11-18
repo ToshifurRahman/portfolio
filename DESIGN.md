@@ -367,7 +367,7 @@ axis and turns the stops from a grid into a column (the two lanes are stacked at
 and restacks the Work node structure.
 
 The flowcharts switch layout on *container* width, not viewport: `@container (max-width: 1171px)`
-for Ticket-Pipeline and `1155px` for RannaGhor — each study's own viewBox width (1170.30 and
+for Relay and `1155px` for RannaGhor — each study's own viewBox width (1170.30 and
 1154.44 units) rounded up, so the switch happens just before the desktop graph would scale below
 1:1. Those numbers are not arbitrary — they are where the desktop chart would drop below 1:1 and
 take every label under the 12px floor.
@@ -452,7 +452,7 @@ carries information.
 ## The flowchart engine
 
 The two case studies draw a real graph, not a picture of one, and its rules are design rules
-because a wrong label changes what the diagram *says*. Ticket-Pipeline draws its own pipeline:
+because a wrong label changes what the diagram *says*. Relay draws its own pipeline:
 a React app, a Hono API, an SQS queue, a Worker, an LLM gateway with a Primary and a Backup
 model, an Event log onto the customer's page and the Ops feed, then the failure path (stage
 fails, retry, needs attention, replay by staff) and the ticket's four states. RannaGhor draws
@@ -517,7 +517,7 @@ the eye:
   next to it.
 - No height clamp exists and none may return. `Ruling 12`: the 12px floor outranks fitting in
   one window, so the chart scrolls on short viewports rather than shrinking its labels. The
-  desktop Ticket-Pipeline chart *does* fit a 1440x900 window (`P2b-4`, row spacing tightened to
+  desktop Relay chart *does* fit a 1440x900 window (`P2b-4`, row spacing tightened to
   `GAP_Y` 30), and at 1440 the type renders above the floor; below that height it scrolls. The
   drawing is 892px against the 900px window, but the 65px sticky bar means the chart is never
   wholly on screen at once — it fits the window, not the viewport under the bar.

@@ -25,7 +25,7 @@ const collect = (page: Page) => {
   return problems;
 };
 
-for (const path of ['/', '/work/ticket-pipeline', '/work/rannaghor', '/unknown-404-page']) {
+for (const path of ['/', '/work/relay', '/work/rannaghor', '/unknown-404-page']) {
   test(`the footer year survives a clock past New Year on ${path}`, async ({ page }) => {
     const problems = collect(page);
     await page.clock.install({ time: new Date(`${nextYear}-02-01T12:00:00Z`) });

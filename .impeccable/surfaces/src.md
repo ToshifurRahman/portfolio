@@ -9,11 +9,11 @@ related_targets: []
 
 Scope: `src/` of the portfolio; home page `/` and `/work/:slug`. Visitor mode: Experience.
 
-Audience and job: recruiters scanning for thirty seconds, then hiring engineers reading a case study. Action: download the CV, email, or open a case study. Content: the owner's facts, two seven-section case studies (Ticket-Pipeline, RannaGhor), short entries for other projects, CV sections. Constraints: dark first with a light theme and toggle, no profile picture, WCAG 2.2 AA, nothing invented.
+Audience and job: recruiters scanning for thirty seconds, then hiring engineers reading a case study. Action: download the CV, email, or open a case study. Content: the owner's facts, two seven-section case studies (Relay, RannaGhor), short entries for other projects, CV sections. Constraints: dark first with a light theme and toggle, no profile picture, WCAG 2.2 AA, nothing invented.
 
 Confirmed by the owner (2026-11-15, second redesign): redesign from scratch, inspired by neon.com, commandcode.ai and linear.app. First screen shows a system at work, supporting the core facts and never hiding them. Keep a light theme. Must not look like a SaaS landing page, must not look sparse. Content decisions from the previous round stand: Certificates under Achievements, no commit counts on the home page, no Focus or Studying lines. Section numbers were not kept.
 
-Memorable moment: a lit ticket runs Ticket-Pipeline's real track across the full width of the first screen, fails, takes the retry loop, and completes; on another run it exhausts retries, waits on the Needs-attention siding and is replayed.
+Memorable moment: a lit ticket runs Relay's real track across the full width of the first screen, fails, takes the retry loop, and completes; on another run it exhausts retries, waits on the Needs-attention siding and is replayed.
 
 ## Direction contract
 

@@ -414,7 +414,7 @@ function edgePath(
      capsules, and ink landing on its border reads as a collision (P2b-9), so it takes
      `RAIL_STOP` here exactly as it does on the vertical rail. This branch lives in the
      desktop half of `edgePath`, and it used to read `RAIL_STOP` only under `if (vertical)`,
-     which left the three desktop state joins on Ticket-Pipeline touching their capsules:
+     which left the three desktop state joins on Relay touching their capsules:
      gap 0 units at 1440, where 40a1256 had 3.5. The target decides, because the target is
      the border the arrowhead's ink reaches. */
   const stop = b.state ? RAIL_STOP : EDGE_STOP;
@@ -1069,11 +1069,13 @@ function Graph({
                 : 'branch'
             : e.route;
           /* Stagger only the departures that actually share a run: the same source box,
-             leaving toward the same side. The route is deliberately not part of the key —
-             a straight drop and a drop-and-turn toward one side share their departure leg
-             for as long as both are vertical, which is what put `authorise` and `refuse`
-             on the same 10-unit leg out of Role check. */
-          const key = `${from0 === a0 ? e.from : `entry:${e.to}`}:${b0.x > from0.x ? 'r' : 'l'}`;
+             leaving by the same edge of it. The route is deliberately not part of the key,
+             and neither is the target's side: an edge to a box below leaves through the
+             bottom edge whatever its column, so a drop and a drop-and-turn share their
+             first leg. That shared leg is what put `authorise` and `refuse` on the same
+             10-unit run out of Role check. */
+          const side = b0.y >= from0.y + from0.h ? 'd' : b0.x > from0.x ? 'r' : 'l';
+          const key = `${from0 === a0 ? e.from : `entry:${e.to}`}:${side}`;
           const sibling = departure.get(key) ?? 0;
           departure.set(key, sibling + 1);
           pathOf.set(e.id, edgePath(from0, b0, r0, bounds, vertical, sibling));
@@ -1183,7 +1185,7 @@ function Graph({
         const d = pathOf.get(e.id) ?? edgePath(sourceOf(e, a, b), b, route, bounds, vertical);
         /* One value decides where the label is, and both the words and the pill are
            rendered from it. The previous version measured a pill, moved the text with two
-           nudges and then drew the pill from the stale rectangle: Ticket-Pipeline's STAGE
+           nudges and then drew the pill from the stale rectangle: Relay's STAGE
            FAILS ended up 18px below its own words, painting over EACH STEP instead. Three
            passes in a row moved this defect to another label because each one added a
            nudge; there is now nowhere for the two to disagree. */

@@ -29,7 +29,7 @@ const n = (id: string, name: string, detail: string | undefined, at: Pos, vat: V
   ...extra,
 });
 
-/* ---------------------------------------------------------------- Ticket-Pipeline
+/* ---------------------------------------------------------------- Relay
  *
  * Desktop is five bands, each on its own row so no edge crosses a box:
  *
@@ -171,10 +171,10 @@ const TP_CLUSTERS: Cluster[] = [
   },
 ];
 
-const ticketPipeline: DiagramSpec = {
-  id: 'ticket-pipeline',
-  title: 'Ticket-Pipeline',
-  href: '/work/ticket-pipeline',
+const relay: DiagramSpec = {
+  id: 'relay',
+  title: 'Relay',
+  href: '/work/relay',
   note: 'A demo ticket through the system’s real states',
   nodes: TP_NODES,
   edges: TP_EDGES,
@@ -189,7 +189,7 @@ const ticketPipeline: DiagramSpec = {
     },
   },
   caption:
-    'Flowchart of Ticket-Pipeline. A React app submits a ticket to the Hono API, which stores it as queued and puts a message on SQS. A worker picks it up and makes one schema-checked call per stage through the LLM gateway: triage, then draft. The gateway uses Gemini and switches to Groq, the backup model, when the primary fails or times out. A stage that fails is retried up to three times; after that the ticket needs attention, ops is alerted, and staff can replay it from the stage that failed. The ticket moves queued, triaging, drafting, completed, and each step is pushed live to the customer’s page and the ops feed.',
+    'Flowchart of Relay. A React app submits a ticket to the Hono API, which stores it as queued and puts a message on SQS. A worker picks it up and makes one schema-checked call per stage through the LLM gateway: triage, then draft. The gateway uses Gemini and switches to Groq, the backup model, when the primary fails or times out. A stage that fails is retried up to three times; after that the ticket needs attention, ops is alerted, and staff can replay it from the stage that failed. The ticket moves queued, triaging, drafting, completed, and each step is pushed live to the customer’s page and the ops feed.',
 };
 
 /* ---------------------------------------------------------------- RannaGhor
@@ -199,13 +199,12 @@ const ticketPipeline: DiagramSpec = {
  */
 
 const RG_NODES: Node[] = [
-  n('security', securityCheckLabel, 'Every API call', { row: 0, col: 0 }, { row: 0, track: 0 }),
-  n('rate', 'Rate limit', 'Per account', { row: 0, col: 1 }, { row: 1, track: 0 }),
-  n('session', 'Session', 'Better Auth', { row: 0, col: 2 }, { row: 2, track: 0 }),
-  n('role', 'Role check', 'Vendor, admin, customer', { row: 0, col: 3 }, { row: 3, track: 0 }),
-  n('handler', 'Route handler', '21 route modules', { row: 1, col: 0 }, { row: 4, track: 0 }),
-  n('postgres', 'PostgreSQL', 'Drizzle', { row: 1, col: 1 }, { row: 5, track: 0 }),
-  n('tx', 'One transaction', 'Lock, check, reduce', { row: 1, col: 2 }, { row: 6, track: 0 }),
+  n('security', securityCheckLabel, 'Every response', { row: 0, col: 0 }, { row: 0, track: 0 }),
+  n('session', 'Session', 'Better Auth', { row: 0, col: 1 }, { row: 1, track: 0 }),
+  n('role', 'Role check', 'Vendor, admin, customer', { row: 0, col: 2 }, { row: 2, track: 0 }),
+  n('handler', 'Route handler', '21 route modules', { row: 1, col: 0 }, { row: 3, track: 0 }),
+  n('postgres', 'PostgreSQL', 'Drizzle', { row: 1, col: 1 }, { row: 4, track: 0 }),
+  n('tx', 'One transaction', 'Lock, check, reduce', { row: 1, col: 2 }, { row: 5, track: 0 }),
   /* The refusals are branches, so they sit in the indented track, after the spine:
      they are what happens instead of the next step, not a step after it. */
   /* The sublabel carries the fact the heading cannot: who is refused, and on what.
@@ -221,15 +220,14 @@ const RG_NODES: Node[] = [
      final approach at (104,114). A refusal is "what happens instead of the next step",
      and the step it replaces is the one below its own check, so this is also the truer
      reading order. */
-  n('refuseRole', '403: refused', 'Customer, vendor route', { row: 2, col: 3 }, { row: 7, track: 1 }),
-  n('refuseStock', 'Stock refused', 'The second order', { row: 2, col: 2 }, { row: 8, track: 1 }),
+  n('refuseRole', '403: refused', 'Customer, vendor route', { row: 2, col: 3 }, { row: 6, track: 1 }),
+  n('refuseStock', 'Stock refused', 'The second order', { row: 2, col: 2 }, { row: 7, track: 1 }),
 ];
 
 const RG_EDGES: Edge[] = [
-  { id: 'sec', from: 'security', to: 'rate', label: 'pass', route: 'right' },
-  { id: 'lim', from: 'rate', to: 'session', route: 'right' },
+  { id: 'sec', from: 'security', to: 'session', label: 'pass', route: 'right' },
   { id: 'sess', from: 'session', to: 'role', route: 'right' },
-  { id: 'authorise', from: 'role', to: 'handler', label: 'allowed', route: 'down-right' },
+  { id: 'authorise', from: 'role', to: 'handler', label: 'allowed', route: 'down-left' },
   { id: 'query', from: 'handler', to: 'postgres', route: 'right' },
   { id: 'commit', from: 'postgres', to: 'tx', label: 'an order', route: 'right' },
   /* One drop each. Both refusals sit under the box that refuses them, so the edge is a
@@ -237,14 +235,13 @@ const RG_EDGES: Edge[] = [
      and the two shared a corridor while `refuse` ran across the graph: its run cut
      `authorise`'s final approach at (104,114). With the targets in their own columns
      there is no corridor left to share. */
-  { id: 'refuse', from: 'role', to: 'refuseRole', label: 'vendor route', branch: true, route: 'down' },
+  { id: 'refuse', from: 'role', to: 'refuseRole', label: 'vendor route', branch: true, route: 'down-right' },
   { id: 'stockOut', from: 'tx', to: 'refuseStock', label: 'stock gone', branch: true, route: 'down' },
 ];
 
 const rgEnter: Step[] = [
   { edge: 'sec', status: 'A request arrives', nodes: { security: 'lit' } },
-  { edge: 'lim', status: 'Security and CSRF checks pass', nodes: { security: 'done', rate: 'lit' } },
-  { edge: 'sess', status: 'Within the rate limit, session read', nodes: { rate: 'done', session: 'lit' } },
+  { edge: 'sess', status: 'Security headers set, session read', nodes: { security: 'done', session: 'lit' } },
 ];
 
 const rgRuns: Step[][] = [
@@ -282,19 +279,19 @@ const rannaghor: DiagramSpec = {
   id: 'rannaghor',
   title: 'RannaGhor',
   href: '/work/rannaghor',
-  note: 'A customer’s request through every check it meets',
+  note: 'A customer’s request through the checks it meets',
   nodes: RG_NODES,
   edges: RG_EDGES,
   clusters: RG_CLUSTERS,
   runs: rgRuns,
   still: {
-    edges: ['sec', 'lim', 'sess', 'authorise', 'query', 'commit'],
+    edges: ['sec', 'sess', 'authorise', 'query', 'commit'],
     nodes: {
-      security: 'done', rate: 'done', session: 'done', role: 'done', handler: 'done', postgres: 'done', tx: 'done',
+      security: 'done', session: 'done', role: 'done', handler: 'done', postgres: 'done', tx: 'done',
     },
   },
   caption:
-    'Flowchart of how a RannaGhor request moves. Every API call passes a security and CSRF check, a rate limit, the session and a role check before it reaches a route handler and PostgreSQL. A customer calling a vendor route is refused at the role check by middleware that guards vendor and admin routes separately. An order locks the product rows, checks stock and reduces it in one database transaction; when two orders reach the last item, the first commits and the second is refused at the stock check.',
+    'Flowchart of how a RannaGhor request moves. Security headers are set on every response, and a signed-in request passes the session and a role check before it reaches a route handler and PostgreSQL. A customer calling a vendor route is refused at the role check by middleware that guards vendor and admin routes separately. An order locks the product rows, checks stock and reduces it in one database transaction; when two orders reach the last item, the first commits and the second is refused at the stock check.',
 };
 
-export const diagrams: Record<string, DiagramSpec> = { 'ticket-pipeline': ticketPipeline, rannaghor };
+export const diagrams: Record<string, DiagramSpec> = { relay, rannaghor };

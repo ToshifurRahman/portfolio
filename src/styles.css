@@ -1157,10 +1157,13 @@ textarea {
 }
 
 .flow-title a {
-  /* A standalone link to the study, so it carries the full tap target. */
+  /* A standalone link to the study, so it carries the full tap target. The width
+     matters as much as the height: a short study name ("Relay") is narrower than
+     the 44px target on its own. */
   display: inline-flex;
   align-items: center;
   min-height: var(--target);
+  min-width: var(--target);
   margin-block: calc((var(--target) - 1.5em) / -2);
   font-weight: var(--weight-semibold);
 }
@@ -1243,7 +1246,7 @@ textarea {
    It is deliberately NOT height-capped to the viewport. With
    `preserveAspectRatio="xMidYMid meet"` a max-height shrinks the drawing on both axes at
    once, so capping the height quietly took every label under the 12px floor wherever the
-   graph was taller than the window — 5.34px on Ticket-Pipeline at 1024x720, 9.44px at
+   graph was taller than the window — 5.34px on Relay at 1024x720, 9.44px at
    1280x720. The floor is a promise to the reader; fitting one screen at every window size
    is not, and the two cannot both hold once the natural drawing is taller than the window.
 
@@ -1277,17 +1280,17 @@ textarea {
 /* The layout switches where the *desktop* graph stops drawing at 1:1, not at a round
    breakpoint. The graph is scaled to fit, and scaling it below 1:1 takes every label
    under the 12px floor: at 1024 RannaGhor rendered 9.6px, at 1100 10.3px. The two
-   studies have different widths (Ticket-Pipeline 1170.30 units, RannaGhor 1154.44), so
+   studies have different widths (Relay 1170.30 units, RannaGhor 1154.44), so
    each gets its own threshold — a single breakpoint cannot serve both without shrinking
    one. Each threshold is its study's viewBox width rounded up (1170.30 -> 1171,
    1154.44 -> 1155), in the container's own units, so the switch happens just before the
    desktop graph would scale below 1:1. */
 @container (max-width: 1171px) {
-  .flow-panel[data-diagram='ticket-pipeline'] .flow-h {
+  .flow-panel[data-diagram='relay'] .flow-h {
     display: none;
   }
 
-  .flow-panel[data-diagram='ticket-pipeline'] .flow-v {
+  .flow-panel[data-diagram='relay'] .flow-v {
     display: block;
   }
 }

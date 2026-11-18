@@ -102,7 +102,7 @@ test.describe('the top nav has no line between its lamps', () => {
 
   test('keeps every lamp and lights the current item', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto('/work/ticket-pipeline');
+    await page.goto('/work/relay');
 
     const state = await page.evaluate(() => {
       const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
@@ -134,7 +134,7 @@ test.describe('the top nav has no line between its lamps', () => {
 
   test('the case-study contents sub-nav keeps its rail', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto('/work/ticket-pipeline');
+    await page.goto('/work/relay');
 
     const rail = await page.evaluate(() => {
       const li = document.querySelector<HTMLElement>('.contents li:not(:last-child)');

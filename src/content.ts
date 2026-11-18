@@ -495,8 +495,11 @@ export type Lane = {
 /* The name of RannaGhor's first check, stated once. The architecture lane and
    the case study's flowchart both show this check on the same page, so both read
    it from here rather than each spelling it out: two names for one thing on one
-   screen is a defect the page can grow by itself. */
-export const securityCheckLabel = "Security and CSRF";
+   screen is a defect the page can grow by itself. The check is the security
+   headers middleware, which `apps/server/src/index.ts` applies to every request.
+   The repository's CSRF middleware is exported but never mounted, so the study
+   does not claim it. */
+export const securityCheckLabel = "Security headers";
 
 export type Block =
   | { kind: "p"; text: string }
@@ -559,9 +562,9 @@ export const sectionOrder = [
    #solutions still land where they used to. */
 export const solutionsAnchor = "solutions";
 
-const ticketPipeline: CaseStudy = {
-  slug: "ticket-pipeline",
-  title: "Ticket-Pipeline",
+const relay: CaseStudy = {
+  slug: "relay",
+  title: "Relay",
   summary:
     "A support-ticket pipeline. A customer submits a ticket, a background worker triages it with an LLM and drafts a reply, and the customer watches it happen live.",
   outcome:
@@ -575,7 +578,12 @@ const ticketPipeline: CaseStudy = {
     {
       label: "Source Code",
       value: "GitHub",
-      href: "https://github.com/ToshifurRahman/ticket-pipe",
+      href: "https://github.com/ToshifurRahman/relay",
+    },
+    {
+      label: "Live",
+      value: "ticket-pipeline.onrender.com",
+      href: "https://ticket-pipeline.onrender.com",
     },
   ],
   sections: [
@@ -585,7 +593,7 @@ const ticketPipeline: CaseStudy = {
       blocks: [
         {
           kind: "p",
-          text: "Ticket-Pipeline takes a support request from submission to a drafted reply without a person in the loop. A worker reads the ticket, sorts it by category, priority and sentiment, then writes a customer reply, an internal note and next steps.",
+          text: "Relay takes a support request from submission to a drafted reply without a person in the loop. A worker reads the ticket, sorts it by category, priority and sentiment, then writes a customer reply, an internal note and next steps.",
         },
         {
           kind: "p",
@@ -770,7 +778,7 @@ const ticketPipeline: CaseStudy = {
               label:
                 "test files across the API, worker, web app and end-to-end suite",
             },
-            { value: "266", label: "commits since April 2026" },
+            { value: "267", label: "commits since April 2026" },
             {
               value: "90+",
               label:
@@ -842,33 +850,30 @@ const rannaghor: CaseStudy = {
       blocks: [
         {
           kind: "diagram",
-          caption: "One monorepo: two apps that share three packages.",
+          caption: "One monorepo: two apps that share four packages.",
           lanes: [
             {
-              label: "Request",
-              nodes: ["React web app", "Hono API", "Drizzle ORM", "PostgreSQL"],
-            },
-            {
-              label: "Every API call",
+              label: "A signed-in request",
               nodes: [
                 securityCheckLabel,
-                "Rate limit",
                 "Session",
                 "Role check",
                 "Route handler",
+                "PostgreSQL",
               ],
+              note: "Security headers are set on every response. Session and role checks guard the routes that need them, and vendor and admin routes are guarded separately.",
             },
             {
               label: "Shared packages",
-              nodes: ["auth", "db", "env"],
+              nodes: ["auth", "db", "env", "config"],
               siblings: true,
-              note: "Both apps import the same sign-in setup, database schema and validated environment.",
+              note: "Both apps import the same sign-in setup, database schema and validated environment, and extend one shared TypeScript config.",
             },
           ],
         },
         {
           kind: "p",
-          text: "The API is split into 21 route modules. Routes are defined with OpenAPI schemas, so requests and responses are validated and the API documentation is generated from the same definitions.",
+          text: "The API is split into 21 route modules. Some routes are defined with OpenAPI schemas, so their requests and responses are validated and the API documentation is generated from the same definitions.",
         },
       ],
     },
@@ -885,7 +890,7 @@ const rannaghor: CaseStudy = {
             },
             {
               lead: "Hono with typed OpenAPI routes.",
-              text: "One definition gives validation, types and documentation.",
+              text: "One definition gives validation, types and documentation for the routes that use it.",
             },
             {
               lead: "Drizzle ORM on PostgreSQL.",
@@ -972,7 +977,7 @@ const rannaghor: CaseStudy = {
             {
               value: "64",
               label:
-                "commits in under two months, 59 of them merged pull requests",
+                "commits in under two months, 60 of them merged pull requests",
             },
             { value: "21", label: "API route modules" },
             {
@@ -991,4 +996,4 @@ const rannaghor: CaseStudy = {
   ],
 };
 
-export const caseStudies: CaseStudy[] = [ticketPipeline, rannaghor];
+export const caseStudies: CaseStudy[] = [relay, rannaghor];

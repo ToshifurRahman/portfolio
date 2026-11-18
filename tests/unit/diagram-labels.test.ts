@@ -17,7 +17,7 @@ const laneNodes = (slug: string, lane: string) => {
 
 describe('the security check has one name', () => {
   it('names it the same way in the lane and in the flowchart', () => {
-    expect(laneNodes('rannaghor', 'Every API call')).toContain(securityCheckLabel);
+    expect(laneNodes('rannaghor', 'A signed-in request')).toContain(securityCheckLabel);
     const node = diagrams['rannaghor'].nodes.find((s) => s.id === 'security');
     expect(node?.name).toBe(securityCheckLabel);
   });
@@ -25,7 +25,7 @@ describe('the security check has one name', () => {
   it('is stated once, and is the wording the lane already used', () => {
     /* The constant carries the lane's own words, so R2-3's other spelling is
        retired rather than kept as a second name on the same screen. */
-    expect(securityCheckLabel).toBe('Security and CSRF');
+    expect(securityCheckLabel).toBe('Security headers');
     expect(securityCheckLabel).not.toBe('Security, CSRF');
   });
 
@@ -34,6 +34,6 @@ describe('the security check has one name', () => {
        must be non-empty as well as equal. */
     const node = diagrams['rannaghor'].nodes.find((s) => s.id === 'security');
     expect(node?.name).toBeTruthy();
-    expect(laneNodes('rannaghor', 'Every API call')[0]).toBe(node?.name);
+    expect(laneNodes('rannaghor', 'A signed-in request')[0]).toBe(node?.name);
   });
 });

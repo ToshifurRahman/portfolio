@@ -7,9 +7,9 @@ import type { CaseStudy } from './content';
  * own: every label is checked against src/content.ts, and a label the source does
  * not name fails the unit test.
  *
- * One branch is allowed, and only where the source states one. Ticket-Pipeline's
- * gateway switches to a backup model when the primary fails or times out, so the
- * diagram forks after the gateway; RannaGhor's lane has no such fork.
+ * One branch is allowed, and only where the source states one. Relay's gateway
+ * switches to a backup model when the primary fails or times out, so the diagram
+ * forks after the gateway; RannaGhor's lane has no such fork.
  *
  * The boxes are real text in a list, so the diagram reads with no CSS and needs
  * no SVG. On a phone the row cannot hold six boxes, so the chain turns vertical
@@ -22,25 +22,25 @@ type Node = { label: string; branch?: boolean };
 /* The chain to draw, by slug.
  *
  * It is a spec rather than a heuristic. Picking the longest lane gave the wrong
- * chain twice (R4a-ds-3): Ticket-Pipeline's longest lane starts at the API, so the
- * card showed no React app in front of it, and RannaGhor's stops at the route
- * handler, so the card showed no database behind it. Which parts a card shows is a
- * decision, so it is written down.
+ * chain twice (R4a-ds-3): Relay's longest lane starts at the API, so the card
+ * showed no React app in front of it, and RannaGhor's stops at the route handler,
+ * so the card showed no database behind it. Which parts a card shows is a decision,
+ * so it is written down.
  *
  * Every label is still sourced: `chain()` checks each one against the study's own
  * lanes and notes, and the unit test fails on a box the source does not name. The
- * Ticket-Pipeline card deliberately has no PostgreSQL node — the brief names six
- * parts plus the branch, and a seventh box does not fit a card. */
+ * Relay card deliberately has no PostgreSQL node — the brief names six parts plus
+ * the branch, and a seventh box does not fit a card. */
 const CHAINS: Record<string, string[]> = {
-  'ticket-pipeline': ['React app', 'Hono API', 'SQS queue', 'Worker', 'LLM gateway', 'Primary model'],
-  rannaghor: ['Security and CSRF', 'Rate limit', 'Session', 'Role check', 'Route handler', 'PostgreSQL'],
+  relay: ['React app', 'Hono API', 'SQS queue', 'Worker', 'LLM gateway', 'Primary model'],
+  rannaghor: ['Security headers', 'Session', 'Role check', 'Route handler', 'PostgreSQL'],
 };
 
-/* The branch, where the source states one. Ticket-Pipeline's Work lane says the
-   gateway switches to a backup model when the primary fails or times out; it is
-   the only fork in either study, so it is named here and checked against the note. */
+/* The branch, where the source states one. Relay's Work lane says the gateway
+   switches to a backup model when the primary fails or times out; it is the only
+   fork in either study, so it is named here and checked against the note. */
 const BRANCH: Record<string, { after: string; label: string }> = {
-  'ticket-pipeline': { after: 'LLM gateway', label: 'Backup model' },
+  relay: { after: 'LLM gateway', label: 'Backup model' },
 };
 
 export function chainFor(study: CaseStudy): Node[] {
