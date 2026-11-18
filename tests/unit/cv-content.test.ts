@@ -274,7 +274,7 @@ describe('case-study facts checked against the repositories', () => {
     expect(text).not.toContain('"value":"119"');
   });
 
-  it('opens each Results section with a plain outcome sentence from the docs', () => {
+  it('opens each Results section with a plain sentence from the docs', () => {
     for (const study of caseStudies) {
       const first = study.sections.find((s) => s.id === 'results')!.blocks[0];
       expect(first.kind, study.slug).toBe('p');

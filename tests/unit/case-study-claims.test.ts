@@ -46,69 +46,89 @@ describe('the shared packages claim matches the repository', () => {
   });
 });
 
-describe('plain American English', () => {
-  /* The guide: "Write plain American English in short sentences." */
-  const BRITISH = [
-    'behaviour',
-    'summarised',
-    'authorisation',
-    'catalogue',
-    'organis',
-    'recognis',
-    'colour',
-    'favour',
-    'licence',
-    'centre',
-    'analys',
-    'optimis',
-    'prioritis',
-    'normalis',
-    'customis',
-    'utilis',
-    'minimis',
-    'maximis',
-    'realis',
-    'initialis',
-    'serialis',
-    'apologis',
-    'specialis',
-    'standardis',
-    'visualis',
-    'categoris',
-    'characteris',
-    'criticis',
-    'memoris',
-    'mobilis',
-    'stabilis',
-    'synchronis',
-    'modelling',
-    'travelling',
-    'cancelled',
-    'labelled',
-    'signalled',
-    'fuelled',
-    'judgement',
-    'acknowledgement',
-    'defence',
-    'programme',
-    'whilst',
-    'amongst',
-    'learnt',
-    'spelt',
-    'practise',
-    'enrol',
-    'fulfil',
-    'skilful',
-    'wilful',
-  ];
+/* The guide: "Write plain American English in short sentences."
+   Each entry is a whole-word pattern with the British inflections spelled out, so
+   the American forms that share a stem still pass: "analysis" is not "analyse",
+   "enroll" is not "enrol", "practice" is not "practise", "fulfill" is not "fulfil".
+   "analyses" is left out on purpose: it is the American plural of "analysis" as
+   well as a British verb, so flagging it would be a false positive. */
+const BRITISH: { label: string; pattern: RegExp }[] = [
+  { label: 'behaviour', pattern: /\bbehaviours?\b/ },
+  { label: 'summarise', pattern: /\bsummaris(e|ed|es|ing)\b/ },
+  { label: 'authorise', pattern: /\bauthoris(e|ed|es|ing|ation|ations)\b/ },
+  { label: 'catalogue', pattern: /\bcatalogues?\b/ },
+  { label: 'organise', pattern: /\borganis(e|ed|es|ing|ation|ations|er|ers)\b/ },
+  { label: 'recognise', pattern: /\brecognis(e|ed|es|ing|able)\b/ },
+  { label: 'colour', pattern: /\bcolours?\b/ },
+  { label: 'favour', pattern: /\bfavours?\b/ },
+  { label: 'licence', pattern: /\blicence\b/ },
+  { label: 'centre', pattern: /\bcentres?\b/ },
+  { label: 'analyse', pattern: /\banalys(e|ed|ing)\b/ },
+  { label: 'optimise', pattern: /\boptimis(e|ed|es|ing|ation)\b/ },
+  { label: 'prioritise', pattern: /\bprioritis(e|ed|es|ing|ation)\b/ },
+  { label: 'normalise', pattern: /\bnormalis(e|ed|es|ing|ation)\b/ },
+  { label: 'customise', pattern: /\bcustomis(e|ed|es|ing|ation)\b/ },
+  { label: 'utilise', pattern: /\butilis(e|ed|es|ing|ation)\b/ },
+  { label: 'minimise', pattern: /\bminimis(e|ed|es|ing)\b/ },
+  { label: 'maximise', pattern: /\bmaximis(e|ed|es|ing)\b/ },
+  { label: 'realise', pattern: /\brealis(e|ed|es|ing|ation)\b/ },
+  { label: 'initialise', pattern: /\binitialis(e|ed|es|ing|ation)\b/ },
+  { label: 'serialise', pattern: /\bserialis(e|ed|es|ing|ation)\b/ },
+  { label: 'apologise', pattern: /\bapologis(e|ed|es|ing)\b/ },
+  { label: 'specialise', pattern: /\bspecialis(e|ed|es|ing|ation)\b/ },
+  { label: 'standardise', pattern: /\bstandardis(e|ed|es|ing|ation)\b/ },
+  { label: 'visualise', pattern: /\bvisualis(e|ed|es|ing|ation)\b/ },
+  { label: 'categorise', pattern: /\bcategoris(e|ed|es|ing|ation)\b/ },
+  { label: 'characterise', pattern: /\bcharacteris(e|ed|es|ing|ation)\b/ },
+  { label: 'criticise', pattern: /\bcriticis(e|ed|es|ing)\b/ },
+  { label: 'memorise', pattern: /\bmemoris(e|ed|es|ing)\b/ },
+  { label: 'mobilise', pattern: /\bmobilis(e|ed|es|ing|ation)\b/ },
+  { label: 'stabilise', pattern: /\bstabilis(e|ed|es|ing|ation)\b/ },
+  { label: 'synchronise', pattern: /\bsynchronis(e|ed|es|ing|ation)\b/ },
+  { label: 'modelling', pattern: /\bmodell(ed|ing)\b/ },
+  { label: 'travelling', pattern: /\btravell(ed|ing|er|ers)\b/ },
+  { label: 'cancelled', pattern: /\bcancell(ed|ing)\b/ },
+  { label: 'labelled', pattern: /\blabell(ed|ing)\b/ },
+  { label: 'signalled', pattern: /\bsignall(ed|ing)\b/ },
+  { label: 'fuelled', pattern: /\bfuell(ed|ing)\b/ },
+  { label: 'judgement', pattern: /\bjudgements?\b/ },
+  { label: 'acknowledgement', pattern: /\backnowledgements?\b/ },
+  { label: 'defence', pattern: /\bdefences?\b/ },
+  { label: 'programme', pattern: /\bprogrammes?\b/ },
+  { label: 'whilst', pattern: /\bwhilst\b/ },
+  { label: 'amongst', pattern: /\bamongst\b/ },
+  { label: 'learnt', pattern: /\blearnt\b/ },
+  { label: 'spelt', pattern: /\bspelt\b/ },
+  { label: 'practise', pattern: /\bpractis(e|ed|es|ing)\b/ },
+  { label: 'enrol', pattern: /\benrol(s|ed|ing|ment|ments)?\b/ },
+  { label: 'fulfil', pattern: /\bfulfil(s|ed|ing|ment|ments)?\b/ },
+  { label: 'skilful', pattern: /\bskilful(ly)?\b/ },
+  { label: 'wilful', pattern: /\bwilful(ly)?\b/ },
+];
 
+const britishSpellings = (body: string) =>
+  BRITISH.filter(({ pattern }) => pattern.test(body.toLowerCase())).map(({ label }) => label);
+
+describe('plain American English', () => {
   for (const { slug } of caseStudies) {
     it(`${slug}: uses no British spelling`, () => {
-      const body = text(slug).toLowerCase();
-      const found = BRITISH.filter((word) => body.includes(word));
+      const found = britishSpellings(text(slug));
       expect(found, `${slug} uses ${found.join(', ')}`).toEqual([]);
     });
   }
+
+  it('passes the American forms that share a British stem', () => {
+    expect(britishSpellings('an analysis of the enroll flow, then practice and fulfill')).toEqual([]);
+  });
+
+  it('fails the British forms of the same words', () => {
+    expect(britishSpellings('we analyse the enrol flow, then practise and fulfil')).toEqual([
+      'analyse',
+      'practise',
+      'enrol',
+      'fulfil',
+    ]);
+  });
 });
 
 describe('no Ticket-Pipeline leftovers', () => {
