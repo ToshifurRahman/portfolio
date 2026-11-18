@@ -1280,11 +1280,13 @@ textarea {
 /* The layout switches where the *desktop* graph stops drawing at 1:1, not at a round
    breakpoint. The graph is scaled to fit, and scaling it below 1:1 takes every label
    under the 12px floor: at 1024 RannaGhor rendered 9.6px, at 1100 10.3px. The two
-   studies have different widths (Relay 1170.30 units, RannaGhor 1154.44), so
+   studies have different widths (Relay 1170.30 units, RannaGhor 1111.48), so
    each gets its own threshold — a single breakpoint cannot serve both without shrinking
    one. Each threshold is its study's viewBox width rounded up (1170.30 -> 1171,
-   1154.44 -> 1155), in the container's own units, so the switch happens just before the
-   desktop graph would scale below 1:1. */
+   1111.48 -> 1112), in the container's own units, so the switch happens just before the
+   desktop graph would scale below 1:1. RannaGhor's was 1155 while it still had a rate
+   node; the graph narrowed when that node came out, and the threshold has to follow it
+   or the vertical chart is chosen about 44px early. */
 @container (max-width: 1171px) {
   .flow-panel[data-diagram='relay'] .flow-h {
     display: none;
@@ -1295,7 +1297,7 @@ textarea {
   }
 }
 
-@container (max-width: 1155px) {
+@container (max-width: 1112px) {
   .flow-panel[data-diagram='rannaghor'] .flow-h {
     display: none;
   }

@@ -679,7 +679,7 @@ const relay: CaseStudy = {
             },
             {
               lead: "One forced, schema-checked call per stage.",
-              text: "Each call must return a named function schema, validated with Zod. It is not an agent loop, so cost and behaviour stay predictable.",
+              text: "Each call must return a named function schema, validated with Zod. It is not an agent loop, so cost and behavior stay predictable.",
             },
             {
               lead: "A gateway with a primary and a backup provider.",
@@ -768,7 +768,7 @@ const relay: CaseStudy = {
       blocks: [
         {
           kind: "p",
-          text: "A ticket goes from submission to a drafted reply without a staff member touching it, and the customer watches each step happen live.",
+          text: "Accessibility is checked automatically on every route. Every provider call is recorded with its outcome, latency and token count, and summarized in the ops console. The app ships as one Docker image and deploys only after CI passes.",
         },
         {
           kind: "facts",
@@ -792,7 +792,7 @@ const relay: CaseStudy = {
         },
         {
           kind: "p",
-          text: "Accessibility is checked automatically on every route. Every provider call is recorded with its outcome, latency and token count, and summarised in the ops console. The app ships as one Docker image and deploys only after CI passes.",
+          text: "A ticket goes from submission to a drafted reply without a staff member touching it, and the customer watches each step happen live.",
         },
       ],
     },
@@ -826,7 +826,7 @@ const rannaghor: CaseStudy = {
       blocks: [
         {
           kind: "p",
-          text: "RannaGhor is an online marketplace. Customers browse a catalogue, search, save items to a wishlist, fill a cart and place orders. Vendors register, wait for approval, then manage their own products. Admins approve vendors and run the platform from an admin panel.",
+          text: "RannaGhor is an online marketplace. Customers browse a catalog, search, save items to a wishlist, fill a cart and place orders. Vendors register, wait for approval, then manage their own products. Admins approve vendors and run the platform from an admin panel.",
         },
         {
           kind: "p",
@@ -850,7 +850,7 @@ const rannaghor: CaseStudy = {
       blocks: [
         {
           kind: "diagram",
-          caption: "One monorepo: two apps that share four packages.",
+          caption: "One monorepo: two apps and four packages.",
           lanes: [
             {
               label: "A signed-in request",
@@ -867,7 +867,7 @@ const rannaghor: CaseStudy = {
               label: "Shared packages",
               nodes: ["auth", "db", "env", "config"],
               siblings: true,
-              note: "Both apps import the same sign-in setup, database schema and validated environment, and extend one shared TypeScript config.",
+              note: "The server and auth share the database schema, and both apps read their environment through the same package. The workspaces that extend the shared TypeScript config do so from one base file.",
             },
           ],
         },
@@ -886,7 +886,7 @@ const rannaghor: CaseStudy = {
           items: [
             {
               lead: "A Bun monorepo with shared packages.",
-              text: "The web app and the API use the same schema, sign-in setup and environment checks, so they cannot disagree.",
+              text: "The API and the auth package share one schema, and both apps read their environment through the same package, so they cannot disagree.",
             },
             {
               lead: "Hono with typed OpenAPI routes.",
@@ -926,7 +926,7 @@ const rannaghor: CaseStudy = {
               },
               solution: {
                 lead: "Role checks as middleware, proven by tests.",
-                text: "Separate middleware guards vendor and admin routes. Dedicated test suites cover authorisation, privilege escalation, session security and database row-level policies.",
+                text: "Separate middleware guards vendor and admin routes. Dedicated test suites cover authorization, privilege escalation, session security and database row-level policies.",
               },
             },
             {

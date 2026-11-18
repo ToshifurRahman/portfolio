@@ -882,8 +882,9 @@ const SWEEP: number[] = (() => {
   /* The panel's padding means each per-study switch lands between viewport widths, and
      the switch has landed inside a 20px step more than once: RannaGhor rendered 11.988px
      at 1208 and Relay 11.989 at 1057 (ds). Sample either side of each switch
-     at 1px, so the sliver cannot hide between samples. */
-  for (const edge of [1050, 1057, 1160, 1169, 1170, 1208, 1210, 1270]) {
+     at 1px, so the sliver cannot hide between samples. RannaGhor's switch moved to a
+     1112px container when its graph narrowed, which is a viewport of about 1165. */
+  for (const edge of [1050, 1057, 1160, 1165, 1169, 1170, 1208, 1210, 1270]) {
     for (const d of [-3, -2, -1, 0, 1, 2, 3]) if (!out.includes(edge + d)) out.push(edge + d);
   }
   for (const w of [895, 896, 897, 927, 928, 929]) if (!out.includes(w)) out.push(w);

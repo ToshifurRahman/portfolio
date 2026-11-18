@@ -367,10 +367,11 @@ axis and turns the stops from a grid into a column (the two lanes are stacked at
 and restacks the Work node structure.
 
 The flowcharts switch layout on *container* width, not viewport: `@container (max-width: 1171px)`
-for Relay and `1155px` for RannaGhor — each study's own viewBox width (1170.30 and
-1154.44 units) rounded up, so the switch happens just before the desktop graph would scale below
+for Relay and `1112px` for RannaGhor — each study's own viewBox width (1170.30 and
+1111.48 units) rounded up, so the switch happens just before the desktop graph would scale below
 1:1. Those numbers are not arbitrary — they are where the desktop chart would drop below 1:1 and
-take every label under the 12px floor.
+take every label under the 12px floor. RannaGhor's was `1155px` while the chart still carried a
+rate node; the graph narrowed when that node came out, and the threshold follows the graph.
 
 ## The bar and the signal strip
 
@@ -537,8 +538,9 @@ side, not per route: a straight drop and a drop-and-turn toward one side share t
 for as long as both are vertical, which is how `authorise` and `refuse` once crossed. A later
 sibling now leaves further out and turns higher, so its leg is past the earlier edge's and its run
 is above the earlier edge's turn. Where even that is not enough — two long runs across the graph
-from one box — the layout moves the target under its own source (RannaGhor's refusals hang under
-the check that refuses them), so the edge is one drop and needs no lane at all.
+from one box — the layout moves each target into its own column below its source (RannaGhor's
+stock refusal sits straight under the transaction, and its role refusal one column to the right of
+the check that refuses it), so neither edge has to run back across the graph.
 
 ## Do's and don'ts
 

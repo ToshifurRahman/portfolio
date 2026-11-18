@@ -44,7 +44,7 @@ const n = (id: string, name: string, detail: string | undefined, at: Pos, vat: V
  * stage after them, and the states as a rail at the end.
  */
 
-const TP_NODES: Node[] = [
+const RELAY_NODES: Node[] = [
   /* Band 0: the spine. */
   /* The spine wraps after three, so the graph stays inside the panel's width and
      the labels stay at full size. `down-right` carries the flow to the next row. */
@@ -76,7 +76,7 @@ const TP_NODES: Node[] = [
   n('completed', 'Completed', undefined, { row: 7, col: 0 }, { row: 16, track: 1 }, { state: true }),
 ];
 
-const TP_EDGES: Edge[] = [
+const RELAY_EDGES: Edge[] = [
   /* The spine. */
   { id: 'submit', from: 'react', to: 'api', label: 'submit', route: 'right' },
   { id: 'enqueue', from: 'api', to: 'queue', label: 'enqueue', route: 'right' },
@@ -114,7 +114,7 @@ const TP_EDGES: Edge[] = [
   { id: 'd2c', from: 'drafting', to: 'completed', route: 'down-left' },
 ];
 
-const tpRuns: Step[][] = [
+const relayRuns: Step[][] = [
   /* One: a ticket all the way to Completed. */
   [
     { edge: 'submit', status: 'New ticket submitted', nodes: { react: 'lit' } },
@@ -159,7 +159,7 @@ const tpRuns: Step[][] = [
 /* The vertical layout's branch groups. Each is headed by where it starts, so the
    entry edge from the spine is the heading rather than a line: a line from a spine box
    to a group three rows below can only run through the boxes between them. */
-const TP_CLUSTERS: Cluster[] = [
+const RELAY_CLUSTERS: Cluster[] = [
   { id: 'backup', heading: 'From the LLM gateway', from: 'gateway', nodes: ['backup'], branch: true },
   { id: 'feed', heading: 'Every step', from: 'worker', nodes: ['eventLog', 'customerPage', 'opsFeed'] },
   {
@@ -176,10 +176,10 @@ const relay: DiagramSpec = {
   title: 'Relay',
   href: '/work/relay',
   note: 'A demo ticket through the system’s real states',
-  nodes: TP_NODES,
-  edges: TP_EDGES,
-  clusters: TP_CLUSTERS,
-  runs: tpRuns,
+  nodes: RELAY_NODES,
+  edges: RELAY_EDGES,
+  clusters: RELAY_CLUSTERS,
+  runs: relayRuns,
   still: {
     edges: ['submit', 'enqueue', 'consume', 'call', 'toPrimary', 'log', 'toPage', 'toOps', 'q2t', 't2d', 'd2c'],
     nodes: {
@@ -194,8 +194,9 @@ const relay: DiagramSpec = {
 
 /* ---------------------------------------------------------------- RannaGhor
  *
- * One row of checks, the transaction at the end, and the two refusals hanging
- * below the point they are refused at.
+ * One row of checks, the transaction at the end, and the two refusals below the
+ * point they are refused at: the stock refusal straight under the transaction,
+ * the role refusal one column to the right of the check that refuses it.
  */
 
 const RG_NODES: Node[] = [
@@ -213,13 +214,13 @@ const RG_NODES: Node[] = [
      vendor route is refused at the role check by middleware that guards vendor and
      admin routes separately". The heading says where the group starts; repeating
      "at the role check" under it was the same sentence twice. */
-  /* The refusals hang under the check that refuses, so each edge is one straight drop
-     into its own target. They used to sit at columns 0 and 1 while their sources were at
-     3 and 2, which forced two long leftward runs across the whole graph from one box —
-     `refuse` and `authorise` both leave Role check, and `refuse`'s run cut `authorise`'s
-     final approach at (104,114). A refusal is "what happens instead of the next step",
-     and the step it replaces is the one below its own check, so this is also the truer
-     reading order. */
+  /* The refusals sit below the point they are refused at, each in its own column, so
+     neither edge has to run back across the graph. They used to sit at columns 0 and 1
+     while their sources were at 3 and 2, which forced two long leftward runs from one
+     box: `refuse` and `authorise` both leave Role check, and `refuse`'s run cut
+     `authorise`'s final approach at (104,114). A refusal is "what happens instead of
+     the next step", and the step it replaces is the one below its own check, so this is
+     also the truer reading order. */
   n('refuseRole', '403: refused', 'Customer, vendor route', { row: 2, col: 3 }, { row: 6, track: 1 }),
   n('refuseStock', 'Stock refused', 'The second order', { row: 2, col: 2 }, { row: 7, track: 1 }),
 ];
@@ -230,10 +231,11 @@ const RG_EDGES: Edge[] = [
   { id: 'authorise', from: 'role', to: 'handler', label: 'allowed', route: 'down-left' },
   { id: 'query', from: 'handler', to: 'postgres', route: 'right' },
   { id: 'commit', from: 'postgres', to: 'tx', label: 'an order', route: 'right' },
-  /* One drop each. Both refusals sit under the box that refuses them, so the edge is a
-     single leg into its own target and uses no lane. `authorise` also leaves Role check,
-     and the two shared a corridor while `refuse` ran across the graph: its run cut
-     `authorise`'s final approach at (104,114). With the targets in their own columns
+  /* `stockOut` is one straight drop: its target sits under the box that refuses it.
+     `refuse` is not: Role check is in column 2 and its target in column 3, so the
+     edge drops and turns right into the refusal's own column. Both used to run
+     across the graph from columns 0 and 1, which put `refuse`'s run across
+     `authorise`'s final approach at (104,114). With each target in its own column
      there is no corridor left to share. */
   { id: 'refuse', from: 'role', to: 'refuseRole', label: 'vendor route', branch: true, route: 'down-right' },
   { id: 'stockOut', from: 'tx', to: 'refuseStock', label: 'stock gone', branch: true, route: 'down' },

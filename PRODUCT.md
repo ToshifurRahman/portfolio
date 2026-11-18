@@ -44,7 +44,7 @@ The owner builds asynchronous, stateful systems and cares about what happens whe
 ## Evidence on Hand
 
 - Relay: `/home/tfr/Projects/ticket-pipe` (README, docs/, screenshots in `docs/screenshots/`). GitHub: ToshifurRahman/relay. LLM support-ticket pipeline on Bun, Hono, PostgreSQL, Redis, AWS SQS, Socket.io, React. 267 commits, April to November 2026.
-- RannaGhor e-commerce: `/home/tfr/Projects/e-commerce-website` (README, CLAUDE.md). GitHub: ToshifurRahman/e-commerce-website. Bun monorepo, React 19, TanStack Router and Query, Hono, Better Auth, Drizzle, Supabase Postgres. 64 commits (59 merged pull requests), January to March 2026.
+- RannaGhor e-commerce: `/home/tfr/Projects/e-commerce-website` (README, CLAUDE.md). GitHub: ToshifurRahman/e-commerce-website. Bun monorepo, React 19, TanStack Router and Query, Hono, Better Auth, Drizzle, Supabase Postgres. 64 commits (60 merged pull requests), January to March 2026.
 - Other projects available for short entries: Dars (Arabic vocabulary app), Attendance Automation (Google Apps Script), HTTP Server, HN clone, 7GUIs.
 - Not on hand, must not be invented: employment history, education, testimonials, user or traffic numbers, performance benchmarks beyond what the repositories document.
 
