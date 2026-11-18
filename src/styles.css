@@ -142,12 +142,9 @@
   --dur-lamp: 120ms;
   --dur-fast: 160ms;
   --dur-none: 0.01ms;
-  /* The signature motion's own clock. The wave is the owner's "low freq" floor at
-     9s; the pulse runs inside his "at most one every 20 to 30 seconds" at 26s;
-     the fade is what a cell takes to light under the pointer. */
-  --dur-wave: 9s;
+  /* The signature motion's own clock. The pulse runs inside the owner's "at
+     most one every 20 to 30 seconds" at 26s. */
   --dur-pulse: 26s;
-  --dur-fade: 220ms;
   /* One strip starts this long after the one before it, so the charge crosses
      the page as well as running down it. */
   --strip-step: 120ms;
@@ -420,88 +417,22 @@ textarea {
 /* The signature motion -------------------------------------------------------
 
    Owner, 23:03: a ray runs from the coloured name down the page's strips to the
-   footer and charges each one as it passes; the hero's cells glow in a slow wave
-   from top to bottom, and three at a time under the pointer. Restraint is the
-   requirement, so:
+   footer and charges each one as it passes. Restraint is the requirement, so:
 
      - every animation starts only once `[data-motion='on']` is set, which the
        hook does after mount: the pre-render and the first client frame are the
        same still picture;
-     - `[data-motion='paused']` is set on a hidden tab, and the hero's cells also
-       stop via `[data-inview='false']`, so nothing animates off-screen;
+     - `[data-motion='paused']` is set on a hidden tab and `[data-motion='scrolling']`
+       while the page moves, so nothing animates at those times;
      - under `prefers-reduced-motion: reduce` no rule below applies at all;
      - only transform and opacity move, so this stays on the compositor and
        cannot shift layout.
 
    The pulse period is 26s with a short lit slice, which is inside the owner's
-   "at most one every 20 to 30 seconds" once the load pulse is counted. */
+   "at most one every 20 to 30 seconds" once the load pulse is counted.
 
-/* The cell in each gap between strips: the thing the wave lights. */
-.hero-cells {
-  position: absolute;
-  inset: 0;
-  display: grid;
-}
-
-.hero-cell {
-  align-self: stretch;
-  /* Inset by a hair on each side so the glow sits between the column lines
-     rather than on top of them: a full-bleed block read as heavy vertical
-     banding, not as light travelling down the page. */
-  margin-inline: 1px;
-  background: linear-gradient(to bottom, transparent, var(--accent) 30%, var(--accent) 70%, transparent);
-  opacity: 0;
-  will-change: opacity;
-}
-
-/* The wave: a slow top-to-bottom pass, each cell offset by its own position so
-   the light appears to travel down the page rather than switching on at once.
-   The cycle is the owner's "low freq" floor, held in a token. */
-:root[data-motion='on'] .hero-cell {
-  animation: hero-wave var(--dur-wave) ease-in-out infinite;
-  /* The stagger is the cell's grid position, so the wave is one animation with
-     eleven phases rather than eleven timers. */
-  animation-delay: calc(var(--cell-index, 0) * var(--strip-step) * -3);
-}
-
-@keyframes hero-wave {
-  0%,
-  70%,
-  100% {
-    opacity: 0;
-  }
-  20% {
-    opacity: 0.03;
-  }
-}
-
-:root[data-motion='paused'] .hero-cell,
-.intro[data-inview='false'] .hero-cell {
-  animation-play-state: paused;
-}
-
-/* Three at a time under the pointer, and only where there is a real pointer: a
-   touch screen has no hover, so there the cells would light and then stick. The
-   hook marks exactly three cells with `is-hot` — the one under the pointer and
-   its two nearest neighbours — because "the nearest three" is not something CSS
-   can express over a grid, and a class is cheaper than eleven timers. */
-@media (hover: hover) and (pointer: fine) {
-  .hero-cell {
-    transition: opacity var(--dur-fade) var(--ease-out);
-  }
-
-  /* While the pointer is in the hero the slow wave pauses, so the pointer's
-     three cells are the only thing moving. */
-  :root[data-motion='on'] .intro:hover .hero-cell:not(.is-hot) {
-    animation-play-state: paused;
-    opacity: 0;
-  }
-
-  .intro:hover .hero-cell.is-hot {
-    animation: none;
-    opacity: 0.07;
-  }
-}
+   The hero's gap cells, and the wave they carried, were removed on 2026-11-17
+   (owner: "in hero, remove animations & colors on strip gaps"). */
 
 /* The pulse: one slow ray down the page's own strips, once on load and then
    every 26s. It is drawn on the frame's edge, not behind body text. */
@@ -574,15 +505,13 @@ textarea {
 }
 
 :root[data-motion='paused'] .site-rail i,
-:root[data-motion='scrolling'] .site-rail i,
-:root[data-motion='scrolling'] .hero-cell {
+:root[data-motion='scrolling'] .site-rail i {
   animation-play-state: paused;
 }
 
-/* Reduced motion: no pulse, no wave. The coloured name and the static strips
-   are the design in that mode. Declared last so it wins over the rules above. */
+/* Reduced motion: no pulse. The coloured name and the static strips are the
+   design in that mode. Declared last so it wins over the rules above. */
 @media (prefers-reduced-motion: reduce) {
-  .hero-cell,
   .site-rail i {
     animation: none !important;
     opacity: 0 !important;
@@ -748,11 +677,11 @@ textarea {
 }
 
 /* The bar speaks the case study's own sub-navbar language (owner, 23:03:
-   "navbar design will be same as works page sub navbar"): a lamp per item with a
-   rail running between them, the same type size and weight, and the same active
-   treatment — the current item's lamp lit and its label in full ink, the passed
-   ones in the second tone. The rail is one hairline behind a row of lamps rather
-   than eight separate dots, so the bar reads as a track across the page. */
+   "navbar design will be same as works page sub navbar"): a lamp per item, the
+   same type size and weight, and the same active treatment — the current item's
+   lamp lit and its label in full ink, the passed ones in the second tone. Owner,
+   2026-11-17: "in nav, remove lines connected with dots", so the lamps stand on
+   their own here; the case-study `.contents` sub-nav keeps its rail. */
 .nav-links {
   position: relative;
   display: flex;
@@ -763,22 +692,6 @@ textarea {
 .nav-links li {
   position: relative;
   flex: 0 0 auto;
-}
-
-/* The rail between stations, drawn on each item's leading edge so it connects
-   the previous item to this item's lamp. Drawing it on the trailing edge instead
-   left the last item pointing at the phone-only CV entry, which is hidden on a
-   wide bar — a rail running into nothing. With the leading edge, an item that
-   renders gets a connector and a hidden one leaves none. */
-.nav-links li + li::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 0;
-  width: var(--space-3);
-  height: var(--line-track);
-  margin-top: -1px;
-  background: var(--track);
 }
 
 .nav-links a {
@@ -1015,14 +928,17 @@ textarea {
 
 /* The Now panel ------------------------------------------------------------ */
 
-/* The home slot the animated track used to hold. Since 23:03 it draws two lanes,
-   Study and Work, on one shared year axis: the owner found the single row of
-   stations hard to read, and the two cells below it went too.
+/* Two lanes, Study and Work, on one shared year axis. Owner, 2026-11-17: the
+   graph was "disconnected & misguided", so the axis is every year from the first
+   to the last (2021 to 2026) at equal spacing, and each lane is one continuous
+   line rather than a row per stop.
  *
- * The axis is a grid of year columns shared by both lanes, so a stop sits in its
- * own year and two labels can never collide — a long label wraps inside its
- * column. Text first: with no CSS this reads as two ordered lists and a list of
- * years. */
+ * The axis is a grid of year columns shared by both lanes. Every stop is placed
+ * in its year's column and in the one row the lane line runs through, so its lamp
+ * sits on that line. Two stops in the same year keep their lamps on the line and
+ * stack their labels below: `--stack` is the stop's offset within its column,
+ * set by the component. Text first: with no CSS this reads as two ordered lists
+ * and a list of years. */
 .now {
   row-gap: var(--space-6);
   padding-block: var(--space-8);
@@ -1058,10 +974,6 @@ textarea {
   letter-spacing: var(--tracking-mono);
 }
 
-.year:last-child {
-  text-align: right;
-}
-
 .tl-lane {
   display: flex;
   flex-direction: column;
@@ -1078,19 +990,22 @@ textarea {
   text-transform: uppercase;
 }
 
-/* Stops are placed into the same year columns as the ticks; the lane's line is
-   drawn behind them. */
+/* Stops are placed into the same year columns as the ticks and share one row,
+   so the lane's line runs through every lamp. `--stack-step` is one label block:
+   a second stop on the same year starts its label below the first. */
 .tl-stops {
+  --stack-step: calc(var(--space-16) + var(--space-6));
+  --lamp-step: var(--space-3);
   position: relative;
   display: grid;
-  gap: var(--space-4) var(--space-3);
+  gap: 0 var(--space-3);
   padding-top: var(--space-2);
 }
 
 .tl-stops::before {
   content: '';
   position: absolute;
-  top: calc(var(--space-2) + 0.3125rem);
+  top: calc(var(--space-2) + var(--space-1) + var(--line));
   right: 0;
   left: 0;
   height: var(--line);
@@ -1110,10 +1025,11 @@ textarea {
   hyphens: none;
 }
 
-/* A span the source dates at both ends: a lit bar across its columns. */
+/* A span the source dates at both ends: a lit bar across its columns, level
+   with the lane line and the lamps. */
 .stop-span {
   position: absolute;
-  top: calc(var(--space-5) / 2 + 0.125rem);
+  top: calc(var(--space-1) + var(--line));
   left: 0;
   width: 100%;
   height: var(--line);
@@ -1124,7 +1040,9 @@ textarea {
 .stop .lamp {
   position: absolute;
   top: 0;
-  left: 0;
+  /* A second stop on the same year keeps its lamp on the line, a step to the
+     right, so both dots are visible. */
+  left: calc(var(--stack, 0) * var(--lamp-step));
   display: block;
   width: 0.625rem;
   height: 0.625rem;
@@ -1142,6 +1060,18 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
+  /* Zero for the first stop on a year; a stacked stop starts below the one
+     before it rather than on a disconnected row. */
+  margin-top: calc(var(--stack, 0) * var(--stack-step));
+}
+
+/* The far end of a span: the completion's own label at the bar's right end. */
+.stop-end {
+  position: absolute;
+  top: var(--space-5);
+  right: 0;
+  align-items: flex-end;
+  text-align: right;
 }
 
 .stop-label {
@@ -2754,6 +2684,8 @@ textarea {
     display: flex;
   }
 
+  /* The owner removed the lines joining the dots, not the horizontal dividers
+     between stacked menu rows: those stay. */
   .nav-links a {
     width: 100%;
     padding-inline: 0;
@@ -2811,8 +2743,9 @@ textarea {
   }
 
   /* One vertical timeline, not two lanes squeezed into columns: the year axis
-     and both lanes become a single column with the year markers on it. Each
-     stop takes its own row, so a label reads in full and nothing overlaps. */
+     gives way and both lanes become a single column with the year markers on it.
+     Each stop takes its own row, so a label reads in full and nothing overlaps;
+     the span's two ends stay together in its row. */
   .timeline {
     gap: var(--space-4);
   }
@@ -2856,9 +2789,27 @@ textarea {
     left: calc(var(--space-5) * -1 + 0.03125rem);
   }
 
-  /* The span bar has no axis to sit on here, so the date carries that job. */
+  /* A same-year stack has no columns to collide in here: every stop is its own
+     row, so the labels flow naturally. */
+  .stop-body {
+    margin-top: 0;
+  }
+
+  /* The span bar has no axis to sit on here, so its two ends become one row:
+     the start and the completion read in order, connected by the list itself. */
+  .stop.is-span {
+    flex-wrap: wrap;
+  }
+
   .stop-span {
     display: none;
+  }
+
+  .stop.is-span .stop-end {
+    position: static;
+    flex-basis: 100%;
+    align-items: flex-start;
+    text-align: left;
   }
 
   .stop-child {

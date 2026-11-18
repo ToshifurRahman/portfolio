@@ -62,40 +62,18 @@ test.describe('the signature pulse actually paints', () => {
   });
 });
 
-test.describe('the hero wave travels', () => {
-  test('at least three cells have different delays', async ({ page }) => {
+test.describe('the removed hero cells paint nothing', () => {
+  test('no gap cell exists, so the wave cannot unfurl', async ({ page }) => {
+    /* R4a-ds-2 pinned the eleven cells' stagger. The owner removed the cells
+       themselves on 2026-11-17, so the test now asserts the new state: the wave
+       has nothing to travel across, and the ray down the strips stays. */
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.emulateMedia({ colorScheme: 'dark' });
     await page.goto('/');
-    await page.locator('.intro').scrollIntoViewIfNeeded();
-    await page.waitForTimeout(400);
 
-    const delays = await page
-      .locator('.hero-cell')
-      .evaluateAll((cells) => cells.map((c) => getComputedStyle(c).animationDelay));
-
-    expect(delays.length).toBeGreaterThanOrEqual(11);
-    const distinct = new Set(delays);
-    expect(distinct.size, `all cells share one delay: ${delays.join(', ')}`).toBeGreaterThanOrEqual(3);
-    /* And the first cell is not delayed, so the wave starts where the name is. */
-    expect(delays[0]).toBe('0s');
-  });
-
-  test('the delay runs in order, so the light moves down', async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto('/');
-    await page.locator('.intro').scrollIntoViewIfNeeded();
-    await page.waitForTimeout(400);
-
-    const delays = await page
-      .locator('.hero-cell')
-      .evaluateAll((cells) => cells.map((c) => parseFloat(getComputedStyle(c).animationDelay)));
-
-    /* A negative delay means each cell is already partway through the same cycle,
-       so later cells are further along. Monotonic, not merely distinct. */
-    for (let i = 1; i < delays.length; i++) {
-      expect(delays[i], `cell ${i} is not offset from cell ${i - 1}`).not.toBe(delays[i - 1]);
-    }
+    expect(await page.locator('.hero-cell').count()).toBe(0);
+    const pulse = await page.locator('.site-rail i').first().evaluate((el) => getComputedStyle(el).animationName);
+    expect(pulse).toBe('rail-pulse');
   });
 });
 

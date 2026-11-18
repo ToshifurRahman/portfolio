@@ -136,9 +136,7 @@ motion:
   lamp: "120ms"
   fast: "160ms"
   none: "0.01ms"
-  wave: "9s"
   pulse: "26s"
-  fade: "220ms"
   strip-step: "120ms"
 components:
   bar:
@@ -206,9 +204,9 @@ hairline rules, mono type for anything that is data — and every section is a r
 than a card.
 
 The owner's own image names the motion: charge runs from the wordmark down the page's strips
-to the footer, and cells between the strips glow as it passes. It is slow (a 26s cycle for the
-ray, a 9s wave for the hero cells), it is decoration, and it stops dead under
-`prefers-reduced-motion`.
+to the footer. It is slow (a 26s cycle for the ray), it is decoration, and it stops dead under
+`prefers-reduced-motion`. The boxes that used to glow in the gaps between the strips were
+removed on 2026-11-17 (owner: "in hero, remove animations & colors on strip gaps").
 
 The redesign replaced an earlier language that is no longer here: Archivo, a vermilion accent,
 and a five-state chain as the home navigation. Nothing in this document describes that site.
@@ -253,7 +251,7 @@ one component that branches at all, and they switch `display`, not paint.)
 
 ### The signal
 - **Amber** (`accent` `#ffb340`) is the only saturated colour outside the failure semantics: a
-  lit lamp, the live token on the track, the current nav item, the glow in a hero cell.
+  lit lamp, the live token on the track, the current nav item, the charge on the strips.
   **`accent-hover`** (`#ffc56b`) is its hover. **`on-accent`** (`#1a1204`) is text on an amber
   fill — a brown-black, not the ground, so amber stays legible as a button. A focused control is
   ringed in `accent-text`, not `accent`: `:focus-visible` is `outline: var(--line-track) solid
@@ -280,7 +278,7 @@ on paper, `rgb(4 5 6 / 0.82)` at night) and it is used solely behind an overlay.
 charge, the primary action, and a focused control — that last one through `accent-text`, which is
 what a focus ring is drawn in, not `accent`. It is never a heading colour and never a section
 background. It *is* decoration in one narrow sense the CSS states plainly: `--accent` is the
-colour of the charge — the ray, the hero-cell glow, the lamp — and those carry no information, so
+colour of the charge — the ray, the lamp — and those carry no information, so
 the token is not held to the text contrast ratio.
 
 **The Two Rule Strengths Rule.** `rule` separates, `rule-strong` outlines something pressable.
@@ -346,7 +344,7 @@ opaque ground and a `rule` line beneath it; `--header-h` is overwritten at run t
 bar's measured height so anchors land below it.
 
 **Home.** A hero (`intro`) holding the name, role, the two hero facts and the statement, laid
-over the twelve column lines with eleven glow cells between them. Under it a ruled readout of
+over the twelve column lines. Under it a ruled readout of
 two proof figures and the actions (Download CV as the primary, Email/GitHub/LinkedIn as
 ghosts). Then the Now panel, Work, the CV sections (Experience, Education, Achievements), Skills
 and Contact, each a `Section` with its `id`, and the footer.
@@ -359,8 +357,7 @@ entry because the bar holds five links. Whatever the bar lists, the sections kee
 its repo, lede), then the meta row (`Type` and `Stack` as plain facts, with Source and any Live
 site as highlighted link-buttons), then the sticky sub-nav, then the
 six sections (`sectionOrder` in `src/content.ts`: Overview, Problem, Architecture, Tech
-decisions, Challenges and solutions, Results — Challenges and Solutions are one section). The sub-nav is the bar's own `navbar` treatment applied to the case study's
-section list, and it lights **Work** while a case study is open — the owner asked for the two to
+decisions, Challenges and solutions, Results — Challenges and Solutions are one section). The sub-nav borrows the bar's type, lamp and active treatment, and keeps its own rail: the top bar draws no line between its items (owner, 2026-11-17: "in nav, remove lines connected with dots"), and it lights **Work** while a case study is open — the owner asked for the two to
 be one design, not two.
 
 **Breakpoints.** `57rem` collapses the bar into a menu button; `48rem` hides the Now panel's year
@@ -376,7 +373,9 @@ take every label under the 12px floor.
 ## The bar and the signal strip
 
 The bar is sticky, `bg` with a `rule` underline, and holds the wordmark (the one amber text in
-the bar at rest, `accent-text`), the five nav links with a lamp each, and a CV action. Two chrome
+the bar at rest, `accent-text`), the five nav links with a lamp each, and a CV action. No line
+joins one nav item to the next: the lamps stand on their own, with the item's own padding as
+the spacing (owner, 2026-11-17). Two chrome
 elements turn amber on demand: the open menu button (`.menu-button[aria-expanded='true']`) and
 the theme toggle's hover. Nav links are `muted` at rest and `ink` when current. A lit lamp fills
 `accent`; the current item's lamp takes an `accent` ring rather than the `lamp-edge` one, because
@@ -389,24 +388,24 @@ The **signal strip** is a fixed, decorative layer of twelve strips on the frame'
 lines, `z-index: -1`, `pointer-events: none`. A ray — a 1px-wide soft gradient of `accent` —
 translates from above the fold to below it inside each strip, staggered by `--strip-step`
 120ms so the charge crosses the page as well as running down it. Cycle `--dur-pulse` 26s. It
-runs from the wordmark, which is where the charge is drawn from.
-
-Hero cells: eleven cells between the column lines, each a vertical gradient of `accent` from
-transparent through the middle, inset 1px per side so the glow sits *between* the lines rather
-than on them. The wave (`--dur-wave` 9s) peaks at 0.03 opacity, staggered by the cell's grid
-index. Under a fine pointer the wave pauses and the cell under the pointer lights at 0.07 over
-`--dur-fade` 220ms together with its two nearest neighbours — three cells, except at the two ends
-of the row, where the neighbour that does not exist is simply not lit and the count is two.
+runs from the wordmark, which is where the charge is drawn from. The hero's gap cells and their
+wave are gone; only the ray remains.
 
 ## The Now panel
 
-Two lanes, **Study** and **Work**, sharing one year axis: a `tl-lane-title` heading per lane,
+Two lanes, **Study** and **Work**, sharing one year axis that shows every year from the first
+to the last in the data (2021 to 2026) at equal spacing: a `tl-lane-title` heading per lane, the
 year ticks drawn as decoration over the lists, and each stop a real list item, so the panel
-reads with no CSS and no script. The lanes are already a single column at every width — the
-`.timeline` is `flex-direction: column` at 1440 as much as at 390, and the two lanes sit one
-above the other. What 48rem changes is the year axis, which is hidden, and the stops, which go
-from a grid to a column; the lane order is the same either way. It is a timeline, not a card
-grid — the earlier two-cell version is gone.
+reads with no CSS and no script. Within a lane every stop sits in one row on one continuous
+line, its lamp on that line at its own year. Two stops in the same year keep their lamps on the
+line and stack their labels below, never on a separate disconnected row.
+
+The B.Sc. is one bar from the 2021 column to the 2025 column, its start labelled "Aug 2021" and
+its far end "B.Sc. completed / Dec 2025"; the completion is the bar's other end, not a stop of
+its own. Both M.Engg. stops sit at 2026 (the owner's ruling), the current one lit, and the
+undated IIUCCPS sub-roles stay listed under the dated role they were held alongside. What 48rem
+changes is the year axis, which is hidden, and the stops, which become one stacked column so
+every label reads in full; the lane order is the same either way.
 
 ## The Work node diagram
 
@@ -436,20 +435,16 @@ copies to the clipboard and confirms in place. The address itself is owner-voice
 Motion is one idea: charge moving through a panel. It is slow, it is decoration, and it never
 carries information.
 
-- **The wave** (`--dur-wave` 9s, hero cells) and **the pulse** (`--dur-pulse` 26s, the strip
-  ray) are the signature. Both animate only `opacity` and `transform`, so they stay on the
-  compositor and cannot shift layout.
-- **The pointer's three cells** fade in over `--dur-fade` 220ms.
+- **The pulse** (`--dur-pulse` 26s, the strip ray) is the signature. It animates only `opacity`
+  and `transform`, so it stays on the compositor and cannot shift layout.
 - **Small transitions** use `--dur-fast` 160ms and `--ease-out`; the lamp uses `--dur-lamp`
   120ms linear.
-- **Pausing is required, not optional.** Both signature animations pause when the tab is hidden
-  and while the page is being scrolled — the root's `data-motion` carries `on` / `paused` /
-  `scrolling`. The hero cells additionally stop when the hero scrolls out of view
-  (`[data-inview='false']`); the rail does not, because it is fixed to the viewport. The motion
-  has no pause *control* of its own: the only pause button on the site is the flowchart's, on a
-  case study.
+- **Pausing is required, not optional.** The pulse pauses when the tab is hidden and while the
+  page is being scrolled — the root's `data-motion` carries `on` / `paused` / `scrolling`. The
+  motion has no pause *control* of its own: the only pause button on the site is the
+  flowchart's, on a case study.
 - **Reduced motion removes it entirely:** under `@media (prefers-reduced-motion: reduce)` the
-  wave and the ray are `animation: none` and `opacity: 0`, and the flowchart shows its still
+  ray is `animation: none` and `opacity: 0`, and the flowchart shows its still
   picture (the `still` edge and node set in `src/diagrams.ts`), not a paused mid-frame.
 
 ## The flowchart engine
