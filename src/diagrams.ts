@@ -214,8 +214,15 @@ const RG_NODES: Node[] = [
      vendor route is refused at the role check by middleware that guards vendor and
      admin routes separately". The heading says where the group starts; repeating
      "at the role check" under it was the same sentence twice. */
-  n('refuseRole', '403: refused', 'Customer, vendor route', { row: 2, col: 0 }, { row: 7, track: 1 }),
-  n('refuseStock', 'Stock refused', 'The second order', { row: 2, col: 1 }, { row: 8, track: 1 }),
+  /* The refusals hang under the check that refuses, so each edge is one straight drop
+     into its own target. They used to sit at columns 0 and 1 while their sources were at
+     3 and 2, which forced two long leftward runs across the whole graph from one box —
+     `refuse` and `authorise` both leave Role check, and `refuse`'s run cut `authorise`'s
+     final approach at (104,114). A refusal is "what happens instead of the next step",
+     and the step it replaces is the one below its own check, so this is also the truer
+     reading order. */
+  n('refuseRole', '403: refused', 'Customer, vendor route', { row: 2, col: 3 }, { row: 7, track: 1 }),
+  n('refuseStock', 'Stock refused', 'The second order', { row: 2, col: 2 }, { row: 8, track: 1 }),
 ];
 
 const RG_EDGES: Edge[] = [
@@ -225,8 +232,13 @@ const RG_EDGES: Edge[] = [
   { id: 'authorise', from: 'role', to: 'handler', label: 'allowed', route: 'down-right' },
   { id: 'query', from: 'handler', to: 'postgres', route: 'right' },
   { id: 'commit', from: 'postgres', to: 'tx', label: 'an order', route: 'right' },
-  { id: 'refuse', from: 'role', to: 'refuseRole', label: 'vendor route', branch: true, route: 'down-right' },
-  { id: 'stockOut', from: 'tx', to: 'refuseStock', label: 'stock gone', branch: true, route: 'down-left' },
+  /* One drop each. Both refusals sit under the box that refuses them, so the edge is a
+     single leg into its own target and uses no lane. `authorise` also leaves Role check,
+     and the two shared a corridor while `refuse` ran across the graph: its run cut
+     `authorise`'s final approach at (104,114). With the targets in their own columns
+     there is no corridor left to share. */
+  { id: 'refuse', from: 'role', to: 'refuseRole', label: 'vendor route', branch: true, route: 'down' },
+  { id: 'stockOut', from: 'tx', to: 'refuseStock', label: 'stock gone', branch: true, route: 'down' },
 ];
 
 const rgEnter: Step[] = [

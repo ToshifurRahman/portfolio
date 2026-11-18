@@ -303,6 +303,9 @@ for (const d of DIAGRAMS) {
             const nodes = [...svg.querySelectorAll('.flow-node')].map((n) => ({
               id: n.getAttribute('data-node') ?? '',
               box: n.querySelector('rect')!.getBoundingClientRect(),
+              /* A state pill: the rail's dashed capsule. Its joins end clear rather than
+                 touching (P2b-9), so it is the one end held to the wider budget. */
+              isState: n.classList.contains('is-state'),
               texts: [...n.querySelectorAll('text')].filter((t) => t.getBoundingClientRect().width > 1),
             }));
 
@@ -364,49 +367,107 @@ for (const d of DIAGRAMS) {
               if (hit) crossing.push(path.getAttribute('data-edge') ?? '?');
             }
 
-            /* (d) every edge joins two things: its target end touches a node's border,
-               and its source end touches a node — or, on the vertical layout, the cluster
+            /* (d) every edge joins two things: its target end meets a node's border,
+               and its source end meets a node — or, on the vertical layout, the cluster
                heading that stands where that group's entry point is. F3-1 draws the edge
                that enters a cluster as a short arrow under its heading, so the group keeps
                its heading *and* the route reaching it keeps its label; before F3-1 that
                edge was not drawn at all, which is what this check used to assume. The
-               target end is still required to touch a node. */
+               target end is still required to meet a node.
+
+               Owner, 2026-11-17: "fix lines connected with boxes". The old tolerance was
+               one whole arrowhead length (12 units) on each axis, which accepts an edge
+               that stops 5-7 units short: every edge in both studies did, and at 1440 that
+               is a visible break between the line and its box. The end has to land on the
+               border now, within 1 unit — the arrowhead's own tip reaches the border from
+               there, so the line meets its box rather than floating beside it. */
             const detached: string[] = [];
-            /* An edge stops a short distance short of the border so its arrowhead
-               lands on it rather than over it: the tolerance is the arrowhead's own
-               length (MARKER_LEN, 12 viewBox units), scaled. */
-            const gap = 12 * (view.width / svg.viewBox.baseVal.width);
+            /* Screen pixels per viewBox unit: distances are compared in screen px, so
+               the floor means the same at every width. */
+            const scale = view.width / svg.viewBox.baseVal.width;
+            /* A path stops `MARKER_TIP` (1.5 viewBox units) short of its target so the
+               arrowhead's ink lands on the border instead of over it — the marker is
+               2px track x markerWidth 6 with its point at refX 7 of 8, so the tip runs
+               1.5 units past the path's own end. `2.5` units therefore accepts the legal
+               join plus sub-pixel rounding, and rejects the 5-7 unit gap every edge had
+               before this pass: that is a visible break, this is a line meeting a box. */
+            const budget = 2.5 * scale;
+            /* Inside a box is always a defect: the path may meet the border, not cross
+               it. One screen pixel of rounding is allowed. */
+            const touch = -1;
             const headings = [...svg.querySelectorAll('.flow-cluster-heading')].map((h) => h.getBoundingClientRect());
-            const nearBox = (x: number, y: number, b: DOMRect) =>
-              x >= b.left - gap && x <= b.right + gap && y >= b.top - gap && y <= b.bottom + gap &&
-              (Math.abs(x - b.left) <= gap || Math.abs(x - b.right) <= gap || Math.abs(y - b.top) <= gap || Math.abs(y - b.bottom) <= gap);
-            /* The box the point belongs to, which is the one an end sits on. */
-            const boxAt = (x: number, y: number) => boxes.find((b) => nearBox(x, y, b)) ?? null;
-            const nearNode = (x: number, y: number) => boxAt(x, y) !== null;
+            /* Distance from a point to a rectangle's border: 0 on the border, positive
+               outside it, and negative strictly inside (which is never legal for an end). */
+            const borderDist = (x: number, y: number, b: DOMRect) => {
+              const dx = Math.max(b.left - x, x - b.right, 0);
+              const dy = Math.max(b.top - y, y - b.bottom, 0);
+              const outside = Math.hypot(dx, dy);
+              if (outside > 0) return outside;
+              return -Math.min(x - b.left, b.right - x, y - b.top, b.bottom - y);
+            };
+            /* Distance to the nearest border, and whether that nearest box is a state
+               pill. A rail join legitimately stops `RAIL_CLEAR` clear of a pill, so the
+               two ends are held to different budgets. */
+            const nearest = (x: number, y: number) => {
+              let best = Infinity;
+              let state = false;
+              for (let i = 0; i < boxes.length; i++) {
+                const d = borderDist(x, y, boxes[i]);
+                if (d < best) {
+                  best = d;
+                  state = nodes[i].isState;
+                }
+              }
+              return { d: best, state };
+            };
             /* An entry arrow leaves the heading's row and descends into the middle of the
                group's first box. So the heading is the anchor for the *row* only; across the
                page the start must sit on that box's centre line, within one arrowhead length
                of it. Without the centre-line half a start may be displaced sideways by any
                distance and still pass — the entry arrow would crawl along the row away from
-               its own box, which is the failure this exists to catch. */
+               its own box, which is the failure this exists to catch. The vertical layout's
+               entry arrow starts in the gap the heading names, which is `ENTRY` units above
+               the box by design, so this anchor keeps the marker-length allowance while the
+               box-to-box joins are held to the tight budget above. */
+            const anchor = 12 * scale;
             const nearHeadingRow = (x: number, y: number, target: DOMRect | null) =>
               target !== null &&
-              headings.some((h) => y >= h.top - gap && y <= h.bottom + gap) &&
-              Math.abs(x - (target.left + target.right) / 2) <= gap;
+              headings.some((h) => y >= h.top - anchor && y <= h.bottom + anchor) &&
+              Math.abs(x - (target.left + target.right) / 2) <= anchor;
             for (const path of svg.querySelectorAll<SVGPathElement>('.flow-edge')) {
               const len = path.getTotalLength();
               const pa = toPage(path.getPointAtLength(0));
               const pb = toPage(path.getPointAtLength(len));
-              const target = boxAt(pb.x, pb.y);
-              /* A start near a node is fine as it is; one that is not has to be a heading
-                 entry, held to the target's centre line. The target end's requirement is
-                 unchanged. */
-              const startOk = nearNode(pa.x, pa.y) || nearHeadingRow(pa.x, pa.y, target);
-              if (!startOk || !nearNode(pb.x, pb.y)) detached.push(path.getAttribute('data-edge') ?? '?');
+              const id = path.getAttribute('data-edge') ?? '?';
+              /* The budget for an end that lands on a state pill: the rail's ink stops
+                 `RAIL_CLEAR` units (4 viewBox) clear of the capsule, P2b-9. */
+              const railBudget = budget + 5 * scale;
+              /* The target end: meets the border, or the rail's clearance of a pill. */
+              const end = nearest(pb.x, pb.y);
+              const endBudget = end.state ? railBudget : budget;
+              if (end.d < touch) {
+                detached.push(`${id} end crosses its box border by ${(-end.d).toFixed(1)}px`);
+              } else if (end.d > endBudget) {
+                detached.push(`${id} end stops ${end.d.toFixed(1)}px short of the nearest border`);
+              }
+              /* The source end: on a node's border, or on the heading that stands in for
+                 the entry point. */
+              const start = nearest(pa.x, pa.y);
+              const startBudget = start.state ? railBudget : budget;
+              const target = boxes.find((b) => borderDist(pb.x, pb.y, b) <= endBudget) ?? null;
+              const onBorder = start.d >= touch && start.d <= startBudget;
+              if (!onBorder && !nearHeadingRow(pa.x, pa.y, target)) {
+                detached.push(`${id} start ${start.d.toFixed(1)}px from the nearest border`);
+              }
             }
 
-            /* (e) every edge label sits on its own edge: within a few units of the
-               path it names. */
+            /* (e) every edge label sits on its own edge. Owner, 2026-11-17: labels
+               must sit "on their own lines". The allowance was 26px, which accepted a
+               label parked a line's width away from the line it names: every horizontal
+               label floated 5px above its run and "EACH STEP" sat 17 units off. The
+               pill behind a label hides the line it sits on, so the words are drawn over
+               the stroke: the label's box has to touch its own path, and 4px is the
+               allowance the design's own line weight leaves. */
             const floating: string[] = [];
             for (const path of svg.querySelectorAll<SVGPathElement>('.flow-edge')) {
               const id = path.getAttribute('data-edge');
@@ -415,15 +476,15 @@ for (const d of DIAGRAMS) {
               const lr = label.getBoundingClientRect();
               const len = path.getTotalLength();
               let best = Infinity;
-              for (let k = 0; k <= 60; k++) {
-                const q = toPage(path.getPointAtLength((len * k) / 60));
+              for (let k = 0; k <= 240; k++) {
+                const q = toPage(path.getPointAtLength((len * k) / 240));
                 const x = q.x;
                 const y = q.y;
                 const dx = Math.max(lr.left - x, 0, x - lr.right);
                 const dy = Math.max(lr.top - y, 0, y - lr.bottom);
                 best = Math.min(best, Math.hypot(dx, dy));
               }
-              if (best > 26) floating.push(`${id}: ${label.textContent}`);
+              if (best > 4) floating.push(`${id}: "${label.textContent}" ${best.toFixed(1)}px off its edge`);
             }
 
             return { outside, collisions, crossing, detached, floating };
@@ -1186,7 +1247,11 @@ for (const d of DIAGRAMS) {
 
 for (const d of DIAGRAMS) {
   test.describe(`${d.slug}: the state rail`, () => {
-    for (const [w, h] of [[390, 844], [834, 900]] as const) {
+    /* The clearance is a rule about the join, not about the layout, so it holds at every
+       width the rail is drawn at. It was only checked at the two vertical ones, and the
+       desktop branches of `edgePath` never read `RAIL_STOP`: at 1440 the three state joins
+       on Ticket-Pipeline touched the dashed capsules (gap 0 units, 3.5 on 40a1256). */
+    for (const [w, h] of [[1440, 900], [1024, 900], [834, 900], [390, 844]] as const) {
       test(`connectors end clear of the pills at ${w}`, async ({ page }) => {
         await page.setViewportSize({ width: w, height: h });
         await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -1210,9 +1275,12 @@ for (const d of DIAGRAMS) {
           const vbw = Number((marker.getAttribute('viewBox') ?? '0 0 8 8').split(/\s+/)[2]);
           const overhangU = mw * sw * ((vbw - refX) / vbw);
 
-          const boxes = [...svg.querySelectorAll('.flow-node rect')].map((r) => (r as SVGRectElement).getBBox());
-          /* The rail is the last row of the graph, so its pills are the four lowest boxes. */
-          const pills = [...boxes].sort((a, b) => a.y - b.y).slice(-4);
+          /* The rail's capsules, by what they are: RannaGhor has no state rail at all, so
+             picking the four lowest boxes measured its ordinary steps and passed for the
+             wrong reason. */
+          const pills = [...svg.querySelectorAll('.flow-node.is-state rect')].map((r) =>
+            (r as SVGRectElement).getBBox(),
+          );
 
           let minGapPx = Infinity;
           let where = '';
@@ -1235,9 +1303,16 @@ for (const d of DIAGRAMS) {
               }
             }
           }
-          return { px: minGapPx * scale, where, overhangU, scale };
+          return { px: minGapPx * scale, where, overhangU, scale, pills: pills.length };
         });
 
+        /* A study with no state rail has to say so, or the run passes by measuring
+           nothing: the earlier version returned early, so RannaGhor asserted nothing
+           at all. The count comes from the spec, so a study that gains a rail is
+           measured rather than skipped. */
+        const marked = diagrams[d.slug].nodes.filter((n) => n.state).length;
+        expect(worst.pills, `${d.slug} drew ${worst.pills} rail pills, spec has ${marked}`).toBe(marked);
+        if (!marked) return;
         /* The connector should stop at the cell edge, not touch it. One marker width of
            clearance is the smallest gap that reads as a deliberate join rather than a
            collision at 3x. */
@@ -1763,4 +1838,62 @@ for (const slug of ['ticket-pipeline', 'rannaghor'] as const) {
       expect(failures, `${slug} ${theme}: the drawn label set differs from the spec's`).toEqual([]);
     });
   }
+}
+
+/* ---------------------------------------------------------------- case-polish
+ *
+ * Owner, 2026-11-17: "in architecture ... while scrolling, Architecture shows at
+ * bg overlapping diagram".
+ *
+ * The heading sticks under the sub-nav (`position: sticky`), and the diagram is a
+ * full-width band. Scrolling through the section therefore slid the sticky word
+ * "Architecture" across the drawing: 24-26px of overlap at 26 of 31 sampled
+ * scroll positions, on both studies, at 1440 and 1280.
+ *
+ * The assertion is the owner's own: while scrolling through the Architecture
+ * section, the heading's box and the diagram's box must never intersect. It is
+ * sampled across the section's whole scroll range rather than at one offset,
+ * because the overlap only appears between them and would pass at rest.
+ */
+for (const d of DIAGRAMS) {
+  test.describe(`${d.slug}: the Architecture heading stays off the diagram`, () => {
+    for (const width of [1440, 1280, 1024, 834]) {
+      test(`${width}px: the heading never overlaps the diagram while scrolling`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        await page.goto(d.path);
+
+        const report = await page.evaluate(async () => {
+          const section = document.getElementById('architecture') as HTMLElement;
+          const heading = section.querySelector('.section-heading') as HTMLElement;
+          const figure = section.querySelector('.flow-panel') as HTMLElement;
+          const start = section.getBoundingClientRect().top + scrollY;
+          const hits: string[] = [];
+          let samples = 0;
+          /* From a screen above the section to a screen past its bottom: every
+             offset a reader can stop at. */
+          for (let y = start - 300; y <= start + section.offsetHeight + 300; y += 50) {
+            scrollTo(0, Math.max(0, y));
+            /* Two frames: a sticky heading moves on the scroll event, and the
+               measurement has to be of the settled frame. */
+            await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+            const h = heading.getBoundingClientRect();
+            const f = figure.getBoundingClientRect();
+            samples += 1;
+            const ox = Math.min(h.right, f.right) - Math.max(h.left, f.left);
+            const oy = Math.min(h.bottom, f.bottom) - Math.max(h.top, f.top);
+            if (ox > 0 && oy > 0) {
+              hits.push(`scrollY ${Math.round(y - start)}: ${Math.round(ox)}x${Math.round(oy)}px`);
+            }
+          }
+          return { hits, samples };
+        });
+
+        /* Guards the guard: the sweep must actually cover the section, or this
+           passes by measuring nowhere. */
+        expect(report.samples, 'too few scroll positions sampled').toBeGreaterThan(10);
+        expect(report.hits, 'the heading box intersects the diagram').toEqual([]);
+      });
+    }
+  });
 }

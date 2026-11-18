@@ -5,6 +5,110 @@ import { expect, test, type Page } from '@playwright/test';
    columns on desktop and as a clean 2x2 on a tablet, never wrapping Source under
    an empty quadrant. */
 
+/* Owner, 2026-11-17: "remove bg of github & create same design as Skills sections
+   button, write Source Code instead of source." So the cell's label is "Source
+   Code", its link reads "GitHub", and the link wears the Skills chip: mono type,
+   a hairline border, no fill. The chip's values are read off a real
+   `.skill-list li` on the home page rather than restated here, because "same
+   design" is a comparison, not a list of literals. */
+
+const STUDIES = [
+  { slug: 'ticket-pipeline', repo: 'https://github.com/ToshifurRahman/ticket-pipe' },
+  { slug: 'rannaghor', repo: 'https://github.com/ToshifurRahman/e-commerce-website' },
+];
+
+/* The chip's own computed style, read from the Skills section. */
+const chipStyle = (page: Page) =>
+  page.goto('/').then(() =>
+    page.locator('.skill-list li').first().evaluate((el) => {
+      const s = getComputedStyle(el);
+      return {
+        fontFamily: s.fontFamily,
+        fontSize: s.fontSize,
+        lineHeight: s.lineHeight,
+        borderTopWidth: s.borderTopWidth,
+        borderTopStyle: s.borderTopStyle,
+        borderTopColor: s.borderTopColor,
+        borderRadius: s.borderRadius,
+        backgroundColor: s.backgroundColor,
+        paddingTop: s.paddingTop,
+        paddingRight: s.paddingRight,
+        paddingBottom: s.paddingBottom,
+        paddingLeft: s.paddingLeft,
+        color: s.color,
+      };
+    }),
+  );
+
+for (const { slug, repo } of STUDIES) {
+  test(`${slug}: the Source cell reads Source Code and links GitHub as a Skills chip`, async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    const chip = await chipStyle(page);
+
+    await page.goto(`/work/${slug}`);
+    const cell = page.locator('.meta > div').filter({ has: page.locator('a.meta-link') });
+    await expect(cell).toHaveCount(1);
+    await expect(cell.locator('dt')).toHaveText('Source Code');
+    const link = cell.locator('a.meta-link');
+    await expect(link).toHaveText('GitHub');
+    await expect(link).toHaveAttribute('href', repo);
+    await expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+
+    const own = await link.evaluate((el) => {
+      const s = getComputedStyle(el);
+      return {
+        fontFamily: s.fontFamily,
+        fontSize: s.fontSize,
+        lineHeight: s.lineHeight,
+        borderTopWidth: s.borderTopWidth,
+        borderTopStyle: s.borderTopStyle,
+        borderTopColor: s.borderTopColor,
+        borderRadius: s.borderRadius,
+        backgroundColor: s.backgroundColor,
+        paddingTop: s.paddingTop,
+        paddingRight: s.paddingRight,
+        paddingBottom: s.paddingBottom,
+        paddingLeft: s.paddingLeft,
+        color: s.color,
+        textTransform: s.textTransform,
+        height: el.getBoundingClientRect().height,
+      };
+    });
+
+    /* No fill of its own: the page's ground shows through, as on a chip. */
+    expect(['rgba(0, 0, 0, 0)', 'transparent']).toContain(own.backgroundColor);
+    /* The same type, border and radius as the Skills chip. */
+    expect(own.fontFamily, 'the link is not in the chip face').toBe(chip.fontFamily);
+    expect(own.fontSize, 'the link is not at the chip size').toBe(chip.fontSize);
+    expect(own.borderTopWidth).toBe(chip.borderTopWidth);
+    expect(own.borderTopStyle).toBe(chip.borderTopStyle);
+    expect(own.borderTopColor, 'the link border is not the chip rule').toBe(chip.borderTopColor);
+    expect(own.borderRadius).toBe(chip.borderRadius);
+    expect(own.color, 'the link ink is not the chip ink').toBe(chip.color);
+  });
+
+  test(`${slug}: the chip keeps its target height and a visible focus ring`, async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(`/work/${slug}`);
+    const link = page.locator('.meta a.meta-link');
+    const target = await page.evaluate(() =>
+      parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--target')) * 16,
+    );
+    const height = await link.evaluate((el) => el.getBoundingClientRect().height);
+    expect(height, 'the chip is under the target height').toBeGreaterThanOrEqual(target - 0.5);
+
+    await link.focus();
+    const ring = await link.evaluate((el) => {
+      const s = getComputedStyle(el);
+      /* Focus is drawn on `:focus-visible`; the stylesheet's ring is an outline in the
+         accent's text tone. A focused link is what a keyboard user gets. */
+      return { outlineWidth: parseFloat(s.outlineWidth), outlineStyle: s.outlineStyle };
+    });
+    expect(ring.outlineStyle, 'no focus ring on the chip').not.toBe('none');
+    expect(ring.outlineWidth, 'the focus ring has no width').toBeGreaterThan(0);
+  });
+}
+
 const readCells = (page: Page) =>
   page.locator('.meta > div').evaluateAll((nodes) =>
     nodes.map((n) => {

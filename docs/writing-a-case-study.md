@@ -47,13 +47,13 @@ test lists in step 8.
 ## 3. The meta row
 
 `meta` is an array of `{ label: string; value: string; href?: string }`. The
-agreed shape is `Type`, `Stack`, `Source`, and `Live` when the study has one:
+agreed shape is `Type`, `Stack`, `Source Code`, and `Live` when the study has one:
 
 ```ts
 meta: [
   { label: 'Type', value: 'A short phrase for the kind of system' },
   { label: 'Stack', value: 'The stack, in the project’s own names' },
-  { label: 'Source', value: 'GitHub', href: 'https://github.com/ToshifurRahman/<repo>' },
+  { label: 'Source Code', value: 'GitHub', href: 'https://github.com/ToshifurRahman/<repo>' },
   // Optional Live entry, added only when the owner confirms the address,
   // in this exact shape: { label: 'Live', value, href }
 ],
@@ -61,14 +61,15 @@ meta: [
 
 - `Type` is required. The Work card reads it.
 - `Stack` is required. The Work card reads it.
-- `Source` is required, in this exact shape: `{ label: 'Source', value: 'GitHub', href: <the repository URL> }`.
+- `Source Code` is required, in this exact shape: `{ label: 'Source Code', value: 'GitHub', href: <the repository URL> }`.
 - `Live` is optional, in this exact shape: `{ label: 'Live', value, href }`. `value` is the host shown, `href` is the full address. Add it only when the owner confirms the address. Do not guess a Live URL.
 - There is no `Timeline` entry. The meta row carries labels, not a date range. Put any date the source states into the prose instead, or leave it out.
 
-The case-study page renders every entry in the array, in order. The `Source`
-entry renders as a highlighted link-button, and a `Live` entry sits next to it in
-the same style. The page title is a link to the `Live` address when the study has
-one, and to the `Source` address otherwise, with `rel="noopener noreferrer"` on
+The case-study page renders every entry in the array, in order. The `Source Code`
+entry renders as a Skills-style chip — mono type, a hairline border, no fill, the
+same treatment as a `.skill-list` item — and a `Live` entry sits next to it in the
+same style. The page title is a link to the `Live` address when the study has
+one, and to the `Source Code` address otherwise, with `rel="noopener noreferrer"` on
 both.
 
 The Work card reads only `Type` and `Stack`, through `meta(c, 'Type')` and
@@ -286,7 +287,7 @@ env LH_PORT=4193 bun run e2e
 
 - [ ] Facts read from the project, with the owner's confirmation for any owner-voice text.
 - [ ] `CaseStudy` object added to `caseStudies`.
-- [ ] Meta row: `Type`, `Stack`, `Source`, plus `Live` only if confirmed. No `Timeline`.
+- [ ] Meta row: `Type`, `Stack`, `Source Code`, plus `Live` only if confirmed. No `Timeline`.
 - [ ] Six sections, in `sectionOrder` order, with a `challenges` section of `pairs`.
 - [ ] `outcome` equals the sentence that closes Results.
 - [ ] `DiagramSpec` added to `diagrams`, with `clusters`, `runs` and `still`.

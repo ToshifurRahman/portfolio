@@ -119,15 +119,16 @@ export function CaseStudyPage() {
   );
 }
 
-/* The study's title and meta row. Source and Live are the page's exits, so they
-   are the only entries drawn as highlighted link-buttons: Live first, then
-   Source, each in its own meta cell. The title links to Live when the study has
-   one, else to its repo, and stays plain text when it has neither. */
+/* The study's title and meta row. The two exits — Source Code and Live — are the
+   entries with a destination, so they are the only ones drawn as links, each in
+   its own meta cell: Live first, then Source Code. The title links to Live when
+   the study has one, else to its repo, and stays plain text when it has neither.
+   The exits carry `meta-link`, which is styled as a Skills chip (src/styles.css). */
 export function StudyHeader({ study }: { study: CaseStudy }) {
-  const isExit = (m: MetaEntry) => (m.label === 'Source' || m.label === 'Live') && Boolean(m.href);
+  const isExit = (m: MetaEntry) => (m.label === 'Source Code' || m.label === 'Live') && Boolean(m.href);
   const facts = study.meta.filter((m) => !isExit(m));
   const live = study.meta.find((m) => m.label === 'Live' && m.href);
-  const source = study.meta.find((m) => m.label === 'Source' && m.href);
+  const source = study.meta.find((m) => m.label === 'Source Code' && m.href);
   const exits = [live, source].filter((m): m is MetaEntry => Boolean(m));
   const titleHref = live?.href ?? source?.href;
 
@@ -163,7 +164,7 @@ export function StudyHeader({ study }: { study: CaseStudy }) {
           <div key={m.label}>
             <dt>{m.label}</dt>
             <dd>
-              <a className="button meta-link" href={m.href} rel="noopener noreferrer">
+              <a className="meta-link" href={m.href} rel="noopener noreferrer">
                 {m.value}
               </a>
             </dd>

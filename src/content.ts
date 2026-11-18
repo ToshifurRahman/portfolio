@@ -427,11 +427,14 @@ export type Pair = { challenge: { lead: string; text: string }; solution: { lead
 export type Section = { id: string; title: string; blocks: Block[] };
 
 /* A header meta entry. The page understands four labels: `Type` and `Stack`
-   are plain facts, `Source` is the repo, and `Live` is the deployed site,
+   are plain facts, `Source Code` is the repo, and `Live` is the deployed site,
    shaped `{ label: 'Live', value: <host shown>, href: <url> }`. An href makes
-   Source or Live a highlighted link-button (Live first when both are present);
-   without one, either renders as plain text, as every other label always does.
-   There is no Timeline label: the owner removed it on 2026-11-17. */
+   Source Code or Live a link drawn as a Skills chip (Live first when both are
+   present); without one, either renders as plain text, as every other label
+   always does. The label is `Source Code`, not `Source`: the owner renamed it on
+   2026-11-17 ("write Source Code instead of source"), and the link keeps its
+   value, `GitHub`. There is no Timeline label: the owner removed it on
+   2026-11-17. */
 export type MetaEntry = { label: string; value: string; href?: string };
 
 export type CaseStudy = {
@@ -472,7 +475,7 @@ const ticketPipeline: CaseStudy = {
   meta: [
     { label: 'Type', value: 'Backend system with a web app' },
     { label: 'Stack', value: 'Bun, Hono, PostgreSQL, Redis, AWS SQS, Socket.io, React' },
-    { label: 'Source', value: 'GitHub', href: 'https://github.com/ToshifurRahman/ticket-pipe' },
+    { label: 'Source Code', value: 'GitHub', href: 'https://github.com/ToshifurRahman/ticket-pipe' },
   ],
   sections: [
     {
@@ -672,7 +675,7 @@ const rannaghor: CaseStudy = {
     { label: 'Type', value: 'Full-stack web app' },
     { label: 'Stack', value: 'Bun, React 19, TanStack Router, Hono, Better Auth, Drizzle, PostgreSQL' },
     {
-      label: 'Source',
+      label: 'Source Code',
       value: 'GitHub',
       href: 'https://github.com/ToshifurRahman/e-commerce-website',
     },

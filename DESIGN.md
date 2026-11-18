@@ -354,8 +354,10 @@ Achievements, Skills, Contact. Certificates are part of Achievements, and Educat
 entry because the bar holds five links. Whatever the bar lists, the sections keep this order.
 
 **Case studies.** A `study-head` (back link, a title that links to the study's Live site or else
-its repo, lede), then the meta row (`Type` and `Stack` as plain facts, with Source and any Live
-site as highlighted link-buttons), then the sticky sub-nav, then the
+its repo, lede), then the meta row (`Type` and `Stack` as plain facts, and the exits — `Source
+Code`, the repo, plus `Live` when there is one — as Skills chips: mono, a hairline `rule-strong`
+border, `radius-sm` and no fill, the same chip the Skills section uses; the owner replaced the
+filled button with it on 2026-11-17), then the sticky sub-nav, then the
 six sections (`sectionOrder` in `src/content.ts`: Overview, Problem, Architecture, Tech
 decisions, Challenges and solutions, Results — Challenges and Solutions are one section). The sub-nav borrows the bar's type, lamp and active treatment, and keeps its own rail: the top bar draws no line between its items (owner, 2026-11-17: "in nav, remove lines connected with dots"), and it lights **Work** while a case study is open — the owner asked for the two to
 be one design, not two.
@@ -504,6 +506,15 @@ the eye:
   special-cased.
 - An edge's final approach runs at least one marker length straight, so the arrowhead lands on
   a leg rather than on an elbow (`P2b-8`).
+- **An edge meets its box.** A path stops exactly `MARKER_TIP` short of its target — the distance
+  the marker's ink itself runs past the path's end — so the arrowhead's tip lands on the border
+  and the line reads as joined rather than floating beside it. The state rail is the one exception:
+  those connectors stop `RAIL_CLEAR` (4 units) clear of a dashed capsule, because two capsules are
+  a set, not a chain of steps, and ink on their border reads as a collision (`P2b-9`).
+- **A label sits on its own line.** The words are drawn over their run and the pill hides the
+  stroke behind them; a desktop label is not lifted above the line, and a vertical-layout label is
+  centred on it, not set beside it. A label lifted clear reads as a heading of whatever box is
+  next to it.
 - No height clamp exists and none may return. `Ruling 12`: the 12px floor outranks fitting in
   one window, so the chart scrolls on short viewports rather than shrinking its labels. The
   desktop Ticket-Pipeline chart *does* fit a 1440x900 window (`P2b-4`, row spacing tightened to
@@ -521,7 +532,13 @@ measured there.
 The shared departure leg where two edges leave one box is staggered at the box edge itself:
 `edgePath`'s `sibling` index moves both the departure point and the lane, so two edges out of
 one box never share a segment, not even the first 12 units. A shared endpoint on the box
-border is the only thing two edges have in common.
+border is the only thing two edges have in common. The index counts departures per box and per
+side, not per route: a straight drop and a drop-and-turn toward one side share their vertical leg
+for as long as both are vertical, which is how `authorise` and `refuse` once crossed. A later
+sibling now leaves further out and turns higher, so its leg is past the earlier edge's and its run
+is above the earlier edge's turn. Where even that is not enough — two long runs across the graph
+from one box — the layout moves the target under its own source (RannaGhor's refusals hang under
+the check that refuses them), so the edge is one drop and needs no lane at all.
 
 ## Do's and don'ts
 

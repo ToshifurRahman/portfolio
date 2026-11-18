@@ -115,12 +115,23 @@ const DETAIL = 12;
 /* The arrowhead is a `marker` inherited by every edge (`Marker` below): markerWidth 6 in
    `strokeWidth` units (the default markerUnits), on a 2px track, with the path's point at
    refX 7 of an 8-unit viewBox. Its ink therefore runs `MARKER_TIP` units past the path's
-   own endpoint — which means a path that stops 2 units short of a box draws its arrowhead
-   almost touching it. An edge stops `EDGE_STOP` short of its target so the *ink* clears by
-   a visible margin, and both numbers come from the marker rather than from eye. */
+   own endpoint.
+
+   Owner, 2026-11-17: "fix lines connected with boxes". Every edge used to stop
+   `2 + 2 * MARKER_TIP` short of its target "so the *ink* clears by a visible margin", which
+   put the arrowhead's tip 3.5 units (4px at 1440) off the border: a measurable break on
+   every edge in both studies. A path now stops exactly `MARKER_TIP` short, so the ink's tip
+   meets the border and the line reads as joined to its box. The number still comes from the
+   marker rather than from eye. */
 const TRACK = 2;
 const MARKER_TIP = (6 * TRACK * (8 - 7)) / 8;
-const EDGE_STOP = 2 + MARKER_TIP * 2;
+const EDGE_STOP = MARKER_TIP;
+/* The state rail keeps its own stop. P2b-9 ruled that a rail connector ends *clear* of
+   the pill it joins rather than touching it: two dashed capsules are a set, not a chain
+   of steps, and ink on the border reads as a collision at 3x. So the tip stops
+   `RAIL_CLEAR` units clear there, while every ordinary join meets its box. */
+const RAIL_CLEAR = 4;
+const RAIL_STOP = MARKER_TIP + RAIL_CLEAR;
 /* The marker's full length: the straight run an arrowhead needs behind it. */
 const MARKER_LEN = 6 * TRACK;
 const PAD = 13;
@@ -381,27 +392,38 @@ function edgePath(
     /* Every vertical-layout box is one column wide, so an edge is a straight drop into
        the next box down, or a link along the state rail. Nothing here can cross a box:
        an edge only ever spans the single gap between two neighbours. */
+    /* The state pills keep their clearance (P2b-9) on their chain joins too: they are a
+       set of dashed capsules, and ink on the border reads as a collision. */
+    const stop = b.state ? RAIL_STOP : EDGE_STOP;
     if (b.y >= a.y + a.h) {
-      if (Math.abs(acx - bcx) < 1) return `M${acx} ${a.y + a.h} V${b.y - EDGE_STOP}`;
-      const mid = Math.min((a.y + a.h + b.y) / 2, b.y - EDGE_STOP - MARKER_LEN);
-      return `M${acx} ${a.y + a.h} V${mid} H${bcx} V${b.y - EDGE_STOP}`;
+      if (Math.abs(acx - bcx) < 1) return `M${acx} ${a.y + a.h} V${b.y - stop}`;
+      const mid = Math.min((a.y + a.h + b.y) / 2, b.y - stop - MARKER_LEN);
+      return `M${acx} ${a.y + a.h} V${mid} H${bcx} V${b.y - stop}`;
     }
-    /* Along the rail: side to side, or down one row. The rail is the one place two boxes
-       share a row, so this is the horizontal join that was touching the pill borders. */
-    if (Math.abs(a.y - b.y) < 1) return `M${a.x + a.w} ${a.y + a.h / 2} H${b.x - EDGE_STOP}`;
+    /* Along the rail: side to side, or down one row. Same stop rule as every other join:
+       the target's own kind decides (`P2b-9`). */
+    if (Math.abs(a.y - b.y) < 1) return `M${a.x + a.w} ${a.y + a.h / 2} H${b.x - stop}`;
     const mid = (a.y + a.h + b.y) / 2;
-    return `M${acx} ${a.y + a.h} V${mid} H${bcx} V${b.y - EDGE_STOP}`;
+    return `M${acx} ${a.y + a.h} V${mid} H${bcx} V${b.y - stop}`;
   }
   const acx = a.x + a.w / 2;
   const bcx = b.x + b.w / 2;
   const acy = a.y + a.h / 2;
   const bcy = b.y + b.h / 2;
+  /* The stop belongs to the join, not the layout. A state pill is one of a set of dashed
+     capsules, and ink landing on its border reads as a collision (P2b-9), so it takes
+     `RAIL_STOP` here exactly as it does on the vertical rail. This branch lives in the
+     desktop half of `edgePath`, and it used to read `RAIL_STOP` only under `if (vertical)`,
+     which left the three desktop state joins on Ticket-Pipeline touching their capsules:
+     gap 0 units at 1440, where 40a1256 had 3.5. The target decides, because the target is
+     the border the arrowhead's ink reaches. */
+  const stop = b.state ? RAIL_STOP : EDGE_STOP;
   /* Out to the outer margin, up to the target's own height, and in from the side:
      the margin is reserved and no box reaches into it. */
   if (route === 'loop-side') {
     const lane = bounds.laneR ?? bounds.w - 10;
-    if (bcy < acy) return `M${a.x + a.w} ${acy} H${lane} V${bcy} H${b.x + b.w + 2}`;
-    return `M${a.x + a.w} ${acy} H${lane} V${bcy} H${b.x + b.w + 2}`;
+    if (bcy < acy) return `M${a.x + a.w} ${acy} H${lane} V${bcy} H${b.x + b.w + stop}`;
+    return `M${a.x + a.w} ${acy} H${lane} V${bcy} H${b.x + b.w + stop}`;
   }
   if (route === 'loop-side-left') {
     /* The left margin, for a branch that leaves a box whose neighbours are below it.
@@ -409,44 +431,54 @@ function edgePath(
        straight leg rather than on the elbow (P2b-8: this leg was 7 units, a 12-unit marker
        long). */
     const lane = bounds.laneL ?? 8;
-    const approach = b.y - EDGE_STOP;
-    return `M${a.x} ${acy} H${lane} V${approach - MARKER_LEN} H${b.x - EDGE_STOP} V${approach}`;
+    const approach = b.y - stop;
+    return `M${a.x} ${acy} H${lane} V${approach - MARKER_LEN} H${b.x - stop} V${approach}`;
   }
   if (route === 'loop-bottom') {
     const lane = Math.min(bounds.h - 10, Math.max(a.y + a.h, b.y + b.h) + 30);
-    return `M${acx} ${a.y + a.h} V${lane} H${bcx} V${b.y + b.h + 2}`;
+    return `M${acx} ${a.y + a.h} V${lane} H${bcx} V${b.y + b.h + stop}`;
   }
 
   /* Below the source: down through the gap under it, then across to the target. */
   if (b.y >= a.y + a.h) {
-    if (Math.abs(acx - bcx) < 1) return `M${acx} ${a.y + a.h} V${b.y - EDGE_STOP}`;
+    /* A later departure from the same box stands off the centre line, so it does not run
+       down the earlier one's leg. The offset stays inside the box's own bottom edge, and
+       the target shares the column, so the leg still lands on its border. */
+    const stagger = acx + Math.min(a.w / 2 - 6, sibling * 14);
+    if (Math.abs(acx - bcx) < 1) return `M${stagger} ${a.y + a.h} V${b.y - stop}`;
     /* To a box that is not directly below, the gap under the source is crossed at
        the outer edge of the two, so the horizontal run misses anything between. */
     const right = b.x > a.x;
     const lane0 = right ? Math.max(a.x + a.w, b.x + b.w) + 10 : Math.min(a.x, b.x) - 10;
     const lane = right ? lane0 + sibling * 12 : lane0 - sibling * 12;
-    const drop = a.y + a.h + 12 + sibling * 16;
-    /* The departure point itself is staggered: two edges that leave one box from the
-       same point share that vertical leg for 12 units before the lanes separate, which
-       is a visible overlap even though the endpoint is legitimately shared. Keep each
-       departure inside the box's own bottom edge. */
-    const sx = Math.min(a.x + a.w - 6, Math.max(a.x + 6, acx + (right ? 1 : -1) * sibling * 12));
+    /* Two edges that leave one box for the same side cannot both use one leg at one
+       height. The two that leave Role check did, and `authorise`'s leftward run cut
+       through `refuse`'s final approach at (104,114). The separation is geometric
+       rather than a bigger number: a later sibling departs *further out* toward the side
+       it travels and turns *higher* (closer to the box) than the one before it. Its leg
+       is then on the far side of the earlier edge's leg, its turn is above the earlier
+       edge's turn, and its run leaves outward — so the two never share a point, and no
+       third edge is displaced to make room. `sibling` is the departure index within one
+       box and side, so this is the whole ordering. */
+    const out = (a.w / 2 - 6) * Math.min(sibling, 2);
+    const sx = Math.min(a.x + a.w - 6, Math.max(a.x + 6, acx + (right ? 1 : -1) * out));
+    const drop = Math.max(a.y + a.h + 2, a.y + a.h + 10 - sibling * 6);
     /* The second-to-last turn sits a whole marker above the target, so the final run is a
        straight leg the arrowhead can sit on (P2b-8: this leg measured 7 units). */
-    return `M${sx} ${a.y + a.h} V${drop} H${lane} V${b.y - EDGE_STOP - MARKER_LEN} H${b.x + b.w / 2} V${b.y - EDGE_STOP}`;
+    return `M${sx} ${a.y + a.h} V${drop} H${lane} V${b.y - stop - MARKER_LEN} H${b.x + b.w / 2} V${b.y - stop}`;
   }
   /* Above the source: up the gap and in from the top. */
   if (b.y + b.h <= a.y) {
     const above = b.y + b.h + (a.y - (b.y + b.h)) / 2;
-    if (Math.abs(acx - bcx) < 1) return `M${acx} ${a.y} V${b.y + b.h + 2}`;
-    return `M${acx} ${a.y} V${above} H${bcx} V${b.y + b.h + 2}`;
+    if (Math.abs(acx - bcx) < 1) return `M${acx} ${a.y} V${b.y + b.h + stop}`;
+    return `M${acx} ${a.y} V${above} H${bcx} V${b.y + b.h + stop}`;
   }
   /* Same band: side to side through the gap between them. */
-  if (b.x >= a.x + a.w) return `M${a.x + a.w} ${acy} H${b.x - EDGE_STOP}`;
-  if (a.x >= b.x + b.w) return `M${a.x} ${acy} H${b.x + b.w + 2}`;
+  if (b.x >= a.x + a.w) return `M${a.x + a.w} ${acy} H${b.x - stop}`;
+  if (a.x >= b.x + b.w) return `M${a.x} ${acy} H${b.x + b.w + stop}`;
   /* Overlapping bands: go round the outside rather than through the box. */
   const lane = b.x >= a.x ? b.x + b.w + 12 : b.x - 12;
-  return `M${a.x + a.w} ${acy} H${lane} V${bcy} H${b.x + b.w + 2}`;
+  return `M${a.x + a.w} ${acy} H${lane} V${bcy} H${b.x + b.w + stop}`;
 }
 
 /* A label's anchor: the middle of the gap its edge crosses. */
@@ -467,10 +499,11 @@ function labelPos(a: Placed, b: Placed, route: Route, bounds: Bounds, labelW: nu
   }
   /* Below the source: on its own vertical run, just under the box. */
   if (b.y >= a.y + a.h) {
-    if (Math.abs(a.x + a.w / 2 - (b.x + b.w / 2)) < 1) {
-      return { x: a.x + a.w / 2 + 6 + labelW / 2, y: (a.y + a.h + b.y) / 2 };
-    }
-    return { x: b.x + b.w / 2 + 5 + labelW / 2, y: b.y - 7 };
+    /* Centred *on* the run, as a loop's label is: a vertical line's label belongs on the
+       line, and its pill hides the stroke behind the words. Sitting it beside the line put
+       it 13-15px off the very edge it names (owner, 2026-11-17: labels must be "on their
+       own lines"). */
+    return { x: (a.x + a.w / 2 + b.x + b.w / 2) / 2, y: (a.y + a.h + b.y) / 2 };
   }
   if (b.y + b.h <= a.y) {
     return { x: (a.x + a.w / 2 + b.x + b.w / 2) / 2, y: b.y + b.h + (a.y - (b.y + b.h)) / 2 - 4 };
@@ -497,12 +530,17 @@ function bestAnchor(
      producing anchors that were optimal by some score and still clipped or parked in a
      gap too narrow for the pill — VENDOR ROUTE lost its "VE" that way. This asks the
      only question that matters and samples the answer. */
-  const pillAt = (cx: number, cy: number, horiz: boolean) => {
-    const p = pillFor('x'.repeat(Math.round(labelW / adv(DETAIL))), cx, horiz ? cy - 8 : cy);
+  const pillAt = (cx: number, cy: number) => {
+    /* The pill is built where the label is drawn: on the run, not lifted above it. The
+       `- 8` this used to apply was the old horizontal lift, which the render dropped when
+       labels moved onto their own lines; leaving it here made the clearance test reason
+       about a pill no label ever occupies. `horiz` no longer changes the geometry, only
+       which reading rule `clears` applies, so the parameter went with the lift. */
+    const p = pillFor('x'.repeat(Math.round(labelW / adv(DETAIL))), cx, cy);
     return { x1: cx - p.w / 2, y1: p.y - 1, x2: cx + p.w / 2, y2: p.y - 1 + p.h };
   };
   const clears = (cx: number, cy: number, horiz: boolean) => {
-    const r = pillAt(cx, cy, horiz);
+    const r = pillAt(cx, cy);
     if (r.x1 < 1 || r.x2 > bounds.w - 1 || r.y1 < 1) return false;
     for (const b of boxes) {
       const dx = Math.max(b.x - r.x2, 0, r.x1 - (b.x + b.w));
@@ -510,7 +548,12 @@ function bestAnchor(
       /* Overlap or within 4 units on either axis: a box clipping a label's first letters
          at a corner is hidden ink, and the pill reads as part of that box. */
       if (Math.hypot(dx, dy) < 5) return false;
-      /* The reading test: inside a box's horizontal span one row gap away is a heading. */
+      /* The reading test: inside a box's horizontal span one row gap away is a heading.
+         It applies to a label lifted *above* a horizontal run, where the words could be
+         mistaken for the heading of the box over them. A label centred *on* a vertical
+         run is not that: the stroke passes through its pill, so it can only read as the
+         line's own label, and the rule would push it off the line it belongs to. */
+      if (!horiz) continue;
       const insideX = r.x1 >= b.x - 2 && r.x2 <= b.x + b.w + 2;
       if (insideX && ((b.y - r.y2 >= -4 && b.y - r.y2 < 46) || (r.y1 - (b.y + b.h) >= -4 && r.y1 - (b.y + b.h) < 46))) {
         return false;
@@ -540,7 +583,8 @@ function bestAnchor(
     x = nx;
     y = ny;
   }
-  /* Prefer a horizontal run — the label reads best above a line — then a vertical one. */
+  /* Prefer a horizontal run, then a vertical one: a label on a horizontal stroke has the
+     whole gap to sit in, where a vertical one is boxed in on both sides. */
   for (const horiz of [true, false]) {
     let fallback: { x: number; y: number; horiz: boolean; score: number } | null = null;
     for (const g of segs) {
@@ -553,9 +597,9 @@ function bestAnchor(
         const t = k / steps;
         const bx = g.x1 + (g.x2 - g.x1) * t;
         const by = g.y1 + (g.y2 - g.y1) * t;
-        /* A label on a horizontal run sits above it; one on a vertical run sits beside
-           it, which is the only room a narrow gap offers. Both are positions on or beside
-           the line, which is what a label is. */
+        /* On the run for a horizontal one, and on it or just beside it for a vertical
+           one — a narrow gap offers no room above the stroke. Every position is on or
+           beside the line, which is what a label is; none is lifted clear of it. */
         const offsets = horiz ? [0] : [0, -labelW / 2 - 8, labelW / 2 + 8];
         for (const off of offsets) {
           const cx = bx + off;
@@ -566,7 +610,7 @@ function bestAnchor(
         const cy = by;
         /* Remember the roomiest invalid spot, so a path with no good seat still gets its
            least-bad one rather than a far-away default. */
-        const r = pillAt(cx, cy, horiz);
+        const r = pillAt(cx, cy);
         let nearest = Infinity;
         for (const b of boxes) {
           const dx = Math.max(b.x - r.x2, 0, r.x1 - (b.x + b.w));
@@ -1024,9 +1068,12 @@ function Graph({
                   : 'down'
                 : 'branch'
             : e.route;
-          /* Stagger only the departures that actually share a run: same source, same side,
-             and the same kind of drop. A box's edges to opposite sides do not collide. */
-          const key = `${from0 === a0 ? e.from : `entry:${e.to}`}:${b0.x > from0.x ? 'r' : 'l'}:${r0}`;
+          /* Stagger only the departures that actually share a run: the same source box,
+             leaving toward the same side. The route is deliberately not part of the key —
+             a straight drop and a drop-and-turn toward one side share their departure leg
+             for as long as both are vertical, which is what put `authorise` and `refuse`
+             on the same 10-unit leg out of Role check. */
+          const key = `${from0 === a0 ? e.from : `entry:${e.to}`}:${b0.x > from0.x ? 'r' : 'l'}`;
           const sibling = departure.get(key) ?? 0;
           departure.set(key, sibling + 1);
           pathOf.set(e.id, edgePath(from0, b0, r0, bounds, vertical, sibling));
@@ -1162,9 +1209,12 @@ function Graph({
            this search is for the desktop graph, where the regression was. */
         const anchor = vertical ? null : bestAnchor(d, labelW, placed, bounds);
         const pos = anchor
-          ? /* Above a horizontal run and on a vertical one: the line stays visible and
-               the label touches its own segment. */
-            { x: anchor.x, y: anchor.horiz ? anchor.y - 8 : anchor.y }
+          ? /* On the run itself: the words sit on their own line and the pill hides the
+               stroke behind them. They used to be lifted 8 units clear, which left every
+               horizontal label 5.4 units off its edge — near enough to look attached and
+               far enough to miss it, which is the "labels not on their own lines" the
+               owner reported. */
+            { x: anchor.x, y: anchor.y }
           : labelPos(sourceOf(e, a, b), b, route, bounds, labelW);
         /* One resolver decides where the label ends up, and the pill and the words are
            both rendered from what it returns. The two used to be separate: a pill was
@@ -1226,16 +1276,17 @@ function Graph({
             const own = strokes.filter((g) => g.id === e.id);
             const cands: { x: number; y: number; dist: number }[] = [];
             for (const g of own) {
-              const horizontal = Math.abs(g.y2 - g.y1) < 0.01;
               const len = Math.hypot(g.x2 - g.x1, g.y2 - g.y1);
               const steps = Math.max(2, Math.ceil(len / 6));
               for (let i = 0; i <= steps; i++) {
                 const t = i / steps;
                 const px = g.x1 + (g.x2 - g.x1) * t;
                 const py = g.y1 + (g.y2 - g.y1) * t;
-                /* Above a horizontal run, beside a vertical one: the line stays visible. */
-                const cx = horizontal ? px : px;
-                const cy = horizontal ? py - 8 : py;
+                /* On the run, horizontal or vertical, matching where the label is drawn:
+                   the fallback used to emit `py - 8` for a horizontal run, the old lift,
+                   which would have seated a fallback label off its own line. */
+                const cx = px;
+                const cy = py;
                 cands.push({ x: cx, y: cy, dist: Math.hypot(cx - pos.x, cy - pos.y) });
               }
             }
