@@ -516,11 +516,15 @@ function edgePath(
    edge: the worker's `log` leaves the centre, and `escalate` enters Replay's
    centre. */
 function stubPath(a: Placed, b: Placed): string {
-  /* The side away from the target: the worker's `log` run and label are on the
-     left, so the failure arrow takes the right edge; the replay return goes up the
-     left, away from the edge that enters Replay from the right. */
+  /* A return to a box above points sideways at its note, clear of the box above.
+     The failure arrow takes the right edge, away from the worker's `log` run and
+     label on the left. */
+  if (b.y < a.y) {
+    const y = a.y + a.h / 2;
+    return `M${a.x + a.w} ${y} H${a.x + a.w + 26}`;
+  }
   const x = b.x > a.x ? a.x + 16 : a.x + a.w - 16;
-  return b.y < a.y ? `M${x} ${a.y} V${a.y - 26}` : `M${x} ${a.y + a.h} V${a.y + a.h + 26}`;
+  return `M${x} ${a.y + a.h} V${a.y + a.h + 26}`;
 }
 
 const stubX = (a: Placed) => a.x + a.w - 16;
@@ -1271,8 +1275,8 @@ function Graph({
           /* A downward stub names the group above the box that starts it; an
              upward return writes beside its source, in the empty row. */
           const below = b.y > a.y;
-          const sx = below ? b.x + 8 : a.x + a.w + 16;
-          const sy = below ? b.y - 10 : a.y + a.h / 2;
+          const sx = below ? b.x + 8 : a.x + a.w + 36;
+          const sy = below ? b.y - 10 : a.y + a.h / 2 + LABEL_SHIFT;
           return (
             <g key={e.id}>
               <path

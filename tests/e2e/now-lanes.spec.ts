@@ -94,6 +94,35 @@ test.describe('the Now timeline', () => {
     expect(parseFloat(frame.tickWidth)).toBeGreaterThan(0);
   });
 
+  for (const width of [1440, 1280]) {
+    test(`${width}px: every stop label sits below the lane line and its lamp`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto('/');
+
+      const rows = await page.evaluate(() =>
+        ['study', 'work'].map((lane) => {
+          const list = document.querySelector(`#now .tl-lane-${lane} .tl-stops`) as HTMLElement;
+          const cs = getComputedStyle(list, '::before');
+          const box = list.getBoundingClientRect();
+          const lineTop = box.top + (parseFloat(cs.top) || 0);
+          const lineBottom = lineTop + (parseFloat(cs.height) || 1);
+          const lamp = list.querySelector('.stop .lamp')!.getBoundingClientRect();
+          const body = list.querySelector('.stop .stop-body')!.getBoundingClientRect();
+          return { lane, lineBottom, lampBottom: lamp.top + lamp.height, bodyTop: body.top };
+        }),
+      );
+
+      for (const row of rows) {
+        expect(row.bodyTop, `${row.lane} label overlaps the lane line`).toBeGreaterThanOrEqual(
+          row.lineBottom - 0.5,
+        );
+        expect(row.bodyTop, `${row.lane} label overlaps its lamp`).toBeGreaterThanOrEqual(
+          row.lampBottom - 0.5,
+        );
+      }
+    });
+  }
+
   test('gives the two 2026 labels their own rows with a gap', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');

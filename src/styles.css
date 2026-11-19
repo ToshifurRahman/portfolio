@@ -1002,7 +1002,9 @@ textarea {
   position: relative;
   display: grid;
   grid-template-rows: repeat(3, auto);
-  gap: 0 var(--space-3);
+  /* Row 1 holds no box height (the lamp is absolute), so the row gap is what
+     holds the first label clear of the line and the lamp. */
+  gap: var(--space-4) var(--space-3);
   padding-top: var(--space-2);
 }
 
@@ -1703,6 +1705,7 @@ textarea {
 /* The parent and its branch are one flex item, so the branch hangs under the box
    it belongs to at every width. */
 .node-stack {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: flex-start;

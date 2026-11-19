@@ -49,6 +49,42 @@ for (const width of WIDTHS) {
   });
 }
 
+for (const width of [1440, 390]) {
+  test(`${width}px: no arrow before the first node or above the card`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/');
+    await page.locator('#work').scrollIntoViewIfNeeded();
+
+    const arrows = await page.locator('#work .case').first().evaluate((card) => {
+      const first = card.querySelector('.nodes > .node') as HTMLElement;
+      const stack = card.querySelector('.nodes > .node-stack') as HTMLElement;
+      const firstBefore = getComputedStyle(first, '::before');
+      const stackBefore = getComputedStyle(stack, '::before');
+      return {
+        firstContent: firstBefore.content,
+        stackPosition: getComputedStyle(stack).position,
+        stackBeforeLeft: parseFloat(stackBefore.left),
+        stackBeforeTop: parseFloat(stackBefore.top),
+      };
+    });
+
+    /* The first node has no predecessor, so it carries no arrow. */
+    expect(['none', 'normal', '""']).toContain(arrows.firstContent);
+    /* The stack must position its own arrow. Without this the arrow is placed
+       against the card and appears at its top-left. */
+    expect(arrows.stackPosition).toBe('relative');
+    /* Desktop: the arrow sits in the gap to the left. Phone: it points down,
+       inset under the box. Either way it is measured from the stack itself. */
+    if (width > 390) {
+      expect(arrows.stackBeforeLeft).toBeLessThan(0);
+    } else {
+      expect(arrows.stackBeforeLeft).toBeGreaterThanOrEqual(0);
+      expect(arrows.stackBeforeLeft).toBeLessThanOrEqual(24);
+    }
+    expect(Number.isFinite(arrows.stackBeforeTop)).toBe(true);
+  });
+}
+
 test('the card never scrolls sideways at 390', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');

@@ -1959,6 +1959,47 @@ for (const d of DIAGRAMS) {
       });
     }
 
+    if (slug === 'relay') {
+      for (const width of [1280, 1440]) {
+        test(`${width}px: the replay return points right at its note`, async ({ page }) => {
+          await page.setViewportSize({ width, height: 900 });
+          await page.emulateMedia({ reducedMotion: 'reduce' });
+          await page.goto(d.path);
+          await panel(page, slug).scrollIntoViewIfNeeded();
+
+          const stub = await page.evaluate(() => {
+            const svg = [...document.querySelectorAll('.flow-svg')].find(
+              (s) => s.getBoundingClientRect().width > 0,
+            ) as SVGSVGElement;
+            const path = svg.querySelector<SVGPathElement>('path[data-edge="replayToQueue"]')!;
+            const node = svg.querySelector('[data-node="replay"] rect')!.getBoundingClientRect();
+            const stage = svg.querySelector('[data-node="stageFails"] rect')!.getBoundingClientRect();
+            const note = svg.querySelector('.flow-stub[data-stub="replayToQueue"]')!.getBoundingClientRect();
+            const d = path.getAttribute('d') ?? '';
+            const toks = d.match(/[MHV][^MHV]*/g) ?? [];
+            const nums = (toks[toks.length - 1]?.slice(1).match(/-?[\d.]+/g) ?? []).map(Number);
+            return {
+              d,
+              lastCommand: toks[toks.length - 1]?.[0],
+              lastDelta: nums[0] ?? 0,
+              nodeRight: node.right,
+              noteLeft: note.left,
+              noteTop: note.top,
+              noteBottom: note.bottom,
+              stageBottom: stage.bottom,
+            };
+          });
+
+          /* Rightward, out of Replay's right border, toward the note. */
+          expect(stub.lastCommand).toBe('H');
+          expect(stub.lastDelta).toBeGreaterThan(0);
+          expect(stub.noteLeft).toBeGreaterThanOrEqual(stub.nodeRight);
+          /* And clear of Stage fails above it. */
+          expect(stub.noteTop).toBeGreaterThan(stub.stageBottom - 0.5);
+        });
+      }
+    }
+
     test('every pill keeps 6 units of air from every box', async ({ page }) => {
       await page.setViewportSize({ width: 1440, height: 900 });
       await page.emulateMedia({ reducedMotion: 'reduce' });
