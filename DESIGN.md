@@ -317,7 +317,7 @@ own `flow-label` 12px, which is a viewBox unit rather than a page step (see the 
 - **A step is a size, not a weight.** The front matter's `fontWeight` is the step's default,
   and a step that a rule sets a weight on is the exception, named here so the number is not read
   as universal: `2xs` defaults to 430 with `.stop-lane` the one 520; `sm` to 430 with
-  `.nav-links a` and `.contents a` at 520; `md` to 430 with `.button`, `.more-link`, `.brand` and
+  `.nav-links a`, `.contents a` and `.stop-year` at 520; `md` to 430 with `.button`, `.more-link`, `.brand` and
   `.certificate-title` at 600 and `.ghost`, `.text-button`, `.next-lead` at 520; `xl` to 520 with
   `.subhead` and `.entry-title` at 600; `lg` to 430 with `.nav-links a` at 520 inside the phone
   menu, where that rule takes `--text-lg` (`@media (max-width: 57rem)`). `flow-label` is the one
@@ -402,8 +402,10 @@ wave are gone; only the ray remains.
 ## The Now panel
 
 One chronological timeline: a horizontal spine across the twelve-column area, with a cap at each
-end, and six real stops alternating above and below it (owner, 2026-11-19). It is one ordered
-list, so the panel reads with no CSS and no script.
+end, and six real stops alternating above and below it (owner, 2026-11-19). Both caps sit inside
+the spine's own ends, and the first station is inset by one lamp plus one gap, so the start cap
+reads separately from the first node. It is one ordered list, so the panel reads with no CSS and
+no script.
 
 The timeline is a five-row grid shared through `subgrid`: up body, up stem, spine, down stem,
 down body. Each stop is one column and all five rows. An up stop puts its label above the spine

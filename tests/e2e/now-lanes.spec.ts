@@ -88,6 +88,55 @@ test.describe('the Now timeline', () => {
     }
   });
 
+  /* The caps belong inside the spine, not half over its ends, and stop 1 must
+     read as a station after the start cap rather than a double blob on it. The
+     reference keeps a run of spine between the cap and the first node. */
+  for (const width of [834, 1024, 1280, 1440]) {
+    test(`${width}px: both caps stay inside the spine and clear of Stop 1`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto('/');
+
+      const report = await page.evaluate(() => {
+        const spine = document.querySelector('#now .tl-spine') as HTMLElement;
+        const timeline = document.querySelector('#now .timeline') as HTMLElement;
+        const s = spine.getBoundingClientRect();
+        const t = timeline.getBoundingClientRect();
+        /* The caps carry a vertical centring transform; read its translateX so
+           a negative offset cannot hide an overhang. */
+        const translateX = (value: string) => {
+          const matrix = value.match(/matrix\(([^)]+)\)/);
+          return matrix ? parseFloat(matrix[1].split(',')[4]) : 0;
+        };
+        const cap = (side: '::before' | '::after') => {
+          const cs = getComputedStyle(spine, side);
+          const left = s.left + parseFloat(cs.left) + translateX(cs.transform);
+          return { left, right: left + parseFloat(cs.width), width: parseFloat(cs.width) };
+        };
+        const node = document.querySelector('#now .stop:first-child .stop-node')!.getBoundingClientRect();
+        const root = getComputedStyle(document.documentElement);
+        return {
+          timeline: { left: t.left, right: t.right },
+          spine: { left: s.left, right: s.right },
+          before: cap('::before'),
+          after: cap('::after'),
+          gap: parseFloat(root.getPropertyValue('--space-2')) * parseFloat(root.fontSize),
+          firstNodeLeft: node.left,
+        };
+      });
+
+      for (const cap of [report.before, report.after]) {
+        expect.soft(cap.left, 'a cap starts outside the spine').toBeGreaterThanOrEqual(report.spine.left - 0.5);
+        expect.soft(cap.right, 'a cap ends outside the spine').toBeLessThanOrEqual(report.spine.right + 0.5);
+        expect.soft(cap.left, 'a cap starts outside the timeline').toBeGreaterThanOrEqual(report.timeline.left - 0.5);
+        expect.soft(cap.right, 'a cap ends outside the timeline').toBeLessThanOrEqual(report.timeline.right + 0.5);
+      }
+      expect.soft(
+        report.firstNodeLeft - report.before.right,
+        'stop 1 node is not clear of the start cap',
+      ).toBeGreaterThanOrEqual(report.gap - 0.5);
+    });
+  }
+
   test('lists six real stops in chronological order, alternating above and below', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');
