@@ -1869,6 +1869,49 @@ const STUBBED = {
   rannaghor: [] as string[],
 };
 
+/* A stub is 26 units long. 40 leaves room for the marker and rounding, and is
+   far below the 226-unit and 849-unit returns this replaced. */
+const STUB_MAX_UNITS = 40;
+
+/* The old U-loops, kept so the margin check proves it would have caught them
+   rather than passing by construction. */
+const OLD_LOOPS: Record<string, Record<string, string>> = {
+  relay: {
+    consume: 'M958.75 94 V104 H65 V110.5 H168.55 V122.5',
+  },
+  rannaghor: {
+    authorise: 'M795.6 94 V104 H6 V118 H160 V122.5',
+    refuse: 'M795.6 98 H1117.48 V212.5 H1018.04 V224.5',
+  },
+};
+
+/* Horizontal runs further than 6 units outside the two endpoint boxes' x-range. */
+const MARGIN_TOLERANCE = 6;
+const marginRuns = (d: string, lo: number, hi: number) => {
+  let x = 0;
+  let y = 0;
+  const runs: { from: number; to: number }[] = [];
+  for (const token of d.match(/[MHV][^MHV]*/g) ?? []) {
+    const n = (token.slice(1).match(/-?[\d.]+/g) ?? []).map(Number);
+    if (token[0] === 'M') {
+      x = n[0];
+      y = n[1];
+    } else if (token[0] === 'H') {
+      runs.push({ from: x, to: n[0] });
+      x = n[0];
+    } else {
+      y = n[0];
+    }
+  }
+  return runs.filter(
+    (run) =>
+      run.from < lo - MARGIN_TOLERANCE ||
+      run.from > hi + MARGIN_TOLERANCE ||
+      run.to < lo - MARGIN_TOLERANCE ||
+      run.to > hi + MARGIN_TOLERANCE,
+  );
+};
+
 for (const d of DIAGRAMS) {
   const slug = d.slug as 'relay' | 'rannaghor';
   test.describe(`${d.slug}: routing`, () => {
@@ -1879,57 +1922,46 @@ for (const d of DIAGRAMS) {
         await page.goto(d.path);
         await panel(page, slug).scrollIntoViewIfNeeded();
 
-        const detours = await page.evaluate((ids) => {
+        /* The allowed corridor is the two endpoint boxes, not the path's own
+           points: a path always contains its own endpoints. */
+        const specs = DIRECT[slug].map((id) => {
+          const edge = diagrams[slug].edges.find((e) => e.id === id)!;
+          return { id, from: edge.from, to: edge.to };
+        });
+        const paths = await page.evaluate((items) => {
           const svg = [...document.querySelectorAll('.flow-svg')].find(
             (s) => s.getBoundingClientRect().width > 0,
           ) as SVGSVGElement;
-          const out: string[] = [];
-          for (const id of ids) {
+          return items.map(({ id, from, to }) => {
             const path = svg.querySelector<SVGPathElement>(`path[data-edge="${id}"]`);
-            if (!path) {
-              out.push(`${id}: not drawn`);
-              continue;
-            }
-            const d = path.getAttribute('d') ?? '';
-            /* A path's own endpoints are the two boxes' centres, so a legal elbow
-               stays inside their x-range. */
-            let x = 0;
-            let y = 0;
-            let first = true;
-            const xs: number[] = [];
-            const runs: { from: number; to: number }[] = [];
-            for (const token of d.match(/[MHV][^MHV]*/g) ?? []) {
-              const n = (token.slice(1).match(/-?[\d.]+/g) ?? []).map(Number);
-              if (token[0] === 'M') {
-                x = n[0];
-                y = n[1];
-                xs.push(x);
-                first = false;
-              } else if (token[0] === 'H') {
-                runs.push({ from: x, to: n[0] });
-                x = n[0];
-                xs.push(x);
-              } else {
-                y = n[0];
-                xs.push(x);
-              }
-            }
-            if (first) {
-              out.push(`${id}: empty path`);
-              continue;
-            }
-            const lo = Math.min(...xs) - 10;
-            const hi = Math.max(...xs) + 10;
-            for (const run of runs) {
-              if (run.from < lo || run.from > hi || run.to < lo || run.to > hi) {
-                out.push(`${id}: horizontal run ${run.from} to ${run.to}`);
-              }
-            }
-          }
-          return out;
-        }, DIRECT[slug]);
+            const rect = (node: string) =>
+              svg.querySelector(`[data-node="${node}"] rect`)!.getBBox();
+            const a = rect(from);
+            const b = rect(to);
+            return {
+              id,
+              d: path?.getAttribute('d') ?? '',
+              lo: Math.min(a.x, b.x),
+              hi: Math.max(a.x + a.width, b.x + b.width),
+            };
+          });
+        }, specs);
 
+        const detours = paths.flatMap((p) =>
+          marginRuns(p.d, p.lo, p.hi).map((r) => `${p.id}: horizontal run ${r.from} to ${r.to}`),
+        );
         expect(detours, 'down edges taking an outer U detour').toEqual([]);
+
+        /* Guard the guard: the old loops must fail this check. */
+        for (const p of paths) {
+          const old = OLD_LOOPS[slug]?.[p.id];
+          if (old) {
+            expect(
+              marginRuns(old, p.lo, p.hi).length,
+              `the margin check does not catch the old ${p.id} loop`,
+            ).toBeGreaterThan(0);
+          }
+        }
       });
 
       test(`${width}px: the long returns are named stubs, not graph loops`, async ({ page }) => {
@@ -1954,13 +1986,47 @@ for (const d of DIAGRAMS) {
 
         for (const stub of stubs) {
           expect(stub.marked, `${stub.id} is not marked as a stub`).toBe(true);
-          expect(stub.length, `${stub.id} still runs ${stub.length} units across the graph`).toBeLessThan(40);
+          expect(
+            stub.length,
+            `${stub.id} still runs ${stub.length} units across the graph`,
+          ).toBeLessThan(STUB_MAX_UNITS);
         }
       });
     }
 
     if (slug === 'relay') {
       for (const width of [1280, 1440]) {
+        test(`${width}px: the failure note sits beside its own arrow`, async ({ page }) => {
+          await page.setViewportSize({ width, height: 900 });
+          await page.emulateMedia({ reducedMotion: 'reduce' });
+          await page.goto(d.path);
+          await panel(page, slug).scrollIntoViewIfNeeded();
+
+          const stub = await page.evaluate(() => {
+            const svg = [...document.querySelectorAll('.flow-svg')].find(
+              (s) => s.getBoundingClientRect().width > 0,
+            ) as SVGSVGElement;
+            const path = svg.querySelector<SVGPathElement>('path[data-edge="fails"]')!.getBoundingClientRect();
+            const note = svg.querySelector('.flow-stub[data-stub="fails"]')!.getBoundingClientRect();
+            const stage = svg.querySelector('[data-node="stageFails"] rect')!.getBoundingClientRect();
+            const scale = svg.getBoundingClientRect().width / svg.viewBox.baseVal.width;
+            return {
+              gap: note.left - path.right,
+              noteCentre: note.top + note.height / 2,
+              arrowCentre: path.top + path.height / 2,
+              scale,
+              stageTop: stage.top,
+              noteTop: note.top,
+            };
+          });
+
+          /* Beside the arrow it names, within a few units, not 200 units below. */
+          expect(stub.gap).toBeGreaterThanOrEqual(-1);
+          expect(stub.gap, 'the note is not beside its arrow').toBeLessThanOrEqual(14 * stub.scale);
+          expect(Math.abs(stub.noteCentre - stub.arrowCentre)).toBeLessThanOrEqual(20 * stub.scale);
+          expect(stub.noteTop).toBeLessThan(stub.stageTop);
+        });
+
         test(`${width}px: the replay return points right at its note`, async ({ page }) => {
           await page.setViewportSize({ width, height: 900 });
           await page.emulateMedia({ reducedMotion: 'reduce' });

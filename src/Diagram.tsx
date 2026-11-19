@@ -1269,41 +1269,22 @@ function Graph({
             </g>
           );
         }
-        /* A note-only stub keeps its arrow for the run but writes its name beside
-           the box, where no pill can sit over another edge's run. */
-        if (!vertical && e.desktopStubText) {
-          /* A downward stub names the group above the box that starts it; an
-             upward return writes beside its source, in the empty row. */
-          const below = b.y > a.y;
-          const sx = below ? b.x + 8 : a.x + a.w + 36;
-          const sy = below ? b.y - 10 : a.y + a.h / 2 + LABEL_SHIFT;
-          return (
-            <g key={e.id}>
-              <path
-                className={`flow-edge${e.branch ? ' is-branch' : ''}`}
-                d={d}
-                data-edge={e.id}
-                data-stub-edge={e.id}
-                style={!animated && !spec.still.edges.includes(e.id) ? { opacity: 0.45 } : undefined}
-                markerEnd={`url(#${marker})`}
-              />
-              <path className="flow-edge-lit" d={d} data-edge-lit={e.id} />
-              <text className="flow-stub" data-stub={e.id} x={sx} y={sy} textAnchor="start">
-                {wrapToWidth(e.stub ?? label, DETAIL, bounds.w - sx - 8).map((line, i) => (
-                  <tspan key={i} x={sx} dy={i === 0 ? 0 : 14}>
-                    {line}
-                  </tspan>
-                ))}
-              </text>
-            </g>
-          );
-        }
         const labelW = label.length * adv(DETAIL);
         const desktopStub = !vertical && e.desktopStub;
+        /* A note-only stub keeps its arrow for the run but writes its name beside
+           that arrow, where no pill can sit over another edge's run. The position
+           lives on the one render path below, so the arrow and the note cannot
+           drift into two copies. */
+        const note = !vertical && e.desktopStubText;
+        const notePos = note
+          ? b.y > a.y
+            ? { x: a.x + a.w - 8, y: a.y + a.h + 20 }
+            : { x: a.x + a.w + 36, y: a.y + a.h / 2 + LABEL_SHIFT }
+          : null;
         /* The vertical layout's seating is closed and its gaps are ~24 units wide;
            this search is for the desktop graph, where the regression was. */
         const anchor = vertical || desktopStub ? null : bestAnchor(d, labelW, placed, bounds);
-        const pos = desktopStub
+        const pos = notePos ?? (desktopStub
           ? { x: stubX(a), y: a.y + a.h + 22 }
           : anchor
             ? /* On the run itself: the words sit on their own line and the pill hides the
@@ -1312,7 +1293,7 @@ function Graph({
                  far enough to miss it, which is the "labels not on their own lines" the
                  owner reported. */
               { x: anchor.x, y: anchor.y }
-            : labelPos(sourceOf(e, a, b), b, route, bounds, labelW);
+            : labelPos(sourceOf(e, a, b), b, route, bounds, labelW));
         /* One resolver decides where the label ends up, and the pill and the words are
            both rendered from what it returns. The two used to be separate: a pill was
            measured, two nudges moved the text, and the pill was drawn from the stale
@@ -1340,7 +1321,7 @@ function Graph({
             (o) => r.x < o.x + o.w + 4 && o.x < r.x + r.w + 4 && r.y < o.y + o.h + 8 && o.y < r.y + r.h + 8,
           );
         };
-        if (!desktopStub && !holds(pos.x, pos.y)) {
+        if (!note && !desktopStub && !holds(pos.x, pos.y)) {
           /* Search outwards in both axes: a label that has to move should move as
              little as possible, and preferring the shortest displacement keeps it near
              its own line — which is what makes it read as that line's label. */
@@ -1398,7 +1379,7 @@ function Graph({
             }
           }
         }
-        placedLabels.push(pillFor(label, pos.x, pos.y));
+        if (!note) placedLabels.push(pillFor(label, pos.x, pos.y));
         return (
           <g key={e.id}>
             <path
@@ -1413,35 +1394,45 @@ function Graph({
               markerEnd={`url(#${marker})`}
             />
             <path className="flow-edge-lit" d={d} data-edge-lit={e.id} />
-            {(() => {
-              /* The pill and the words are rendered from the same `pos`. This is the
-                 whole fix: they cannot disagree, because neither is stored. */
-              const pill = pillFor(label, pos.x, pos.y);
-              return (
-                <>
-                  <rect
-                    className="flow-edge-pill"
-                    x={pill.x}
-                    y={pill.y}
-                    width={pill.w}
-                    height={pill.h}
-                    rx="3"
-                  />
-                  <text
-                    className="flow-edge-label"
-                    data-edge-label={e.id}
-                    data-edge-from={e.from}
-                    data-edge-to={e.to}
-                    data-edge-loop={e.route.startsWith('loop') ? 'true' : undefined}
-                    x={pos.x}
-                    y={pos.y}
-                    textAnchor="middle"
-                  >
-                    {label}
-                  </text>
-                </>
-              );
-            })()}
+            {note && notePos ? (
+              <text className="flow-stub" data-stub={e.id} x={notePos.x} y={notePos.y} textAnchor="start">
+                {wrapToWidth(e.stub ?? label, DETAIL, bounds.w - notePos.x - 8).map((line, i) => (
+                  <tspan key={i} x={notePos.x} dy={i === 0 ? 0 : 14}>
+                    {line}
+                  </tspan>
+                ))}
+              </text>
+            ) : (
+              (() => {
+                /* The pill and the words are rendered from the same `pos`. This is the
+                   whole fix: they cannot disagree, because neither is stored. */
+                const pill = pillFor(label, pos.x, pos.y);
+                return (
+                  <>
+                    <rect
+                      className="flow-edge-pill"
+                      x={pill.x}
+                      y={pill.y}
+                      width={pill.w}
+                      height={pill.h}
+                      rx="3"
+                    />
+                    <text
+                      className="flow-edge-label"
+                      data-edge-label={e.id}
+                      data-edge-from={e.from}
+                      data-edge-to={e.to}
+                      data-edge-loop={e.route.startsWith('loop') ? 'true' : undefined}
+                      x={pos.x}
+                      y={pos.y}
+                      textAnchor="middle"
+                    >
+                      {label}
+                    </text>
+                  </>
+                );
+              })()
+            )}
           </g>
         );
         });
