@@ -1880,8 +1880,8 @@ const OLD_LOOPS: Record<string, Record<string, string>> = {
     consume: 'M958.75 94 V104 H65 V110.5 H168.55 V122.5',
   },
   rannaghor: {
-    authorise: 'M795.6 94 V104 H6 V118 H160 V122.5',
-    refuse: 'M795.6 98 H1117.48 V212.5 H1018.04 V224.5',
+    authorise: 'M708.05 94 V104 H6 V110.5 H104.18 V122.5',
+    refuse: 'M795.6 94 V98 H1117.48 V212.5 H1018.04 V224.5',
   },
 };
 
@@ -2066,7 +2066,7 @@ for (const d of DIAGRAMS) {
       }
     }
 
-    test('every pill keeps 6 units of air from every box', async ({ page }) => {
+    test('every pill keeps 8 units of air from every box', async ({ page }) => {
       await page.setViewportSize({ width: 1440, height: 900 });
       await page.emulateMedia({ reducedMotion: 'reduce' });
       await page.goto(d.path);
@@ -2087,7 +2087,7 @@ for (const d of DIAGRAMS) {
             const dy = Math.max(b.top - p.bottom, 0, p.top - b.bottom);
             nearest = Math.min(nearest, Math.hypot(dx, dy) / scale);
           }
-          if (nearest < 6) {
+          if (nearest < 8) {
             const label = pill.parentElement?.querySelector('.flow-edge-label')?.textContent ?? '?';
             out.push(`"${label}" ${nearest.toFixed(1)} units`);
           }
@@ -2095,7 +2095,7 @@ for (const d of DIAGRAMS) {
         return out;
       });
 
-      expect(tight, 'labels closer than 6 units to a box').toEqual([]);
+      expect(tight, 'labels closer than 8 units to a box').toEqual([]);
     });
   });
 }

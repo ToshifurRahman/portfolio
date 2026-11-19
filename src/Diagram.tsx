@@ -527,7 +527,6 @@ function stubPath(a: Placed, b: Placed): string {
   return `M${x} ${a.y + a.h} V${a.y + a.h + 26}`;
 }
 
-const stubX = (a: Placed) => a.x + a.w - 16;
 
 /* A label's anchor: the middle of the gap its edge crosses. */
 function labelPos(a: Placed, b: Placed, route: Route, bounds: Bounds, labelW: number): { x: number; y: number } {
@@ -588,7 +587,9 @@ function bestAnchor(
        about a pill no label ever occupies. `horiz` no longer changes the geometry, only
        which reading rule `clears` applies, so the parameter went with the lift. */
     const p = pillFor('x'.repeat(Math.round(labelW / adv(DETAIL))), cx, cy);
-    return { x1: cx - p.w / 2, y1: p.y - 1, x2: cx + p.w / 2, y2: p.y - 1 + p.h };
+    /* The exact pill, with no inset: the search and `holds` must measure the same
+       rectangle, or a seat that passes here can fail there and walk far off its edge. */
+    return { x1: cx - p.w / 2, y1: p.y, x2: cx + p.w / 2, y2: p.y + p.h };
   };
   const clears = (cx: number, cy: number, horiz: boolean) => {
     /* A horizontal label is centred by its ink, so test the pill where it will
@@ -645,7 +646,9 @@ function bestAnchor(
       if (isH !== horiz) continue;
       /* A run has to be long enough that the label relates to it. */
       if (horiz ? g.len < labelW * 0.5 : g.len < 18) continue;
-      const steps = Math.max(2, Math.round(g.len / 6));
+      /* One-unit steps: a 6-unit grid stepped over the only legal seat in a 34-unit
+         gap, which is how 6.5-unit pills slipped past the 8-unit rule. */
+      const steps = Math.max(2, Math.round(g.len));
       for (let k = 0; k <= steps; k++) {
         const t = k / steps;
         const bx = g.x1 + (g.x2 - g.x1) * t;
@@ -672,7 +675,9 @@ function bestAnchor(
           const dy = Math.max(b.y - r.y2, 0, r.y1 - (b.y + b.h));
           nearest = Math.min(nearest, Math.hypot(dx, dy));
         }
-        if (!fallback || nearest > fallback.score) {
+        /* A fallback is only a seat if it meets the floor; a roomier invalid spot
+           is still invalid and must not become the chosen position. */
+        if (nearest >= 8 && (!fallback || nearest > fallback.score)) {
           fallback = { x: cx, y: horiz ? cy + LABEL_SHIFT : cy, horiz, score: nearest };
         }
       }
@@ -1283,17 +1288,15 @@ function Graph({
           : null;
         /* The vertical layout's seating is closed and its gaps are ~24 units wide;
            this search is for the desktop graph, where the regression was. */
-        const anchor = vertical || desktopStub ? null : bestAnchor(d, labelW, placed, bounds);
-        const pos = notePos ?? (desktopStub
-          ? { x: stubX(a), y: a.y + a.h + 22 }
-          : anchor
-            ? /* On the run itself: the words sit on their own line and the pill hides the
-                 stroke behind them. They used to be lifted 8 units clear, which left every
-                 horizontal label 5.4 units off its edge — near enough to look attached and
-                 far enough to miss it, which is the "labels not on their own lines" the
-                 owner reported. */
-              { x: anchor.x, y: anchor.y }
-            : labelPos(sourceOf(e, a, b), b, route, bounds, labelW));
+        const anchor = vertical || note ? null : bestAnchor(d, labelW, placed, bounds);
+        const pos = notePos ?? (anchor
+          ? /* On the run itself: the words sit on their own line and the pill hides the
+               stroke behind them. They used to be lifted 8 units clear, which left every
+               horizontal label 5.4 units off its edge — near enough to look attached and
+               far enough to miss it, which is the "labels not on their own lines" the
+               owner reported. */
+            { x: anchor.x, y: anchor.y }
+          : labelPos(sourceOf(e, a, b), b, route, bounds, labelW));
         /* One resolver decides where the label ends up, and the pill and the words are
            both rendered from what it returns. The two used to be separate: a pill was
            measured, two nudges moved the text, and the pill was drawn from the stale
@@ -1310,6 +1313,16 @@ function Graph({
           const r = pillFor(label, x, y);
           if (r.x < 1 || r.x + r.w > bounds.w - 1 || r.y < 1 || r.y + r.h > bounds.h - 1) return false;
           if (touchesBox({ x, y }, r, placed)) return false;
+          /* The desktop rule is 8 units, not mere non-overlap: the fallback used to
+             return the roomiest invalid spot, leaving 6.5-unit pills. The vertical
+             layout's 24-unit gaps keep their own tighter clearance. */
+          if (!vertical) {
+            for (const b of placed) {
+              const dx = Math.max(b.x - (r.x + r.w), 0, r.x - (b.x + b.w));
+              const dy = Math.max(b.y - (r.y + r.h), 0, r.y - (b.y + b.h));
+              if (Math.hypot(dx, dy) < 8) return false;
+            }
+          }
           /* A pill over another edge's line reads as that line's label, so a position
              that covers one is not a legal position for this label. */
           if (coversOtherStroke(e.id, r)) return false;
@@ -1321,7 +1334,7 @@ function Graph({
             (o) => r.x < o.x + o.w + 4 && o.x < r.x + r.w + 4 && r.y < o.y + o.h + 8 && o.y < r.y + r.h + 8,
           );
         };
-        if (!note && !desktopStub && !holds(pos.x, pos.y)) {
+        if (!note && !holds(pos.x, pos.y)) {
           /* Search outwards in both axes: a label that has to move should move as
              little as possible, and preferring the shortest displacement keeps it near
              its own line — which is what makes it read as that line's label. */

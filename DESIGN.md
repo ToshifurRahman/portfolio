@@ -484,8 +484,9 @@ the band (32px/32px at 1440), with no extra margin under the diagram.
 straight into the target (`down-direct`). It never runs out to an outer margin and back: that
 was the U through x 65 on Relay and x 6 on RannaGhor. The two long returns (`fails`,
 `replayToQueue`) are named short arrows at their source (`desktopStub`) instead of lines
-around the whole graph. Every label pill keeps at least 8 viewBox units from a box, and node
-text is centred with 12 units of vertical padding on both sides.
+around the whole graph. On the desktop diagram every label pill keeps at least 8 viewBox
+units from a box; the narrower vertical layout, whose gaps are about 24 units, keeps its
+4-unit floor. Node text is centred with 12 units of vertical padding on both sides.
 
 **Surface and motion.** The panel has no ground of its own: the page's background shows
 through, the panel keeps only its top and bottom rules, and the edge-label pills are cut from
