@@ -317,11 +317,12 @@ own `flow-label` 12px, which is a viewBox unit rather than a page step (see the 
 - **A step is a size, not a weight.** The front matter's `fontWeight` is the step's default,
   and a step that a rule sets a weight on is the exception, named here so the number is not read
   as universal: `2xs` defaults to 430 with `.stop-lane` the one 520; `sm` to 430 with
-  `.nav-links a`, `.contents a` and `.stop-year` at 520; `md` to 430 with `.button`, `.more-link`, `.brand` and
-  `.certificate-title` at 600 and `.ghost`, `.text-button`, `.next-lead` at 520; `xl` to 520 with
-  `.subhead` and `.entry-title` at 600; `lg` to 430 with `.nav-links a` at 520 inside the phone
-  menu, where that rule takes `--text-lg` (`@media (max-width: 57rem)`). `flow-label` is the one
-  step no rule gives a weight, so what it renders is `body`'s 430.
+  `.nav-links a`, `.contents a` and `.stop-year` at 520; `md` to 430 with `.button`,
+  `.more-link`, `.brand` and `.certificate-title` at 600 and `.ghost`, `.text-button`,
+  `.next-lead` at 520; `xl` to 520 with `.subhead` and `.entry-title` at 600; `lg` to
+  430 with `.nav-links a` at 520 inside the phone menu, where that rule takes
+  `--text-lg` (`@media (max-width: 57rem)`). `flow-label` is the one step no rule
+  gives a weight, so what it renders is `body`'s 430.
 
 ### Named rules
 **The Mono Means Data Rule.** If it is a number, a station, a stack, a label or a system name,

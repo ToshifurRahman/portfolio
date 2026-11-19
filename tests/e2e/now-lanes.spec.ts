@@ -112,7 +112,8 @@ test.describe('the Now timeline', () => {
           const left = s.left + parseFloat(cs.left) + translateX(cs.transform);
           return { left, right: left + parseFloat(cs.width), width: parseFloat(cs.width) };
         };
-        const node = document.querySelector('#now .stop:first-child .stop-node')!.getBoundingClientRect();
+        const first = document.querySelector('#now .stop:first-child .stop-node')!.getBoundingClientRect();
+        const last = document.querySelector('#now .stop:last-child .stop-node')!.getBoundingClientRect();
         const root = getComputedStyle(document.documentElement);
         return {
           timeline: { left: t.left, right: t.right },
@@ -120,7 +121,8 @@ test.describe('the Now timeline', () => {
           before: cap('::before'),
           after: cap('::after'),
           gap: parseFloat(root.getPropertyValue('--space-2')) * parseFloat(root.fontSize),
-          firstNodeLeft: node.left,
+          firstNodeLeft: first.left,
+          lastNodeRight: last.right,
         };
       });
 
@@ -133,6 +135,10 @@ test.describe('the Now timeline', () => {
       expect.soft(
         report.firstNodeLeft - report.before.right,
         'stop 1 node is not clear of the start cap',
+      ).toBeGreaterThanOrEqual(report.gap - 0.5);
+      expect.soft(
+        report.after.left - report.lastNodeRight,
+        'stop 6 node is not clear of the end cap',
       ).toBeGreaterThanOrEqual(report.gap - 0.5);
     });
   }
