@@ -4,7 +4,7 @@ import { chainFor } from '../../src/NodeDiagram';
 
 /* R4a-ds-3, from the review of R4a: the Work card's node diagram stopped short of
    the chain the brief names. It picked the longest lane and drew only that, so
-   Ticket-Pipeline began at "Hono API" with no React app in front of it, and
+   Relay began at "Hono API" with no React app in front of it, and
    RannaGhor began at the security check with no database behind it.
 
    The chains below are the ones R4a-3 wrote. Every label is still read from the
@@ -14,9 +14,9 @@ import { chainFor } from '../../src/NodeDiagram';
 const study = (slug: string) => caseStudies.find((c) => c.slug === slug)!;
 const labels = (slug: string) => chainFor(study(slug)).map((n) => n.label);
 
-describe('Ticket-Pipeline’s card chain', () => {
+describe('Relay’s card chain', () => {
   it('runs from the React app to the primary model, through the queue and worker', () => {
-    expect(labels('ticket-pipeline')).toEqual([
+    expect(labels('relay')).toEqual([
       'React app',
       'Hono API',
       'SQS queue',
@@ -28,7 +28,7 @@ describe('Ticket-Pipeline’s card chain', () => {
   });
 
   it('starts with the React app and ends with the primary model', () => {
-    const chain = labels('ticket-pipeline');
+    const chain = labels('relay');
     expect(chain[0]).toBe('React app');
     expect(chain[1]).toBe('Hono API');
     /* The backup model is the branch, so it is last and marked as one. */
@@ -39,11 +39,11 @@ describe('Ticket-Pipeline’s card chain', () => {
   it('has no PostgreSQL node on the card', () => {
     /* The brief is explicit: the card shows the app, the queue, the worker and
        the models, not the database, which would add a seventh box to a card. */
-    expect(labels('ticket-pipeline')).not.toContain('PostgreSQL');
+    expect(labels('relay')).not.toContain('PostgreSQL');
   });
 
   it('marks the backup model as the one branch', () => {
-    const branches = chainFor(study('ticket-pipeline')).filter((n) => n.branch);
+    const branches = chainFor(study('relay')).filter((n) => n.branch);
     expect(branches).toHaveLength(1);
     expect(branches[0].label).toBe('Backup model');
   });
@@ -52,8 +52,7 @@ describe('Ticket-Pipeline’s card chain', () => {
 describe('RannaGhor’s card chain', () => {
   it('runs from the security check to PostgreSQL, through every check', () => {
     expect(labels('rannaghor')).toEqual([
-      'Security and CSRF',
-      'Rate limit',
+      'Security headers',
       'Session',
       'Role check',
       'Route handler',
@@ -63,7 +62,7 @@ describe('RannaGhor’s card chain', () => {
 
   it('starts at the security check and ends at the database', () => {
     const chain = labels('rannaghor');
-    expect(chain[0]).toBe('Security and CSRF');
+    expect(chain[0]).toBe('Security headers');
     expect(chain[chain.length - 1]).toBe('PostgreSQL');
   });
 
@@ -75,7 +74,7 @@ describe('RannaGhor’s card chain', () => {
 describe('every label is sourced from the study’s own content', () => {
   /* The guard that matters: a chain may not invent a box. Each label has to
      appear in one of the study's own architecture lanes. */
-  for (const slug of ['ticket-pipeline', 'rannaghor']) {
+  for (const slug of ['relay', 'rannaghor']) {
     it(`${slug}: every node label appears in a lane, or is the stated branch`, () => {
       const lanes = study(slug).sections.flatMap((s) =>
         s.blocks.flatMap((b) => (b.kind === 'diagram' ? b.lanes : [])),

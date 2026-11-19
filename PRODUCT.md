@@ -32,7 +32,7 @@ The owner builds asynchronous, stateful systems and cares about what happens whe
 
 - Dark first. A light theme may exist but dark is the default and the designed-for state.
 - Minimal, simple design. No profile picture anywhere.
-- Full case studies: Ticket-Pipeline and the e-commerce project (RannaGhor). No other projects appear as short entries; the site's Work section lists only these two, and the earlier "What I build" and "Other projects" sections are not on the page.
+- Full case studies: Relay and the e-commerce project (RannaGhor). No other projects appear as short entries; the site's Work section lists only these two, and the earlier "What I build" and "Other projects" sections are not on the page.
 - Undecided: availability. It is left empty in `src/content.ts` (`availability: ''`), hidden on the built site and shown as a note only while developing. Location, contact email, LinkedIn URL and the CV file are supplied and shown.
 
 ## Brand Commitments
@@ -43,8 +43,8 @@ The owner builds asynchronous, stateful systems and cares about what happens whe
 
 ## Evidence on Hand
 
-- Ticket-Pipeline: `/home/tfr/Projects/ticket-pipe` (README, docs/, screenshots in `docs/screenshots/`). GitHub: ToshifurRahman/ticket-pipe. LLM support-ticket pipeline on Bun, Hono, PostgreSQL, Redis, AWS SQS, Socket.io, React. 266 commits, April to November 2026.
-- RannaGhor e-commerce: `/home/tfr/Projects/e-commerce-website` (README, CLAUDE.md). GitHub: ToshifurRahman/e-commerce-website. Bun monorepo, React 19, TanStack Router and Query, Hono, Better Auth, Drizzle, Supabase Postgres. 64 commits (59 merged pull requests), January to March 2026.
+- Relay: `/home/tfr/Projects/ticket-pipe` (README, docs/, screenshots in `docs/screenshots/`). GitHub: ToshifurRahman/relay. LLM support-ticket pipeline on Bun, Hono, PostgreSQL, Redis, AWS SQS, Socket.io, React. 267 commits, April to November 2026.
+- RannaGhor e-commerce: `/home/tfr/Projects/e-commerce-website` (README, CLAUDE.md). GitHub: ToshifurRahman/e-commerce-website. Bun monorepo, React 19, TanStack Router and Query, Hono, Better Auth, Drizzle, Supabase Postgres. 64 commits (60 merged pull requests), January to March 2026.
 - Other projects available for short entries: Dars (Arabic vocabulary app), Attendance Automation (Google Apps Script), HTTP Server, HN clone, 7GUIs.
 - Not on hand, must not be invented: employment history, education, testimonials, user or traffic numbers, performance benchmarks beyond what the repositories document.
 

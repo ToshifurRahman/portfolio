@@ -104,7 +104,7 @@ describe('current section', () => {
        another page", which is exactly the behaviour the owner changed, so it pins
        the new rule instead: Work is current, and nothing else is. */
     render(
-      <MemoryRouter initialEntries={['/work/ticket-pipeline']}>
+      <MemoryRouter initialEntries={['/work/relay']}>
         <App />
       </MemoryRouter>,
     );

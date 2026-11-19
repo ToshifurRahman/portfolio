@@ -36,7 +36,7 @@ A study is one object of type `CaseStudy`. The type is declared in
 Declare the object, then add it to `caseStudies`:
 
 ```ts
-export const caseStudies: CaseStudy[] = [ticketPipeline, rannaghor, myStudy];
+export const caseStudies: CaseStudy[] = [relay, rannaghor, myStudy];
 ```
 
 `caseStudies` order is the Work card order, the "Next case study" link order and

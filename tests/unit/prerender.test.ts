@@ -25,7 +25,7 @@ const why = 'dist/index.html is missing: run `bun run build` before the unit sui
 
 const routes = [
   { file: 'index.html', route: '/', heading: 'class="name"' },
-  { file: 'work/ticket-pipeline/index.html', route: '/work/ticket-pipeline', heading: 'class="study-title"' },
+  { file: 'work/relay/index.html', route: '/work/relay', heading: 'class="study-title"' },
   { file: 'work/rannaghor/index.html', route: '/work/rannaghor', heading: 'class="study-title"' },
   { file: '404.html', route: '/404', heading: 'Page not found' },
 ];
@@ -50,8 +50,8 @@ whenBuilt(`pre-rendered routes (${hasBuild ? 'built output' : why})`, () => {
   });
 
   it('gives each route its own heading, not the home page', () => {
-    const study = read('work/ticket-pipeline/index.html');
-    expect(study).toContain('Ticket-Pipeline');
+    const study = read('work/relay/index.html');
+    expect(study).toContain('Relay');
     expect(study).not.toContain('class="name"');
     const home = read('index.html');
     expect(home).toContain('class="name"');
@@ -93,12 +93,12 @@ whenBuilt(`pre-rendered routes (${hasBuild ? 'built output' : why})`, () => {
     });
     expect(new Set(titles).size, `titles are not distinct: ${titles.join(' | ')}`).toBe(routes.length);
     expect(titles[0]).toBe('Toshifur Rahman, Software Engineer');
-    expect(titles[1]).toBe('Ticket-Pipeline case study · Toshifur Rahman');
+    expect(titles[1]).toBe('Relay case study · Toshifur Rahman');
     expect(titles[2]).toBe('RannaGhor case study · Toshifur Rahman');
     expect(titles[3]).toBe('Page not found · Toshifur Rahman');
 
     /* The description follows the title, in all three places it is written. */
-    const study = read('work/ticket-pipeline/index.html');
+    const study = read('work/relay/index.html');
     const description = study.match(/<meta\s+name="description"\s+content="([^"]*)"/)?.[1] ?? '';
     expect(description).toMatch(/support-ticket pipeline/i);
     expect(study).toContain(`<meta property="og:description" content="${description}"`);
@@ -122,7 +122,7 @@ whenBuilt(`pre-rendered routes (${hasBuild ? 'built output' : why})`, () => {
       expect(og, `${route.file} og:title`).toBe(title);
       expect(twitter, `${route.file} twitter:title`).toBe(title);
     }
-    expect(share('work/ticket-pipeline/index.html').og).toMatch(/Ticket-Pipeline/);
+    expect(share('work/relay/index.html').og).toMatch(/Relay/);
     expect(share('404.html').og).toMatch(/Page not found/);
   });
 

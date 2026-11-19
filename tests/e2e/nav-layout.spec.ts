@@ -92,7 +92,7 @@ test.describe('design review 1 regressions', () => {
        the shipped bar hid the button and the open menu offered no CV, no email
        and no LinkedIn on a case study. It now asserts what ships. */
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/work/ticket-pipeline');
+    await page.goto('/work/relay');
 
     const fit = await page.evaluate(() => {
       const bar = document.querySelector('.navbar') as HTMLElement;
@@ -136,7 +136,7 @@ test.describe('design review 1 regressions', () => {
 
   test('390 px: a contents link clears the sticky contents row', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/work/ticket-pipeline');
+    await page.goto('/work/relay');
     await page.locator('.contents a', { hasText: 'Problem' }).click();
     await expect
       .poll(async () =>
@@ -216,7 +216,7 @@ test.describe('design review 1 regressions', () => {
 });
 
 test.describe('case-study contents', () => {
-  const pages = ['/work/ticket-pipeline', '/work/rannaghor'];
+  const pages = ['/work/relay', '/work/rannaghor'];
 
   test('shows all six steps, unclipped, inside the column at 1280 px', async ({ page }) => {
     /* Six since 2026-11-15: Challenges and Solutions became one section, because
@@ -240,7 +240,7 @@ test.describe('case-study contents', () => {
 
   test('a contents link clears the two-row contents bar at 1280 px', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto('/work/ticket-pipeline');
+    await page.goto('/work/relay');
     await page.locator('.contents a', { hasText: 'Challenges' }).click();
     await expect
       .poll(async () =>
@@ -255,7 +255,7 @@ test.describe('case-study contents', () => {
 
   test('narrow widths keep a visible scroll cue', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/work/ticket-pipeline');
+    await page.goto('/work/relay');
     const cue = await page.locator('.contents ol').evaluate((el) => {
       const style = getComputedStyle(el);
       return {
@@ -270,7 +270,7 @@ test.describe('case-study contents', () => {
 
   test('the current step never sits flush against the left edge', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/work/ticket-pipeline');
+    await page.goto('/work/relay');
     await page.locator('#results').scrollIntoViewIfNeeded();
     const current = page.locator('.contents a[aria-current]');
     await expect(current).toBeVisible();

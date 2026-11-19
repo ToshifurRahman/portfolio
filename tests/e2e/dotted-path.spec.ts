@@ -18,7 +18,7 @@ for (const path of ['/nope.html', '/missing.png', '/work/nope.html']) {
 /* A route is a directory in dist, and treating a directory as a file sent the
    case study to the SPA fallback: the home page's document at the study's URL,
    which cost the study its pre-render (LCP 1.88 s, perf 91). */
-for (const path of ['/work/ticket-pipeline', '/work/rannaghor']) {
+for (const path of ['/work/relay', '/work/rannaghor']) {
   test(`${path} still serves its own pre-rendered document`, async ({ page }) => {
     const response = await page.goto(path);
     expect(response?.status()).toBe(200);

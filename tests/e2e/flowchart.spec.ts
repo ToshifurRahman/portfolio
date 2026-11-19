@@ -18,8 +18,8 @@ import { diagrams } from '../../src/diagrams';
 
 const DIAGRAMS = [
   {
-    slug: 'ticket-pipeline',
-    path: '/work/ticket-pipeline',
+    slug: 'relay',
+    path: '/work/relay',
     status: /Completed/,
     done: ['react', 'api', 'queue', 'worker', 'gateway', 'primary', 'queued', 'triaging', 'drafting', 'completed'],
   },
@@ -27,7 +27,7 @@ const DIAGRAMS = [
     slug: 'rannaghor',
     path: '/work/rannaghor',
     status: /Order committed/,
-    done: ['security', 'rate', 'session', 'role', 'handler', 'postgres', 'tx'],
+    done: ['security', 'session', 'role', 'handler', 'postgres', 'tx'],
   },
 ];
 
@@ -881,9 +881,10 @@ const SWEEP: number[] = (() => {
   for (let w = 360; w <= 1920; w += 20) out.push(w);
   /* The panel's padding means each per-study switch lands between viewport widths, and
      the switch has landed inside a 20px step more than once: RannaGhor rendered 11.988px
-     at 1208 and Ticket-Pipeline 11.989 at 1057 (ds). Sample either side of each switch
-     at 1px, so the sliver cannot hide between samples. */
-  for (const edge of [1050, 1057, 1160, 1169, 1170, 1208, 1210, 1270]) {
+     at 1208 and Relay 11.989 at 1057 (ds). Sample either side of each switch
+     at 1px, so the sliver cannot hide between samples. RannaGhor's switch moved to a
+     1112px container when its graph narrowed, which is a viewport of about 1165. */
+  for (const edge of [1050, 1057, 1160, 1165, 1169, 1170, 1208, 1210, 1270]) {
     for (const d of [-3, -2, -1, 0, 1, 2, 3]) if (!out.includes(edge + d)) out.push(edge + d);
   }
   for (const w of [895, 896, 897, 927, 928, 929]) if (!out.includes(w)) out.push(w);
@@ -1095,7 +1096,7 @@ for (const d of DIAGRAMS) {
  * asks whether the label's own ink is where its pill is, which is the other half: the pill
  * and the text are two elements, and nothing in the suite required them to agree.
  *
- * They did not. Ticket-Pipeline's STAGE FAILS had its pill measured before the box and
+ * They did not. Relay's STAGE FAILS had its pill measured before the box and
  * clash nudges moved the text, so the pill stayed 16-19px below its own words and painted
  * over EACH STEP instead — 88x12px of another label's ink at 1440. Every geometry check
  * passed, because a pill is not a box and a text is not a text.
@@ -1168,7 +1169,7 @@ for (const d of DIAGRAMS) {
  * because the width never changed.
  *
  * That is not hypothetical: at a 1024px viewport the width ratio read 1.358 (comfortably
- * over the floor) while the browser painted Ticket-Pipeline's labels at 5.34px and
+ * over the floor) while the browser painted Relay's labels at 5.34px and
  * RannaGhor's at 8.52px. The clamp applies from 56rem up to each study's layout switch,
  * so the band is exactly where the old sweep's 20px steps, and its four named widths,
  * either missed or measured with the wrong formula.
@@ -1250,7 +1251,7 @@ for (const d of DIAGRAMS) {
     /* The clearance is a rule about the join, not about the layout, so it holds at every
        width the rail is drawn at. It was only checked at the two vertical ones, and the
        desktop branches of `edgePath` never read `RAIL_STOP`: at 1440 the three state joins
-       on Ticket-Pipeline touched the dashed capsules (gap 0 units, 3.5 on 40a1256). */
+       on Relay touched the dashed capsules (gap 0 units, 3.5 on 40a1256). */
     for (const [w, h] of [[1440, 900], [1024, 900], [834, 900], [390, 844]] as const) {
       test(`connectors end clear of the pills at ${w}`, async ({ page }) => {
         await page.setViewportSize({ width: w, height: h });
@@ -1437,11 +1438,11 @@ for (const d of DIAGRAMS) {
         return { x: minX * scale, y: minY * scale, scale, count: boxes.length };
       });
 
-      /* RannaGhor has no state rail; Ticket-Pipeline has all four. Stated per study rather
+      /* RannaGhor has no state rail; Relay has all four. Stated per study rather
          than asserting 4 for both, so this cannot pass by finding nothing to measure in the
          study that does have the pills. */
-      expect(gaps.count, `${d.slug} stage pills`).toBe(d.slug === 'ticket-pipeline' ? 4 : 0);
-      if (d.slug !== 'ticket-pipeline') return;
+      expect(gaps.count, `${d.slug} stage pills`).toBe(d.slug === 'relay' ? 4 : 0);
+      if (d.slug !== 'relay') return;
       /* 12px: the pill border is dashed, so a gap under one dash period reads as a shared
          border rather than two. Measured in screen pixels, at the scale actually drawn. */
       expect(gaps.x, 'horizontal gap between the pills').toBeGreaterThanOrEqual(12);
@@ -1453,7 +1454,7 @@ for (const d of DIAGRAMS) {
 /* ---------------------------------------------------------------- round P2b
  *
  * P2b-4, and the other half of ruling 12. Ruling 12 accepted that the chart may scroll
- * rather than shrink its labels below the floor, but it did not accept that Ticket-Pipeline
+ * rather than shrink its labels below the floor, but it did not accept that Relay
  * cannot fit a 1440x900 window at all: it ended 57px past the fold. Row spacing is the lever
  * that buys the height without touching the type — the CTM must stay where it was.
  *
@@ -1462,12 +1463,12 @@ for (const d of DIAGRAMS) {
  * the drawing fails on the second half.
  */
 
-test.describe('ticket-pipeline: fits a desktop window', () => {
+test.describe('relay: fits a desktop window', () => {
   test('ends inside a 1440x900 window, at the full scale', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.goto('/work/ticket-pipeline');
-    await panel(page, 'ticket-pipeline').scrollIntoViewIfNeeded();
+    await page.goto('/work/relay');
+    await panel(page, 'relay').scrollIntoViewIfNeeded();
 
     const geo = await page.evaluate(() => {
       const svg = [...document.querySelectorAll('.flow-svg')].find(
@@ -1753,7 +1754,7 @@ for (const d of DIAGRAMS) {
  * vertical layout it is replaced by the longer stub sentence, which is the same
  * statement in more words, so the stub's text is accepted in its place.
  */
-const labelSpec = (slug: 'ticket-pipeline' | 'rannaghor') => {
+const labelSpec = (slug: 'relay' | 'rannaghor') => {
   const edges = diagrams[slug].edges;
   return {
     labels: edges.filter((e) => e.label).map((e) => e.label as string),
@@ -1765,7 +1766,7 @@ const labelSpec = (slug: 'ticket-pipeline' | 'rannaghor') => {
 };
 
 const LABEL_SPEC = {
-  'ticket-pipeline': labelSpec('ticket-pipeline'),
+  relay: labelSpec('relay'),
   rannaghor: labelSpec('rannaghor'),
 };
 
@@ -1780,7 +1781,7 @@ const LABEL_SWEEP = [
 
 const norm = (s: string) => s.replace(/\s+/g, ' ').trim();
 
-for (const slug of ['ticket-pipeline', 'rannaghor'] as const) {
+for (const slug of ['relay', 'rannaghor'] as const) {
   const d = DIAGRAMS.find((x) => x.slug === slug)!;
   for (const theme of THEMES) {
     test(`${slug}: every label the spec defines is drawn, ${theme}`, async ({ page }) => {

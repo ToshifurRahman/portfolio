@@ -19,7 +19,7 @@ const renderAt = (route: string) => {
 };
 
 describe('Challenges and Solutions', () => {
-  for (const slug of ['ticket-pipeline', 'rannaghor']) {
+  for (const slug of ['relay', 'rannaghor']) {
     const study = caseStudies.find((s) => s.slug === slug)!;
     const challenges = study.sections.find((s) => s.id === 'challenges')!;
     const solutions = study.sections.find((s) => s.id === 'solutions');
@@ -31,7 +31,7 @@ describe('Challenges and Solutions', () => {
       const block = challenges.blocks.find((b) => b.kind === 'pairs');
       expect(block, `${slug} has no pairs block`).toBeDefined();
       if (block?.kind !== 'pairs') return;
-      /* Five pairs for Ticket-Pipeline, four for RannaGhor: one per challenge
+      /* Five pairs for Relay, four for RannaGhor: one per challenge
          each study already had. */
       expect(block.items.length).toBe(slug === 'rannaghor' ? 4 : 5);
       for (const pair of block.items) {
@@ -64,14 +64,14 @@ describe('Challenges and Solutions', () => {
   }
 
   it('names the merged section for both', () => {
-    const container = renderAt('/work/ticket-pipeline');
+    const container = renderAt('/work/relay');
     const heading = container.querySelector('#challenges .section-heading');
     expect(heading?.textContent).toBe('Challenges and solutions');
   });
 });
 
 describe('Tech decisions', () => {
-  for (const slug of ['ticket-pipeline', 'rannaghor']) {
+  for (const slug of ['relay', 'rannaghor']) {
     it(`${slug}: renders each decision as a card with its lead as the title`, () => {
       const container = renderAt(`/work/${slug}`);
       const section = container.querySelector('#tech-decisions')!;

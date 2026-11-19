@@ -25,7 +25,7 @@ describe('navbar', () => {
 
   it('is rendered on a case study page and links back to the home sections', () => {
     render(
-      <MemoryRouter initialEntries={['/work/ticket-pipeline']}>
+      <MemoryRouter initialEntries={['/work/relay']}>
         <App />
       </MemoryRouter>,
     );
@@ -118,7 +118,7 @@ describe('home sections', () => {
         <App />
       </MemoryRouter>,
     );
-    expect(screen.getAllByRole('link', { name: /Ticket-Pipeline/i }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('link', { name: /Relay/i }).length).toBeGreaterThan(0);
     expect(screen.getAllByRole('link', { name: /RannaGhor/i })[0]).toHaveAttribute('href', '/work/rannaghor');
   });
 });

@@ -8,7 +8,7 @@ const PORT = Number(process.env.LH_PORT ?? 4173);
 const ORIGIN = `http://localhost:${PORT}`;
 const PAGES = [
   { name: 'home', path: '/' },
-  { name: 'case-study', path: '/work/ticket-pipeline' },
+  { name: 'case-study', path: '/work/relay' },
 ];
 const PRESETS = ['mobile', 'desktop'];
 const THRESHOLDS = { performance: 95, accessibility: 95, 'best-practices': 95, seo: 95 };

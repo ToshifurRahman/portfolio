@@ -255,8 +255,8 @@ describe('certificates', () => {
 });
 
 describe('case-study facts checked against the repositories', () => {
-  const ticketPipeline = caseStudies.find((s) => s.slug === 'ticket-pipeline')!;
-  const results = ticketPipeline.sections.find((s) => s.id === 'results')!;
+  const relay = caseStudies.find((s) => s.slug === 'relay')!;
+  const results = relay.sections.find((s) => s.id === 'results')!;
   const text = JSON.stringify(results);
 
   it('states the Lighthouse gate in plain words, with no command name', () => {
@@ -274,7 +274,7 @@ describe('case-study facts checked against the repositories', () => {
     expect(text).not.toContain('"value":"119"');
   });
 
-  it('opens each Results section with a plain outcome sentence from the docs', () => {
+  it('opens each Results section with a plain sentence from the docs', () => {
     for (const study of caseStudies) {
       const first = study.sections.find((s) => s.id === 'results')!.blocks[0];
       expect(first.kind, study.slug).toBe('p');

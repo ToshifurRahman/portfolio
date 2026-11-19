@@ -85,15 +85,15 @@ test.describe('unknown path without JavaScript', () => {
 });
 
 /* A document served at its own file path must show its own page. The build
-   writes real files, so `vite preview` serves /work/ticket-pipeline/index.html
-   as itself; the route stamp says /work/ticket-pipeline, the address said
+   writes real files, so `vite preview` serves /work/relay/index.html
+   as itself; the route stamp says /work/relay, the address said
    .../index.html, the client saw no match and rendered <NotFound /> over the
    home document. A crawler linking the file path got a soft 404 (200 with the
    not-found page) for a page that exists. */
 test.describe('a document at its own file path', () => {
   const pages = [
     { file: '/index.html', heading: '.name', name: 'home' },
-    { file: '/work/ticket-pipeline/index.html', heading: '.study-title', name: 'ticket-pipeline' },
+    { file: '/work/relay/index.html', heading: '.study-title', name: 'relay' },
     { file: '/work/rannaghor/index.html', heading: '.study-title', name: 'rannaghor' },
   ];
 
@@ -114,7 +114,7 @@ test.describe('a document at its own file path', () => {
    the toggle's icon is chosen by CSS from that same attribute, so a stored
    light theme shows the moon (the way back to dark) with no hydration error. */
 test.describe('theme toggle after reload', () => {
-  for (const path of ['/', '/work/ticket-pipeline']) {
+  for (const path of ['/', '/work/relay']) {
     test(`shows the light theme's icon on ${path} when light is stored`, async ({ page }) => {
       const problems = collect(page);
       await page.addInitScript(() => localStorage.setItem('theme', 'light'));
@@ -130,7 +130,7 @@ test.describe('theme toggle after reload', () => {
 
 test.describe('no console error on any route', () => {
   for (const theme of ['dark', 'light'] as const) {
-    for (const path of ['/', '/work/ticket-pipeline', '/work/rannaghor', '/unknown-404-page']) {
+    for (const path of ['/', '/work/relay', '/work/rannaghor', '/unknown-404-page']) {
       test(`${path} ${theme}`, async ({ page }) => {
         const problems = collect(page);
         await page.addInitScript((value) => localStorage.setItem('theme', value), theme);

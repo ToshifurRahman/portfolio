@@ -1,9 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
 
-/* The real content has no Live entry, so these checks add one to the rendered
-   meta row and measure the grid. A study with four entries must lay out as four
-   columns on desktop and as a clean 2x2 on a tablet, never wrapping Source under
-   an empty quadrant. */
+/* Relay has four meta entries (Type, Stack, Source Code, Live) and RannaGhor has
+   three. Four entries must lay out as four columns on desktop and as a clean 2x2
+   on a tablet, never wrapping Source under an empty quadrant; three must let the
+   last one own the second row. */
 
 /* Owner, 2026-11-17: "remove bg of github & create same design as Skills sections
    button, write Source Code instead of source." So the cell's label is "Source
@@ -13,7 +13,7 @@ import { expect, test, type Page } from '@playwright/test';
    design" is a comparison, not a list of literals. */
 
 const STUDIES = [
-  { slug: 'ticket-pipeline', repo: 'https://github.com/ToshifurRahman/ticket-pipe' },
+  { slug: 'relay', repo: 'https://github.com/ToshifurRahman/relay' },
   { slug: 'rannaghor', repo: 'https://github.com/ToshifurRahman/e-commerce-website' },
 ];
 
@@ -46,9 +46,9 @@ for (const { slug, repo } of STUDIES) {
     const chip = await chipStyle(page);
 
     await page.goto(`/work/${slug}`);
-    const cell = page.locator('.meta > div').filter({ has: page.locator('a.meta-link') });
+    /* Relay also has a Live chip, so the Source cell is found by its label. */
+    const cell = page.locator('.meta > div').filter({ has: page.locator('dt', { hasText: 'Source Code' }) });
     await expect(cell).toHaveCount(1);
-    await expect(cell.locator('dt')).toHaveText('Source Code');
     const link = cell.locator('a.meta-link');
     await expect(link).toHaveText('GitHub');
     await expect(link).toHaveAttribute('href', repo);
@@ -90,7 +90,10 @@ for (const { slug, repo } of STUDIES) {
   test(`${slug}: the chip keeps its target height and a visible focus ring`, async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(`/work/${slug}`);
-    const link = page.locator('.meta a.meta-link');
+    const link = page
+      .locator('.meta > div')
+      .filter({ has: page.locator('dt', { hasText: 'Source Code' }) })
+      .locator('a.meta-link');
     const target = await page.evaluate(() =>
       parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--target')) * 16,
     );
@@ -125,22 +128,9 @@ const readCells = (page: Page) =>
     }),
   );
 
-const withLiveEntry = (page: Page) =>
-  page.evaluate(() => {
-    const meta = document.querySelector('.meta') as HTMLElement;
-    const source = meta.lastElementChild as HTMLElement;
-    const live = source.cloneNode(true) as HTMLElement;
-    live.querySelector('dt')!.textContent = 'Live';
-    const link = live.querySelector('a') as HTMLAnchorElement;
-    link.textContent = 'ticket.example.com';
-    link.href = 'https://ticket.example.com';
-    meta.insertBefore(live, source);
-  });
-
 test('four entries share one row at 1440 px', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/work/ticket-pipeline');
-  await withLiveEntry(page);
+  await page.goto('/work/relay');
 
   const cells = await readCells(page);
   expect(cells).toHaveLength(4);
@@ -154,8 +144,7 @@ test('four entries share one row at 1440 px', async ({ page }) => {
 
 test('four entries form a 2x2 at 1024 px', async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 900 });
-  await page.goto('/work/ticket-pipeline');
-  await withLiveEntry(page);
+  await page.goto('/work/relay');
 
   const cells = await readCells(page);
   expect(cells).toHaveLength(4);
@@ -166,7 +155,7 @@ test('four entries form a 2x2 at 1024 px', async ({ page }) => {
 
 test('the last of three entries spans the row at 1024 px', async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 900 });
-  await page.goto('/work/ticket-pipeline');
+  await page.goto('/work/rannaghor');
 
   const cells = await readCells(page);
   expect(cells).toHaveLength(3);

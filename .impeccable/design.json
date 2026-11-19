@@ -294,13 +294,13 @@
         "purpose": "The bar collapses into a menu button."
       },
       {
-        "name": "flow-ticket-vertical",
+        "name": "flow-relay-vertical",
         "value": "1171px container",
-        "purpose": "Where Ticket-Pipeline's desktop chart would fall below 1:1."
+        "purpose": "Where Relay's desktop chart would fall below 1:1."
       },
       {
         "name": "flow-rannaghor-vertical",
-        "value": "1155px container",
+        "value": "1112px container",
         "purpose": "Where RannaGhor's desktop chart would fall below 1:1."
       },
       {

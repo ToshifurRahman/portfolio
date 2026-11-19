@@ -68,7 +68,7 @@ function inlineCss(): Plugin {
 
 /*
  * Serve the pre-rendered documents. `vite preview` answers an extensionless
- * path with the SPA fallback (dist/index.html), so /work/ticket-pipeline would
+ * path with the SPA fallback (dist/index.html), so /work/relay would
  * get the home page's markup and an unknown path would get it too. This
  * rewrites a request to the route's own pre-rendered document when the build
  * wrote one, and otherwise to dist/404.html with a 404 status, which is what a
@@ -98,7 +98,7 @@ function prerenderedRoutes(): Plugin {
         }
         /* A real file in dist is served as itself, whatever its name. It has
            to be a file: a route is a directory, and treating that as a file
-           sent /work/ticket-pipeline to the SPA fallback (the home page). */
+           sent /work/relay to the SPA fallback (the home page). */
         if (statSync(`dist${path}`, { throwIfNoEntry: false })?.isFile()) return next();
         const route = path.replace(/\/$/, '');
         const own = `dist${route}/index.html`;

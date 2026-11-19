@@ -8,7 +8,7 @@ import { expect, test, type Page } from '@playwright/test';
  */
 
 const DIAGRAMS = [
-  { slug: 'ticket-pipeline', path: '/work/ticket-pipeline', firstStatus: 'New ticket submitted' },
+  { slug: 'relay', path: '/work/relay', firstStatus: 'New ticket submitted' },
   { slug: 'rannaghor', path: '/work/rannaghor', firstStatus: 'A request arrives' },
 ];
 
