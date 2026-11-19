@@ -582,7 +582,7 @@ const relay: CaseStudy = {
     },
     {
       label: "Live",
-      value: "ticket-pipeline.onrender.com",
+      value: "Live Link",
       href: "https://ticket-pipeline.onrender.com",
     },
   ],

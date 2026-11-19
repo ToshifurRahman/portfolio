@@ -136,7 +136,7 @@ motion:
   lamp: "120ms"
   fast: "160ms"
   none: "0.01ms"
-  pulse: "26s"
+  pulse: "10s"
   strip-step: "120ms"
 components:
   bar:
@@ -204,8 +204,8 @@ hairline rules, mono type for anything that is data — and every section is a r
 than a card.
 
 The owner's own image names the motion: charge runs from the wordmark down the page's strips
-to the footer. It is slow (a 26s cycle for the ray), it is decoration, and it stops dead under
-`prefers-reduced-motion`. The boxes that used to glow in the gaps between the strips were
+to the footer. It is continuous (a 10s cycle for the ray), it is decoration, and it stops dead
+under `prefers-reduced-motion`. The boxes that used to glow in the gaps between the strips were
 removed on 2026-11-17 (owner: "in hero, remove animations & colors on strip gaps").
 
 The redesign replaced an earlier language that is no longer here: Archivo, a vermilion accent,
@@ -357,14 +357,15 @@ entry because the bar holds five links. Whatever the bar lists, the sections kee
 its repo, lede), then the meta row (`Type` and `Stack` as plain facts, and the exits — `Source
 Code`, the repo, plus `Live` when there is one — as Skills chips: mono, a hairline `rule-strong`
 border, `radius-sm` and no fill, the same chip the Skills section uses; the owner replaced the
-filled button with it on 2026-11-17), then the sticky sub-nav, then the
+filled button with it on 2026-11-17). The Live chip's text is `Live Link`, not the raw host
+(owner, 2026-11-19); its `href`, `rel`, and chip styling are unchanged. Then the sticky sub-nav, then the
 six sections (`sectionOrder` in `src/content.ts`: Overview, Problem, Architecture, Tech
 decisions, Challenges and solutions, Results — Challenges and Solutions are one section). The sub-nav borrows the bar's type, lamp and active treatment, and keeps its own rail: the top bar draws no line between its items (owner, 2026-11-17: "in nav, remove lines connected with dots"), and it lights **Work** while a case study is open — the owner asked for the two to
 be one design, not two.
 
 **Breakpoints.** `57rem` collapses the bar into a menu button; `48rem` hides the Now panel's year
-axis and turns the stops from a grid into a column (the two lanes are stacked at every width),
-and restacks the Work node structure.
+axis, shows each stop's year in its own text instead, and turns the stops from a grid into a
+column (the two lanes are stacked at every width), and restacks the Work node structure.
 
 The flowcharts switch layout on *container* width, not viewport: `@container (max-width: 1171px)`
 for Relay and `1112px` for RannaGhor — each study's own viewBox width (1170.30 and
@@ -390,7 +391,8 @@ The current item carries `aria-current`.
 The **signal strip** is a fixed, decorative layer of twelve strips on the frame's own column
 lines, `z-index: -1`, `pointer-events: none`. A ray — a 1px-wide soft gradient of `accent` —
 translates from above the fold to below it inside each strip, staggered by `--strip-step`
-120ms so the charge crosses the page as well as running down it. Cycle `--dur-pulse` 26s. It
+120ms so the charge crosses the page as well as running down it. Cycle `--dur-pulse` 10s, and
+it does not pause or restart while the page scrolls. It
 runs from the wordmark, which is where the charge is drawn from. The hero's gap cells and their
 wave are gone; only the ray remains.
 
@@ -399,22 +401,28 @@ wave are gone; only the ray remains.
 Two lanes, **Study** and **Work**, sharing one year axis that shows every year from the first
 to the last in the data (2021 to 2026) at equal spacing: a `tl-lane-title` heading per lane, the
 year ticks drawn as decoration over the lists, and each stop a real list item, so the panel
-reads with no CSS and no script. Within a lane every stop sits in one row on one continuous
-line, its lamp on that line at its own year. Two stops in the same year keep their lamps on the
-line and stack their labels below, never on a separate disconnected row.
+reads with no CSS and no script. The title is its own row and the timeline takes all twelve
+columns (owner, 2026-11-19), so six years share the frame's 1260px at 1440 instead of 938.
 
-The B.Sc. is one bar from the 2021 column to the 2025 column, its start labelled "Aug 2021" and
-its far end "B.Sc. completed / Dec 2025"; the completion is the bar's other end, not a stop of
-its own. Both M.Engg. stops sit at 2026 (the owner's ruling), the current one lit, and the
-undated IIUCCPS sub-roles stay listed under the dated role they were held alongside. What 48rem
-changes is the year axis, which is hidden, and the stops, which become one stacked column so
-every label reads in full; the lane order is the same either way.
+Within a lane every stop spans the same three grid rows and hands them down with `subgrid`:
+row 1 holds the lamp on the continuous line at its own year, row 2 the first label, row 3 a
+same-year sibling's label. The rows are sized by their own content; the old 88px stack offset
+is gone. A 1px tick marks every year on the line, including the empty ones.
+
+The B.Sc. is one bar from the 2021 column to the 2025 column, with a lamp at both ends, its
+start labelled "Aug 2021" and its far end "B.Sc. completed / Dec 2025"; the completion is the
+bar's other end, not a stop of its own. Both M.Engg. stops sit at 2026 (the owner's ruling), the
+current one lit, and the undated IIUCCPS sub-roles stay listed under the dated role they were
+held alongside. What 48rem changes is the year axis, which is hidden and replaced by a visible
+year (or year range) in each stop, and the stops, which become one stacked column so every
+label reads in full; the lane order is the same either way.
 
 ## The Work node diagram
 
 Each Work card carries a small node diagram instead of prose about architecture: the study's
-modules as marked nodes with the breaks (`node-break`) that matter, at card scale, in mono at
-`2xs`. It is the case study's flowchart reduced to its skeleton, so a scanner sees the shape of
+modules as marked nodes, at card scale, in mono at `2xs`. A fork is one `node-stack` item: the
+parent box and its branch in a column, so the branch hangs under the box it belongs to at every
+width. There is no full-width row break, and the phone column sets `flex-wrap: nowrap`. It is the case study's flowchart reduced to its skeleton, so a scanner sees the shape of
 the system before reading the summary. The card is not a card in the boxed sense: a ruled row,
 with a `rule` line on top, no background of its own and square corners, and its only hover
 affordance is the title and the arrow.
@@ -438,14 +446,14 @@ copies to the clipboard and confirms in place. The address itself is owner-voice
 Motion is one idea: charge moving through a panel. It is slow, it is decoration, and it never
 carries information.
 
-- **The pulse** (`--dur-pulse` 26s, the strip ray) is the signature. It animates only `opacity`
+- **The pulse** (`--dur-pulse` 10s, the strip ray) is the signature. It animates only `opacity`
   and `transform`, so it stays on the compositor and cannot shift layout.
 - **Small transitions** use `--dur-fast` 160ms and `--ease-out`; the lamp uses `--dur-lamp`
   120ms linear.
-- **Pausing is required, not optional.** The pulse pauses when the tab is hidden and while the
-  page is being scrolled — the root's `data-motion` carries `on` / `paused` / `scrolling`. The
-  motion has no pause *control* of its own: the only pause button on the site is the
-  flowchart's, on a case study.
+- **Scrolling never touches it.** The cycle runs continuously; removing the animation to pause
+  it reset its clock, which was the defect. The root's `data-motion` carries `on` / `paused`,
+  and `paused` is only the hidden tab. The motion has no pause *control* of its own: the only
+  pause button on the site is the flowchart's, on a case study.
 - **Reduced motion removes it entirely:** under `@media (prefers-reduced-motion: reduce)` the
   ray is `animation: none` and `opacity: 0`, and the flowchart shows its still
   picture (the `still` edge and node set in `src/diagrams.ts`), not a paused mid-frame.
@@ -464,6 +472,22 @@ its request path. Every box is a node in `src/diagrams.ts`; the study's Stack st
 The vertical layout is a complete picture of the same graph — spine, then each branch group as
 its own stacked cluster with a heading naming where it starts — not a crop. It switches on
 container width so each study keeps its own threshold.
+
+**Placement.** The Architecture band breaks out of the 12-column frame to the viewport
+edges because the graph needs the width to stay at 1:1. Above `84rem` its toolbar and graph
+share the heading's inner edge, so the band and the column grid start on one line; below
+`84rem` the band keeps the frame edge, because aligning it there would leave 1146px at 1280
+and force the vertical layout early. The section's one row gap is the rhythm above and below
+the band (32px/32px at 1440), with no extra margin under the diagram.
+
+**Routing.** An ordinary down edge takes one elbow in the row gap under its source and drops
+straight into the target (`down-direct`). It never runs out to an outer margin and back: that
+was the U through x 65 on Relay and x 6 on RannaGhor. The two long returns (`fails`,
+`replayToQueue`) are named short arrows at their source (`desktopStub`) instead of lines
+around the whole graph. On the desktop diagram every label pill keeps at least 8 viewBox
+units from a box; in the narrower vertical layout the gaps between x-overlapping boxes
+measure 26 to 34 units, and its pills are measured to a 4-unit minimum. Node text is
+centred with 12 units of vertical padding on both sides.
 
 **Surface and motion.** The panel has no ground of its own: the page's background shows
 through, the panel keeps only its top and bottom rules, and the edge-label pills are cut from

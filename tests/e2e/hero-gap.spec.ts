@@ -26,7 +26,7 @@ test.describe('the hero has no gap cells', () => {
       return { name: cs.animationName, duration: cs.animationDuration };
     });
     expect(pulse.name).toBe('rail-pulse');
-    expect(parseFloat(pulse.duration)).toBeGreaterThanOrEqual(20);
+    expect(parseFloat(pulse.duration)).toBe(10);
   });
 
   test('under reduced motion there is no cell and the ray holds still', async ({ page }) => {

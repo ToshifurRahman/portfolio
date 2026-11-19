@@ -77,30 +77,38 @@ test.describe('the removed hero cells paint nothing', () => {
   });
 });
 
-test.describe('the pulse holds its restraint while scrolling', () => {
-  test('pauses during a fast scroll and resumes when the page settles', async ({ page }) => {
-    /* Ruling 4: the rail is fixed to the viewport, so "paused off-screen" is the
-       hero's rule; for the rail it is the hidden tab and this one. */
+test.describe('the pulse keeps its cycle while scrolling', () => {
+  test('does not pause or reset when the page moves', async ({ page }) => {
+    /* The rail is fixed to the viewport, so it is always on screen: a scroll is
+       not a reason to stop it, and removing the animation reset its clock. The
+       owner asked for a continuous 10s cycle from header to footer. */
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto('/');
     await page.waitForTimeout(300);
     await expect.poll(() => page.evaluate(() => document.documentElement.dataset.motion)).toBe('on');
 
+    const before = await page.locator('.site-rail i').first().evaluate((el) => {
+      const anim = el.getAnimations()[0] as CSSAnimation | undefined;
+      return {
+        time: anim?.currentTime ?? null,
+        name: getComputedStyle(el).animationName,
+      };
+    });
+    expect(before.name).toBe('rail-pulse');
+    expect(before.time).not.toBeNull();
+
     await page.evaluate(() => window.scrollTo(0, 600));
-    /* The scroll event is dispatched asynchronously, so the state lands a frame
-       after the call, not inside it. */
+    await page.waitForTimeout(150);
 
-    await expect.poll(() => page.evaluate(() => document.documentElement.dataset.motion)).toBe('scrolling');
-    const play = await page
-      .locator('.site-rail i')
-      .first()
-      .evaluate((el) => getComputedStyle(el).animationPlayState);
-    expect(play).toBe('paused');
-
-    /* And it comes back once the page is still. */
-    await expect.poll(() => page.evaluate(() => document.documentElement.dataset.motion), {
-      timeout: 3000,
-    }).toBe('on');
+    await expect.poll(() => page.evaluate(() => document.documentElement.dataset.motion)).toBe('on');
+    const during = await page.locator('.site-rail i').first().evaluate((el) => {
+      const anim = el.getAnimations()[0] as CSSAnimation | undefined;
+      const cs = getComputedStyle(el);
+      return { time: anim?.currentTime ?? null, name: cs.animationName, play: cs.animationPlayState };
+    });
+    expect(during.name).toBe('rail-pulse');
+    expect(during.play).toBe('running');
+    expect(Number(during.time)).toBeGreaterThan(Number(before.time));
   });
 
   test('the rail pauses on a hidden tab too', async ({ page }) => {

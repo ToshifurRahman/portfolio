@@ -142,9 +142,9 @@
   --dur-lamp: 120ms;
   --dur-fast: 160ms;
   --dur-none: 0.01ms;
-  /* The signature motion's own clock. The pulse runs inside the owner's "at
-     most one every 20 to 30 seconds" at 26s. */
-  --dur-pulse: 26s;
+  /* The signature motion's own clock: one cycle every 10 seconds, from header
+     to footer, whatever the reader is doing. */
+  --dur-pulse: 10s;
   /* One strip starts this long after the one before it, so the charge crosses
      the page as well as running down it. */
   --strip-step: 120ms;
@@ -422,20 +422,19 @@ textarea {
      - every animation starts only once `[data-motion='on']` is set, which the
        hook does after mount: the pre-render and the first client frame are the
        same still picture;
-     - `[data-motion='paused']` is set on a hidden tab and `[data-motion='scrolling']`
-       while the page moves, so nothing animates at those times;
+     - `[data-motion='paused']` is set only on a hidden tab, so a scroll never
+       pauses or restarts the cycle;
      - under `prefers-reduced-motion: reduce` no rule below applies at all;
      - only transform and opacity move, so this stays on the compositor and
        cannot shift layout.
 
-   The pulse period is 26s with a short lit slice, which is inside the owner's
-   "at most one every 20 to 30 seconds" once the load pulse is counted.
+   The pulse period is 10s, continuous from header to footer.
 
    The hero's gap cells, and the wave they carried, were removed on 2026-11-17
    (owner: "in hero, remove animations & colors on strip gaps"). */
 
-/* The pulse: one slow ray down the page's own strips, once on load and then
-   every 26s. It is drawn on the frame's edge, not behind body text. */
+/* The pulse: one slow ray down the page's own strips, every 10s. It is drawn on
+   the frame's edge, not behind body text. */
 .site-rail {
   position: fixed;
   inset: 0;
@@ -477,7 +476,10 @@ textarea {
    The stagger is derived from the strip's own index — `--strip-index` from the
    markup — rather than written out twelve times, so adding or removing a strip
    needs no CSS change. */
-:root[data-motion='on'] .site-rail i {
+/* Both states declare the animation. Pausing then only changes the play state;
+   the clock is never removed, so a scroll cannot restart it. */
+:root[data-motion='on'] .site-rail i,
+:root[data-motion='paused'] .site-rail i {
   animation: rail-pulse var(--dur-pulse) linear
     calc(var(--strip-index, 0) * var(--strip-step)) infinite;
 }
@@ -504,8 +506,7 @@ textarea {
   }
 }
 
-:root[data-motion='paused'] .site-rail i,
-:root[data-motion='scrolling'] .site-rail i {
+:root[data-motion='paused'] .site-rail i {
   animation-play-state: paused;
 }
 
@@ -945,7 +946,7 @@ textarea {
 }
 
 .now-title {
-  grid-column: 1 / span 3;
+  grid-column: 1 / -1;
   align-self: start;
   font-size: var(--text-h2);
   font-weight: var(--weight-bold);
@@ -953,8 +954,10 @@ textarea {
   letter-spacing: var(--tracking-tight);
 }
 
+/* The ruler takes the whole frame: the title is its own row now, so the six
+   years share 1260px at 1440 instead of 938. */
 .timeline {
-  grid-column: 4 / span 9;
+  grid-column: 1 / -1;
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
@@ -990,15 +993,18 @@ textarea {
   text-transform: uppercase;
 }
 
-/* Stops are placed into the same year columns as the ticks and share one row,
-   so the lane's line runs through every lamp. `--stack-step` is one label block:
-   a second stop on the same year starts its label below the first. */
+/* Stops are placed into the same year columns as the ticks. Each stop spans the
+   same three rows and hands them down with `subgrid`: row 1 holds the lamp on the
+   line, row 2 the first label, row 3 a same-year sibling's label. The rows are
+   real grid rows, so their height is the labels' own height, not a magic offset. */
 .tl-stops {
-  --stack-step: calc(var(--space-16) + var(--space-6));
   --lamp-step: var(--space-3);
   position: relative;
   display: grid;
-  gap: 0 var(--space-3);
+  grid-template-rows: repeat(3, auto);
+  /* Row 1 holds no box height (the lamp is absolute), so the row gap is what
+     holds the first label clear of the line and the lamp. */
+  gap: var(--space-4) var(--space-3);
   padding-top: var(--space-2);
 }
 
@@ -1012,14 +1018,32 @@ textarea {
   background: var(--rule-strong);
 }
 
+/* A tick at every year, including the empty ones, so the ruler reads as ruled
+   rather than broken. The period is one column plus one gap. */
+.tl-stops::after {
+  content: '';
+  position: absolute;
+  top: calc(var(--space-2) + var(--space-1) + var(--line));
+  right: 0;
+  left: 0;
+  height: 5px;
+  background-image: linear-gradient(to right, var(--rule-strong) 0 1px, transparent 1px);
+  background-size: calc((100% + var(--space-3)) / 6) 5px;
+  background-repeat: repeat-x;
+  pointer-events: none;
+}
+
 .stop {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-2);
+  display: grid;
+  /* One full-width column: the absolute end label needs the stop's whole width,
+     not the content width of an auto column. */
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: subgrid;
+  grid-row: 1 / span 3;
+  align-items: start;
   min-width: 0;
-  padding-top: var(--space-5);
+  padding-top: 0;
   font-size: var(--text-xs);
   line-height: 1.45;
   hyphens: none;
@@ -1059,16 +1083,42 @@ textarea {
 .stop-body {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: var(--space-1);
-  /* Zero for the first stop on a year; a stacked stop starts below the one
-     before it rather than on a disconnected row. */
-  margin-top: calc(var(--stack, 0) * var(--stack-step));
+  /* Its row is set inline from `--stack`: row 2 for the first label on a year,
+     row 3 for a same-year sibling. */
+  grid-row: 2;
+}
+
+/* The far end cap: the bar gets a lamp at both ends, so its completion is a
+   marked point on the line rather than a label floating past it. */
+.stop-end-cap {
+  position: absolute;
+  top: 0;
+  right: calc(var(--lamp) / 2 * -1);
+  width: var(--lamp);
+  height: var(--lamp);
+  border: var(--line) solid var(--accent);
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* The year, shown only when the axis is hidden below 48rem. */
+.stop-year {
+  display: none;
+  color: var(--muted);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-mono);
 }
 
 /* The far end of a span: the completion's own label at the bar's right end. */
 .stop-end {
   position: absolute;
-  top: var(--space-5);
+  /* Span the whole grid area so `right: 0` is the far end of the bar, not the
+     first year column. */
+  grid-column: 1 / -1;
+  grid-row: 1 / -1;
+  top: var(--space-3);
   right: 0;
   align-items: flex-end;
   text-align: right;
@@ -1109,7 +1159,9 @@ textarea {
    gutter is applied inside it. */
 .section-diagram {
   grid-column: 1 / -1;
-  margin-bottom: var(--space-6);
+  /* The section's row-gap is the one rhythm above and below the band. The 24px
+     margin that used to sit here made the gap below 56px against 32px above. */
+  margin-bottom: 0;
 }
 
 /* The flowchart panel ------------------------------------------------------
@@ -1256,6 +1308,17 @@ textarea {
 .flow-window {
   padding: var(--space-5) max(var(--frame-margin), calc((100vw - var(--frame)) / 2));
   container-type: inline-size;
+}
+
+/* Above the frame's own width the diagram band aligns its inner gutter with the
+   12-column heading. Below it the graph needs the extra 42px to stay at 1:1, so the
+   band keeps the frame edge and reads as a deliberate sheet. Declared after both
+   base padding rules so it wins at the same specificity. */
+@media (min-width: 84rem) {
+  .flow-head,
+  .flow-window {
+    padding-inline: calc(max(var(--frame-margin), (100vw - var(--frame)) / 2) + var(--pad));
+  }
 }
 
 .flow-svg {
@@ -1634,9 +1697,20 @@ textarea {
 .nodes {
   display: flex;
   flex-wrap: wrap;
-  align-items: stretch;
+  align-items: flex-start;
   gap: var(--space-2) var(--space-5);
   margin-top: var(--space-5);
+}
+
+/* The parent and its branch are one flex item, so the branch hangs under the box
+   it belongs to at every width. */
+.node-stack {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  flex: 0 1 auto;
 }
 
 .node {
@@ -1656,7 +1730,8 @@ textarea {
 }
 
 /* The arrow from the previous box, drawn in the gap the flex row leaves. */
-.node + .node::before {
+.node + .node::before,
+.node + .node-stack::before {
   content: '→';
   position: absolute;
   top: 50%;
@@ -1669,32 +1744,28 @@ textarea {
 
 /* The branch hangs below its parent, joined by a dashed rule: the gateway
    switches to a backup model, so this is a fork, not the next step. */
-/* A zero-height full-width item: it takes the rest of its row and pushes the
-   branch onto the next one. */
-.node-break {
-  flex-basis: 100%;
-  height: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-
 .nodes .is-branch {
-  /* The branch hangs under the chain at an indent. Its width is bounded rather
-     than `max-content`: at 360 the indent plus a nowrap label pushed the box past
-     the card, so it may shrink and the label wraps inside it instead of spilling. */
+  /* The branch hangs under its parent at a small indent. Its width is bounded
+     rather than `max-content`: at 360 the indent plus a nowrap label pushed the box
+     past the card, so it may shrink and the label wraps inside it instead of
+     spilling. */
   max-width: 100%;
-  margin-left: var(--space-6);
+  margin-left: var(--space-3);
   border-style: dashed;
   overflow-wrap: anywhere;
 }
 
-.is-branch::before {
+/* No right arrow between the parent and the branch: the dashed elbow says fork. */
+.node-stack .node + .node::before {
+  content: none;
+}
+
+.node-stack .is-branch::before {
   content: '';
-  top: calc(var(--space-4) * -1);
-  left: calc(var(--space-6) * -1 + 0.5rem);
-  width: var(--space-4);
-  height: var(--space-4);
+  top: calc(var(--space-2) * -1 - var(--line));
+  left: var(--space-3);
+  width: var(--space-3);
+  height: calc(var(--space-2) + var(--line));
   border: 0;
   border-left: var(--line) dashed var(--rule-strong);
   border-bottom: var(--line) dashed var(--rule-strong);
@@ -1714,16 +1785,22 @@ textarea {
      label is cut and nothing scrolls sideways. */
   .nodes {
     flex-direction: column;
+    flex-wrap: nowrap;
     align-items: flex-start;
     gap: var(--space-4);
   }
 
-  .node + .node::before {
+  .node + .node::before,
+  .node + .node-stack::before {
     content: '↓';
     top: calc(var(--space-4) * -1);
     left: var(--space-3);
     width: auto;
     transform: none;
+  }
+
+  .node-stack {
+    width: 100%;
   }
 
   .nodes .is-branch {
@@ -1732,9 +1809,9 @@ textarea {
     white-space: normal;
   }
 
-  .is-branch::before {
+  .node-stack .is-branch::before {
     top: calc(var(--space-4) * -1);
-    left: calc(var(--space-5) * -1 + 0.5rem);
+    left: var(--space-4);
   }
 }
 
@@ -2823,6 +2900,7 @@ textarea {
   }
 
   .stop {
+    display: flex;
     flex-direction: row;
     align-items: baseline;
     gap: var(--space-3);
@@ -2839,7 +2917,16 @@ textarea {
   /* A same-year stack has no columns to collide in here: every stop is its own
      row, so the labels flow naturally. */
   .stop-body {
-    margin-top: 0;
+    grid-row: auto;
+  }
+
+  .stop-year {
+    display: block;
+  }
+
+  .stop-end-cap,
+  .tl-stops::after {
+    display: none;
   }
 
   /* The span bar has no axis to sit on here, so its two ends become one row:

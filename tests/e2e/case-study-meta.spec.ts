@@ -112,6 +112,25 @@ for (const { slug, repo } of STUDIES) {
   });
 }
 
+test('relay: the Live chip reads Live Link, not the host', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/work/relay');
+
+  const cell = page.locator('.meta > div').filter({ has: page.locator('dt', { hasText: 'Live' }) });
+  await expect(cell).toHaveCount(1);
+  const link = cell.locator('a.meta-link');
+  await expect(link).toHaveText('Live Link');
+  await expect(link).toHaveAttribute('href', 'https://ticket-pipeline.onrender.com');
+  await expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+  /* The cell's label stays Live; the placeholder is the chip's words. */
+  await expect(cell.locator('dt')).toHaveText('Live');
+});
+
+test('rannaghor: no Live chip', async ({ page }) => {
+  await page.goto('/work/rannaghor');
+  await expect(page.locator('.meta dt', { hasText: 'Live' })).toHaveCount(0);
+});
+
 const readCells = (page: Page) =>
   page.locator('.meta > div').evaluateAll((nodes) =>
     nodes.map((n) => {

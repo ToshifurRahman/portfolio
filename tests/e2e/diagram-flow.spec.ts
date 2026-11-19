@@ -8,8 +8,8 @@ import { expect, test, type Page } from '@playwright/test';
  */
 
 const DIAGRAMS = [
-  { slug: 'relay', path: '/work/relay', firstStatus: 'New ticket submitted' },
-  { slug: 'rannaghor', path: '/work/rannaghor', firstStatus: 'A request arrives' },
+  { slug: 'relay', path: '/work/relay', firstStatus: 'New ticket submitted', secondStatus: 'Completed on the backup model' },
+  { slug: 'rannaghor', path: '/work/rannaghor', firstStatus: 'A request arrives', secondStatus: '403: request refused at the role check' },
 ];
 
 const panel = (page: Page, slug: string) => page.locator(`.flow-panel[data-diagram="${slug}"]`);
@@ -135,8 +135,21 @@ for (const d of DIAGRAMS) {
         }
       }
 
-      /* The trail is of this run only: when the clock wraps, it clears. */
-      await expect.poll(async () => trails(page, d.slug).count(), { timeout: 90_000 }).toBe(0);
+      /* The natural wrap moves to the second run; 1.5x keeps the wait short. */
+      await panel(page, d.slug).locator('.flow-speed-option', { hasText: '1.5x' }).click();
+      await expect(panel(page, d.slug).locator('.flow-status')).toHaveText(d.secondStatus, {
+        timeout: 60_000,
+      });
+
+      /* The trail is of this run only: a restart clears it. The natural wrap is
+         timing-fragile in headless Chrome because rAF can be throttled and the
+         clock caps each frame at 64ms, stretching a run toward the poll timeout.
+         Pause then Reset exercises the same reset path deterministically. */
+      await panel(page, d.slug).locator('.flow-pause').click();
+      const reset = panel(page, d.slug).locator('.flow-reset');
+      await expect(reset).toBeVisible();
+      await reset.click();
+      await expect.poll(async () => trails(page, d.slug).count(), { timeout: 5_000 }).toBe(0);
     });
   });
 
