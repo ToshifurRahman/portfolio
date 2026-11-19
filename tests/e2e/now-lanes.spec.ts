@@ -88,11 +88,14 @@ test.describe('the Now timeline', () => {
     }
   });
 
-  /* The caps belong inside the spine, not half over its ends, and stop 1 must
-     read as a station after the start cap rather than a double blob on it. The
-     reference keeps a run of spine between the cap and the first node. */
-  for (const width of [834, 1024, 1280, 1440]) {
-    test(`${width}px: both caps stay inside the spine and clear of Stop 1`, async ({ page }) => {
+  /* The caps belong inside the spine, not half over its ends, and the stations at
+     each end must read as stations rather than double blobs on the cap: stop 1
+     after the start cap, stop 6 before the end cap. The reference keeps a run of
+     spine between a cap and the node beside it. 769 sits just past the 48rem
+     phone boundary, in the window where the caps return and the first-station
+     inset has to return with them. */
+  for (const width of [769, 834, 1024, 1280, 1440]) {
+    test(`${width}px: both caps stay inside the spine and clear of Stop 1 and Stop 6`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
       await page.goto('/');
 
@@ -101,16 +104,25 @@ test.describe('the Now timeline', () => {
         const timeline = document.querySelector('#now .timeline') as HTMLElement;
         const s = spine.getBoundingClientRect();
         const t = timeline.getBoundingClientRect();
-        /* The caps carry a vertical centring transform; read its translateX so
-           a negative offset cannot hide an overhang. */
+        /* The caps carry a vertical centring transform; read its translateX so a
+           negative offset cannot hide an overhang. Read both matrix forms: a
+           matrix3d would otherwise parse as 0 and pass an overhang. */
         const translateX = (value: string) => {
-          const matrix = value.match(/matrix\(([^)]+)\)/);
-          return matrix ? parseFloat(matrix[1].split(',')[4]) : 0;
+          const two = value.match(/matrix\(([^)]+)\)/);
+          if (two) return parseFloat(two[1].split(',')[4]);
+          const three = value.match(/matrix3d\(([^)]+)\)/);
+          if (three) return parseFloat(three[1].split(',')[12]);
+          return 0;
         };
         const cap = (side: '::before' | '::after') => {
           const cs = getComputedStyle(spine, side);
           const left = s.left + parseFloat(cs.left) + translateX(cs.transform);
-          return { left, right: left + parseFloat(cs.width), width: parseFloat(cs.width) };
+          return {
+            left,
+            right: left + parseFloat(cs.width),
+            width: parseFloat(cs.width),
+            transform: cs.transform,
+          };
         };
         const first = document.querySelector('#now .stop:first-child .stop-node')!.getBoundingClientRect();
         const last = document.querySelector('#now .stop:last-child .stop-node')!.getBoundingClientRect();
@@ -127,6 +139,7 @@ test.describe('the Now timeline', () => {
       });
 
       for (const cap of [report.before, report.after]) {
+        expect.soft(cap.transform, 'a cap carries a 3D transform').toMatch(/^matrix\(/);
         expect.soft(cap.left, 'a cap starts outside the spine').toBeGreaterThanOrEqual(report.spine.left - 0.5);
         expect.soft(cap.right, 'a cap ends outside the spine').toBeLessThanOrEqual(report.spine.right + 0.5);
         expect.soft(cap.left, 'a cap starts outside the timeline').toBeGreaterThanOrEqual(report.timeline.left - 0.5);
@@ -346,6 +359,7 @@ test.describe('the Now timeline', () => {
           top: box.top,
           bottom: box.bottom,
           year: (year.textContent ?? '').trim(),
+          yearLeft: year.getBoundingClientRect().left,
           yearVisible: getComputedStyle(year).display !== 'none' && year.getBoundingClientRect().height > 0,
         };
       });
@@ -377,6 +391,13 @@ test.describe('the Now timeline', () => {
     for (let i = 0; i < report.stops.length; i++) {
       const stop = report.stops[i];
       expect(stop.yearVisible, `the year is hidden on stop ${i + 1}`).toBe(true);
+      /* The rail has no caps here, so the desktop first-station inset has to be
+         reset. Otherwise stop 1's year sits 16px right of every other year and
+         of its own dot, which still sits on the rail. */
+      expect(
+        Math.abs(stop.yearLeft - report.stops[0].yearLeft),
+        `stop ${i + 1} does not share stop 1's year left edge`,
+      ).toBeLessThanOrEqual(1);
       if (i > 0) {
         expect(stop.top, `stop ${i + 1} is not on its own row`).toBeGreaterThanOrEqual(
           report.stops[i - 1].bottom - 1,
