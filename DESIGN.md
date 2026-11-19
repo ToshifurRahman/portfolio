@@ -316,7 +316,7 @@ own `flow-label` 12px, which is a viewBox unit rather than a page step (see the 
   than the usual 400/500/600/700, so headings sit a shade heavier than system defaults.
 - **A step is a size, not a weight.** The front matter's `fontWeight` is the step's default,
   and a step that a rule sets a weight on is the exception, named here so the number is not read
-  as universal: `2xs` defaults to 430 with `.tl-lane-title` the one 520; `sm` to 430 with
+  as universal: `2xs` defaults to 430 with `.stop-lane` the one 520; `sm` to 430 with
   `.nav-links a` and `.contents a` at 520; `md` to 430 with `.button`, `.more-link`, `.brand` and
   `.certificate-title` at 600 and `.ghost`, `.text-button`, `.next-lead` at 520; `xl` to 520 with
   `.subhead` and `.entry-title` at 600; `lg` to 430 with `.nav-links a` at 520 inside the phone
@@ -325,10 +325,9 @@ own `flow-label` 12px, which is a viewBox unit rather than a page step (see the 
 
 ### Named rules
 **The Mono Means Data Rule.** If it is a number, a station, a stack, a label or a system name,
-it is Martian Mono. If it is a sentence, it is Mona Sans. A line never mixes the two. One
-exception is written into the CSS rather than the rule: the Now panel's `tl-lane-title` ("Study",
-"Work") is uppercase `2xs` in **Mona Sans**, because it is a heading for a lane rather than a
-data label, and `.tl-lane-title` sets no `font-family`.
+it is Martian Mono. If it is a sentence, it is Mona Sans. A line never mixes the two. The Now
+panel's lane captions ("Study", "Work") are data labels, so `.stop-lane` is uppercase mono
+`2xs`; they are not an exception.
 
 **The Diagram Floor Rule.** No text in a flowchart may render below **12px**. The floor is
 measured from the rendered transform (`getScreenCTM().a`), not from the viewBox, because the
@@ -357,15 +356,19 @@ entry because the bar holds five links. Whatever the bar lists, the sections kee
 its repo, lede), then the meta row (`Type` and `Stack` as plain facts, and the exits — `Source
 Code`, the repo, plus `Live` when there is one — as Skills chips: mono, a hairline `rule-strong`
 border, `radius-sm` and no fill, the same chip the Skills section uses; the owner replaced the
-filled button with it on 2026-11-17). The Live chip's text is `Live Link`, not the raw host
-(owner, 2026-11-19); its `href`, `rel`, and chip styling are unchanged. Then the sticky sub-nav, then the
+filled button with it on 2026-11-17). At rest the exits take the hero ghost's primary `ink` and
+its `rule-strong` hairline; on hover the text becomes `accent-text` and the border `accent`, while
+the chip's mono `--text-xs` face, radius, transparent ground and 44px target stay (owner,
+2026-11-19). The Live chip's text is `Live Link`, not the raw host (owner, 2026-11-19); its
+`href`, `rel`, and chip styling are unchanged. Then the sticky sub-nav, then the
 six sections (`sectionOrder` in `src/content.ts`: Overview, Problem, Architecture, Tech
 decisions, Challenges and solutions, Results — Challenges and Solutions are one section). The sub-nav borrows the bar's type, lamp and active treatment, and keeps its own rail: the top bar draws no line between its items (owner, 2026-11-17: "in nav, remove lines connected with dots"), and it lights **Work** while a case study is open — the owner asked for the two to
 be one design, not two.
 
-**Breakpoints.** `57rem` collapses the bar into a menu button; `48rem` hides the Now panel's year
-axis, shows each stop's year in its own text instead, and turns the stops from a grid into a
-column (the two lanes are stacked at every width), and restacks the Work node structure.
+**Breakpoints.** `57rem` collapses the bar into a menu button; `48rem` turns the Now panel's
+single horizontal spine into a vertical spine on the left, puts every stop on its own row in
+chronological order, and restacks the Work node structure. The years stay visible in each stop at
+every width.
 
 The flowcharts switch layout on *container* width, not viewport: `@container (max-width: 1171px)`
 for Relay and `1112px` for RannaGhor — each study's own viewBox width (1170.30 and
@@ -398,24 +401,30 @@ wave are gone; only the ray remains.
 
 ## The Now panel
 
-Two lanes, **Study** and **Work**, sharing one year axis that shows every year from the first
-to the last in the data (2021 to 2026) at equal spacing: a `tl-lane-title` heading per lane, the
-year ticks drawn as decoration over the lists, and each stop a real list item, so the panel
-reads with no CSS and no script. The title is its own row and the timeline takes all twelve
-columns (owner, 2026-11-19), so six years share the frame's 1260px at 1440 instead of 938.
+One chronological timeline: a horizontal spine across the twelve-column area, with a cap at each
+end, and six real stops alternating above and below it (owner, 2026-11-19). It is one ordered
+list, so the panel reads with no CSS and no script.
 
-Within a lane every stop spans the same three grid rows and hands them down with `subgrid`:
-row 1 holds the lamp on the continuous line at its own year, row 2 the first label, row 3 a
-same-year sibling's label. The rows are sized by their own content; the old 88px stack offset
-is gone. A 1px tick marks every year on the line, including the empty ones.
+The timeline is a five-row grid shared through `subgrid`: up body, up stem, spine, down stem,
+down body. Each stop is one column and all five rows. An up stop puts its label above the spine
+and its year below; a down stop mirrors that. The year is the opposite-side label, a stem runs
+from the spine node to an outer ring, and the body sits beyond that ring. Stems are at least
+40px, so they clear the years, and the outer rows size to the tallest body on each side. Six
+columns share the frame's inner width, so a label wraps inside its own column.
 
-The B.Sc. is one bar from the 2021 column to the 2025 column, with a lamp at both ends, its
-start labelled "Aug 2021" and its far end "B.Sc. completed / Dec 2025"; the completion is the
-bar's other end, not a stop of its own. Both M.Engg. stops sit at 2026 (the owner's ruling), the
-current one lit, and the undated IIUCCPS sub-roles stay listed under the dated role they were
-held alongside. What 48rem changes is the year axis, which is hidden and replaced by a visible
-year (or year range) in each stop, and the stops, which become one stacked column so every
-label reads in full; the lane order is the same either way.
+The stops are derived from `path` in `src/content.ts`, not written separately. A stop the source
+dates at both ends becomes two stations: the B.Sc. start (Aug 2021) and its completion
+(B.Sc. completed, Dec 2025). Undated IIUCCPS roles stay under the dated role they were held
+alongside. Within one year the display order comes from the real date text: an undated admission,
+then a dated month, then "In progress".
+
+Past stops are monochrome: label `ink`, year `ink-2`, date and lane `muted`, stems and rings
+`rule-strong`. The two `current: true` 2026 stops are lit: label, year and lane take
+`accent-text`, and the node, outer dot and stem take `accent`. The lane caption (`Study` / `Work`)
+is mono `2xs` in each body, so the two kinds of work stay legible without a second axis.
+
+At `48rem` and below the spine turns vertical on the left, the year leads every stop, and each
+stop takes its own row so every label reads in full.
 
 ## The Work node diagram
 
@@ -479,6 +488,13 @@ share the heading's inner edge, so the band and the column grid start on one lin
 `84rem` the band keeps the frame edge, because aligning it there would leave 1146px at 1280
 and force the vertical layout early. The section's one row gap is the rhythm above and below
 the band (32px/32px at 1440), with no extra margin under the diagram.
+
+The toolbar is split, not one left-packed row: `.flow-title` and `.flow-status` stay on the
+left, and `.flow-controls` (Pause, Reset while paused, and the speed group) is pushed right by
+`margin-left: auto`, so the speed group ends on the inner gutter. One `--space-3` gap holds
+inside the controls group and inside the speed group; the space between the status and the group
+is the auto margin, not a second rhythm. Below `48rem` the controls take their own full-width row
+and wrap without clipping.
 
 **Routing.** An ordinary down edge takes one elbow in the row gap under its source and drops
 straight into the target (`down-direct`). It never runs out to an outer margin and back: that

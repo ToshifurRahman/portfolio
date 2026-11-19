@@ -929,17 +929,14 @@ textarea {
 
 /* The Now panel ------------------------------------------------------------ */
 
-/* Two lanes, Study and Work, on one shared year axis. Owner, 2026-11-17: the
-   graph was "disconnected & misguided", so the axis is every year from the first
-   to the last (2021 to 2026) at equal spacing, and each lane is one continuous
-   line rather than a row per stop.
- *
- * The axis is a grid of year columns shared by both lanes. Every stop is placed
- * in its year's column and in the one row the lane line runs through, so its lamp
- * sits on that line. Two stops in the same year keep their lamps on the line and
- * stack their labels below: `--stack` is the stop's offset within its column,
- * set by the component. Text first: with no CSS this reads as two ordered lists
- * and a list of years. */
+/* One chronological spine, six real stops alternating above and below it. Owner,
+   2026-11-19: the two-lane axis read as disconnected, so the panel follows the
+   reference's single timeline. The timeline is a five-row grid: up body, up
+   stem, spine, down stem, down body. Odd stops put their body in row 1 and their
+   year in row 4; even stops mirror that. Each stop inherits the rows with
+   `subgrid`, and the list inherits both rows and columns from the timeline, so
+   there is no magic offset. Text first: with no CSS this reads as one ordered
+   list. */
 .now {
   row-gap: var(--space-6);
   padding-block: var(--space-8);
@@ -954,38 +951,174 @@ textarea {
   letter-spacing: var(--tracking-tight);
 }
 
-/* The ruler takes the whole frame: the title is its own row now, so the six
-   years share 1260px at 1440 instead of 938. */
+/* The spine takes the whole frame: the title is its own row, so six columns
+   share the frame's inner width. */
 .timeline {
   grid-column: 1 / -1;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-/* The year ticks: one cell per year, the same track the lanes below use. */
-.years {
+  position: relative;
   display: grid;
-  gap: 0 var(--space-3);
-  padding-bottom: var(--space-2);
-  border-bottom: var(--line) solid var(--rule-strong);
+  column-gap: var(--col-gap);
+  row-gap: 0;
+  /* 40px minimum stems clear the years at every width. The outer rows size to
+     the tallest up and down bodies. */
+  grid-template-rows: auto minmax(var(--space-10), auto) var(--line) minmax(var(--space-10), auto) auto;
 }
 
-.year {
-  color: var(--muted);
-  font-size: var(--text-2xs);
-  letter-spacing: var(--tracking-mono);
+/* The list is a subgrid of the timeline, so its items inherit both axes. */
+.tl-stops {
+  grid-column: 1 / -1;
+  grid-row: 1 / -1;
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-template-rows: subgrid;
 }
 
-.tl-lane {
+/* The one continuous spine, with a cap at each end. */
+.tl-spine {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  position: relative;
+  align-self: center;
+  height: var(--line);
+  background: var(--rule-strong);
+}
+
+.tl-spine::before,
+.tl-spine::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 50%;
+  background: var(--rule-strong);
+  transform: translate(-50%, -50%);
+}
+
+.tl-spine::before {
+  left: 0;
+}
+
+.tl-spine::after {
+  left: 100%;
+}
+
+/* One stop is one column and all five rows. */
+.stop {
+  position: relative;
+  grid-row: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: subgrid;
+  align-items: start;
+  min-width: 0;
+  font-size: var(--text-xs);
+  line-height: 1.45;
+  hyphens: none;
+}
+
+/* Up: body above, ring and stem in row 2, year below the spine. Down: the
+   mirror. Bodies align to the edge nearest the spine so every stem is the same
+   length even when labels differ in line count. */
+.stop-body {
+  grid-column: 1;
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
-  padding-block: var(--space-5) var(--space-6);
-  border-bottom: var(--line) solid var(--rule);
+  align-items: flex-start;
+  gap: var(--space-1);
+  min-width: 0;
 }
 
-.tl-lane-title {
+.is-up .stop-body {
+  grid-row: 1;
+  align-self: end;
+  padding-bottom: var(--space-2);
+}
+
+.is-down .stop-body {
+  grid-row: 5;
+  align-self: start;
+  padding-top: var(--space-2);
+}
+
+.stop-stem {
+  grid-column: 1;
+  justify-self: start;
+  /* The stop's `align-items: start` would collapse a stem with no content. */
+  align-self: stretch;
+  width: var(--line);
+  /* Centre the hairline under the 8px dots. */
+  margin-left: calc((var(--lamp) - var(--line)) / 2);
+  background: var(--rule-strong);
+}
+
+.is-up .stop-stem {
+  grid-row: 2;
+}
+
+.is-down .stop-stem {
+  grid-row: 4;
+}
+
+.stop-outer {
+  grid-column: 1;
+  justify-self: start;
+  width: var(--lamp);
+  height: var(--lamp);
+  border: var(--line) solid var(--rule-strong);
+  border-radius: 50%;
+  background: var(--bg);
+}
+
+.is-up .stop-outer {
+  grid-row: 2;
+  align-self: start;
+}
+
+.is-down .stop-outer {
+  grid-row: 4;
+  align-self: end;
+}
+
+.stop-node {
+  grid-column: 1;
+  grid-row: 3;
+  justify-self: start;
+  align-self: center;
+  width: var(--lamp);
+  height: var(--lamp);
+  border: var(--line) solid var(--rule-strong);
+  border-radius: 50%;
+  background: var(--bg);
+}
+
+/* The year is the opposite-side label: below the spine for an up stop, above it
+   for a down stop. */
+.stop-year {
+  grid-column: 1;
+  color: var(--ink-2);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-mono);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.is-up .stop-year {
+  grid-row: 4;
+  align-self: start;
+  padding-top: var(--space-1);
+}
+
+.is-down .stop-year {
+  grid-row: 2;
+  align-self: end;
+  padding-bottom: var(--space-1);
+}
+
+/* Lane is a caption, not a second axis: a data label in mono, the one 520
+   weight on the 2xs step. */
+.stop-lane {
   color: var(--muted);
   font-size: var(--text-2xs);
   font-weight: var(--weight-medium);
@@ -993,143 +1126,29 @@ textarea {
   text-transform: uppercase;
 }
 
-/* Stops are placed into the same year columns as the ticks. Each stop spans the
-   same three rows and hands them down with `subgrid`: row 1 holds the lamp on the
-   line, row 2 the first label, row 3 a same-year sibling's label. The rows are
-   real grid rows, so their height is the labels' own height, not a magic offset. */
-.tl-stops {
-  --lamp-step: var(--space-3);
-  position: relative;
-  display: grid;
-  grid-template-rows: repeat(3, auto);
-  /* Row 1 holds no box height (the lamp is absolute), so the row gap is what
-     holds the first label clear of the line and the lamp. */
-  gap: var(--space-4) var(--space-3);
-  padding-top: var(--space-2);
-}
-
-.tl-stops::before {
-  content: '';
-  position: absolute;
-  top: calc(var(--space-2) + var(--space-1) + var(--line));
-  right: 0;
-  left: 0;
-  height: var(--line);
-  background: var(--rule-strong);
-}
-
-/* A tick at every year, including the empty ones, so the ruler reads as ruled
-   rather than broken. The period is one column plus one gap. */
-.tl-stops::after {
-  content: '';
-  position: absolute;
-  top: calc(var(--space-2) + var(--space-1) + var(--line));
-  right: 0;
-  left: 0;
-  height: 5px;
-  background-image: linear-gradient(to right, var(--rule-strong) 0 1px, transparent 1px);
-  background-size: calc((100% + var(--space-3)) / 6) 5px;
-  background-repeat: repeat-x;
-  pointer-events: none;
-}
-
-.stop {
-  position: relative;
-  display: grid;
-  /* One full-width column: the absolute end label needs the stop's whole width,
-     not the content width of an auto column. */
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: subgrid;
-  grid-row: 1 / span 3;
-  align-items: start;
-  min-width: 0;
-  padding-top: 0;
-  font-size: var(--text-xs);
-  line-height: 1.45;
-  hyphens: none;
-}
-
-/* A span the source dates at both ends: a lit bar across its columns, level
-   with the lane line and the lamps. */
-.stop-span {
-  position: absolute;
-  top: calc(var(--space-1) + var(--line));
-  left: 0;
-  width: 100%;
-  height: var(--line);
-  background: var(--accent);
-  opacity: 0.45;
-}
-
-.stop .lamp {
-  position: absolute;
-  top: 0;
-  /* A second stop on the same year keeps its lamp on the line, a step to the
-     right, so both dots are visible. */
-  left: calc(var(--stack, 0) * var(--lamp-step));
-  display: block;
-  width: 0.625rem;
-  height: 0.625rem;
-  border: var(--line) solid var(--rule-strong);
-  border-radius: 50%;
-  background: var(--bg);
-}
-
-.stop .lamp.is-lit {
-  border-color: var(--accent);
-  background: var(--accent);
-}
-
-.stop-body {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-1);
-  /* Its row is set inline from `--stack`: row 2 for the first label on a year,
-     row 3 for a same-year sibling. */
-  grid-row: 2;
-}
-
-/* The far end cap: the bar gets a lamp at both ends, so its completion is a
-   marked point on the line rather than a label floating past it. */
-.stop-end-cap {
-  position: absolute;
-  top: 0;
-  right: calc(var(--lamp) / 2 * -1);
-  width: var(--lamp);
-  height: var(--lamp);
-  border: var(--line) solid var(--accent);
-  border-radius: 50%;
-  background: var(--accent);
-}
-
-/* The year, shown only when the axis is hidden below 48rem. */
-.stop-year {
-  display: none;
-  color: var(--muted);
-  font-size: var(--text-2xs);
-  letter-spacing: var(--tracking-mono);
-}
-
-/* The far end of a span: the completion's own label at the bar's right end. */
-.stop-end {
-  position: absolute;
-  /* Span the whole grid area so `right: 0` is the far end of the bar, not the
-     first year column. */
-  grid-column: 1 / -1;
-  grid-row: 1 / -1;
-  top: var(--space-3);
-  right: 0;
-  align-items: flex-end;
-  text-align: right;
-}
-
 .stop-label {
   color: var(--ink);
 }
 
+.is-current .stop-label,
+.is-current .stop-year,
+.is-current .stop-lane {
+  color: var(--accent-text);
+}
+
 .is-current .stop-label {
   font-weight: var(--weight-medium);
+}
+
+.is-current .stop-node,
+.is-current .stop-outer {
+  border-color: var(--accent);
+}
+
+.is-current .stop-node,
+.is-current .stop-outer,
+.is-current .stop-stem {
+  background: var(--accent);
 }
 
 .stop-date {
@@ -1181,16 +1200,13 @@ textarea {
   background: transparent;
 }
 
-/* The toolbar is one row of controls, so it takes one gap. It used to run three
-   rhythms at once: the title pushed the status away with `margin-right: auto`
-   (460px at 1440), Pause sat `--space-4` from the status, and the speed options sat
-   `--space-1` from each other. The owner read that as the design pattern broken
-   ("sub heading containing pause, speed button, diagram are breaking design pattern
-   by not maintaining gaps"). One `column-gap` now sets every neighbour pair,
-   including the options inside `.flow-speed`, and the auto margin is gone: the
-   row's items sit at that one rhythm and the speed group is just the last of them.
-   `--space-3` is the gap: the largest token that still fits the whole row on one
-   line at 1024, which is the narrowest width the desktop toolbar is shown at. */
+/* The toolbar is split: title and status on the left, the interactive controls on
+   the right. Owner, 2026-11-19: the controls sat in the reading flow on the left
+   and the speed group clipped on a phone, so Pause, Reset and the speed group are
+   one `.flow-controls` group pushed right by `margin-left: auto`. The group is
+   flush with the toolbar's inner frame, and `--space-3` is the one gap inside it
+   and inside the speed group. The gap between the status and the group is the
+   auto margin, not a second control rhythm. */
 .flow-head {
   display: flex;
   flex-wrap: wrap;
@@ -1277,9 +1293,20 @@ textarea {
   color: var(--accent-text);
 }
 
+.flow-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  /* The group's right edge sits on the toolbar's inner gutter. */
+  margin-left: auto;
+  min-width: 0;
+}
+
 .flow-speed {
   display: inline-flex;
-  /* The same gap as the toolbar row: the group is not a tighter rhythm of its own. */
+  flex-wrap: wrap;
+  /* The same gap as the controls group: it is not a tighter rhythm of its own. */
   gap: var(--space-3);
 }
 
@@ -2341,7 +2368,7 @@ textarea {
   padding: var(--space-1) var(--space-2);
   border: var(--line) solid var(--rule-strong);
   border-radius: var(--radius-sm);
-  color: var(--ink-2);
+  color: var(--ink);
   font-family: var(--mono);
   font-size: var(--text-xs);
   line-height: 1.5;
@@ -2866,84 +2893,66 @@ textarea {
     white-space: normal;
   }
 
-  /* One vertical timeline, not two lanes squeezed into columns: the year axis
-     gives way and both lanes become a single column with the year markers on it.
-     Each stop takes its own row, so a label reads in full and nothing overlaps;
-     the span's two ends stay together in its row. */
+  /* One vertical timeline: the spine turns vertical on the left, every stop
+     takes its own row, and the year leads the stop so it survives here. */
   .timeline {
+    display: flex;
+    flex-direction: column;
     gap: var(--space-4);
+    padding-left: var(--space-5);
   }
 
-  .years {
+  .tl-spine {
+    position: absolute;
+    top: 0.3125rem;
+    right: auto;
+    bottom: auto;
+    left: 0.28125rem;
+    width: var(--line);
+    /* An explicit height: the desktop `align-self: center` otherwise collapses
+       an absolutely positioned flex child with both insets set. */
+    height: calc(100% - 0.625rem);
+    align-self: auto;
+  }
+
+  .tl-spine::before,
+  .tl-spine::after {
     display: none;
-  }
-
-  .tl-lane {
-    gap: var(--space-3);
   }
 
   .tl-stops {
     display: flex;
     flex-direction: column;
     gap: 0;
-    padding-left: var(--space-5);
-  }
-
-  /* The rail runs down the left, through every stop's lamp. */
-  .tl-stops::before {
-    top: 0.3125rem;
-    right: auto;
-    bottom: 0.3125rem;
-    left: 0.28125rem;
-    width: var(--line);
-    height: auto;
   }
 
   .stop {
     display: flex;
-    flex-direction: row;
-    align-items: baseline;
-    gap: var(--space-3);
-    padding-top: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-1);
     padding-bottom: var(--space-4);
   }
 
-  .stop .lamp {
+  /* The dot sits on the rail, level with the year's first line. */
+  .stop .stop-node {
     position: absolute;
-    top: 0.3125rem;
+    top: 0.28125rem;
     left: calc(var(--space-5) * -1 + 0.03125rem);
   }
 
-  /* A same-year stack has no columns to collide in here: every stop is its own
-     row, so the labels flow naturally. */
-  .stop-body {
-    grid-row: auto;
+  /* The desktop alternation aligned these to opposite sides; in one column both
+     take the full width so the year leads and the body follows. The `.stop`
+     prefix matches those rules' specificity so this later rule wins. */
+  .stop .stop-body,
+  .stop .stop-year {
+    align-self: stretch;
+    padding: 0;
   }
 
-  .stop-year {
-    display: block;
-  }
-
-  .stop-end-cap,
-  .tl-stops::after {
+  .stop-stem,
+  .stop-outer {
     display: none;
-  }
-
-  /* The span bar has no axis to sit on here, so its two ends become one row:
-     the start and the completion read in order, connected by the list itself. */
-  .stop.is-span {
-    flex-wrap: wrap;
-  }
-
-  .stop-span {
-    display: none;
-  }
-
-  .stop.is-span .stop-end {
-    position: static;
-    flex-basis: 100%;
-    align-items: flex-start;
-    text-align: left;
   }
 
   .stop-child {
@@ -2992,11 +3001,16 @@ textarea {
     grid-column: 1 / -1;
   }
 
-  /* The flowchart's status line and control wrap onto their own row, as the
-     track's status did before it. */
-  .flow-status,
-  .flow-pause {
+  /* The flowchart's status line and controls wrap onto their own rows. The
+     controls group takes the full width and starts on the inner left edge, so
+     the speed options cannot clip at the right edge. */
+  .flow-status {
     flex-basis: 100%;
+  }
+
+  .flow-controls {
+    flex-basis: 100%;
+    margin-left: 0;
   }
 
   .rows > div {

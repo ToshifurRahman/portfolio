@@ -1,97 +1,76 @@
 import type { CSSProperties } from 'react';
-import { path, pathYears, type PathStop } from './content';
+import { path, type PathStop } from './content';
 
-/* The Now panel: two lanes, Study and Work, on one shared year axis.
+/* The Now panel: one chronological spine, six real stops alternating above and
+ * below it.
  *
- * Owner, 2026-11-15: "In Now, timeline chart not looking good, research to make
- * it look good. drop latest system & problem solving", answered by two lanes.
- * Owner, 2026-11-17: the graph was "disconnected & misguided", so:
+ * Owner, 2026-11-19: the two-lane axis read as disconnected, so the panel is one
+ * timeline in the reference's shape: a central horizontal spine with end caps,
+ * odd stops above it and even stops below. An up stop has its label above the
+ * spine and its year below; a down stop is the mirror. A node dot sits on the
+ * spine, a stem runs to an outer dot, and the body sits beyond that dot.
  *
- *   - the axis is every year from the first to the last year in the data
- *     (derived in src/content.ts), so distance on it is truthful;
- *   - a lane is one continuous line: every stop's lamp sits on that line, and a
- *     stop that shares a year with a neighbour stacks its label below rather than
- *     dropping to a row of its own;
- *   - the B.Sc. is one bar from 2021 to 2025, its ends labelled and capped;
- *   - both M.Engg. stops sit at 2026, the current one lit;
- *   - same-year labels have their own rows, and the ruler marks every year,
- *     including the empty ones.
+ * Nothing is invented. The stops are derived from `path` in src/content.ts: a
+ * stop the source dates at both ends (the B.Sc.) becomes two stations, its start
+ * and its `endLabel` / `endDate` completion. Undated children hang under their
+ * dated parent. Same-year stops use the real date text for their display order:
+ * an undated admission, then a dated month, then "In progress".
  *
- * Nothing is invented: every label, date and year comes from the `path` list in
- * src/content.ts. It is static, and it is an ordered list of real text, so it
- * reads with no CSS and no script. Below 48rem the year axis gives way to one
- * stacked timeline.
+ * It is static, and it is one ordered list of real text, so it reads with no CSS
+ * and no script. Below 48rem the spine turns vertical on the left.
  */
 
-const laneStops = (lane: PathStop['lane']) => path.filter((stop) => stop.lane === lane && !stop.parent);
+type Station = {
+  key: string;
+  label: string;
+  date: string;
+  year: number;
+  lane: PathStop['lane'];
+  current?: boolean;
+  children: string[];
+};
+
 const childrenOf = (label: string) => path.filter((stop) => stop.parent === label);
 
-/* The grid column a year occupies, 1-based, with the year ticks in row 1. */
-const columnOf = (year: number) => pathYears.indexOf(year) + 1;
+/* The display rank within one year. The source text decides it: no date is an
+   admission point, a month is a dated role, "In progress" is the open end. */
+const dateRank = (date: string) => (date === '' ? 0 : /in progress/i.test(date) ? 2 : 1);
 
-const isSpan = (stop: PathStop) => stop.year !== undefined && stop.yearEnd !== undefined;
+const stations: Station[] = (() => {
+  const sources = path
+    .filter((stop) => !stop.parent && stop.year !== undefined)
+    .flatMap((stop, index) => {
+      const start = { stop, index, label: stop.label, date: stop.date, year: stop.year as number, end: false };
+      if (stop.yearEnd === undefined) return [start];
+      return [
+        start,
+        {
+          stop,
+          index,
+          label: stop.endLabel ?? stop.label,
+          date: stop.endDate ?? '',
+          year: stop.yearEnd,
+          end: true,
+        },
+      ];
+    })
+    .sort((a, b) => a.year - b.year || dateRank(a.date) - dateRank(b.date) || a.index - b.index);
 
-/* A stop's offset within its year's column. The first stop on a year sits on the
-   line; a second one keeps its lamp on the line and stacks its label below. */
-function placements(lane: PathStop['lane']) {
-  const seen = new Map<number, number>();
-  return laneStops(lane).map((stop) => {
-    if (stop.year === undefined || isSpan(stop)) return { stop, stack: 0 };
-    const stack = seen.get(stop.year) ?? 0;
-    seen.set(stop.year, stack + 1);
-    return { stop, stack };
-  });
-}
-
-function Stop({ stop, stack }: { stop: PathStop; stack: number }) {
-  const children = childrenOf(stop.label);
-  const span = isSpan(stop);
-  const start = stop.year !== undefined ? columnOf(stop.year) : undefined;
-  const end = stop.yearEnd !== undefined ? columnOf(stop.yearEnd) : start;
-  const gridColumn =
-    start === undefined ? '1 / -1' : end === undefined ? `${start} / ${start + 1}` : `${start} / ${end! + 1}`;
-
-  return (
-    <li
-      className={['stop', span && 'is-span', stop.current && 'is-current'].filter(Boolean).join(' ')}
-      data-year={stop.year ?? ''}
-      data-year-end={stop.yearEnd ?? ''}
-      style={{ gridColumn, gridRow: '1 / span 3', '--stack': stack } as CSSProperties}
-    >
-      {span && <span className="stop-span" aria-hidden="true" />}
-      <span className={stop.current ? 'lamp is-lit' : 'lamp'} aria-hidden="true" />
-      {span && <span className="stop-end-cap" aria-hidden="true" />}
-      <span className="stop-body" style={{ gridRow: 2 + stack }}>
-        {/* The axis is hidden below 48rem, so the year has to survive here. */}
-        {stop.year !== undefined && (
-          <span className="stop-year mono">
-            {span && stop.yearEnd !== undefined ? `${stop.year} to ${stop.yearEnd}` : stop.year}
-          </span>
-        )}
-        <span className="stop-label">{stop.label}</span>
-        {stop.date && <span className="stop-date mono">{stop.date}</span>}
-        {children.length > 0 && (
-          <span className="stop-children">
-            {children.map((child) => (
-              <span key={child.label} className="stop-child">
-                {child.label}
-              </span>
-            ))}
-          </span>
-        )}
-      </span>
-      {span && stop.endLabel && (
-        <span className="stop-body stop-end">
-          <span className="stop-label">{stop.endLabel}</span>
-          {stop.endDate && <span className="stop-date mono">{stop.endDate}</span>}
-        </span>
-      )}
-    </li>
-  );
-}
+  return sources.map(({ stop, label, date, year, end }) => ({
+    key: `${label}-${year}`,
+    label,
+    date,
+    year,
+    lane: stop.lane,
+    current: end ? undefined : stop.current,
+    /* The completion is its own station, so the source's children stay with the
+       start station only. */
+    children: end ? [] : childrenOf(stop.label).map((child) => child.label),
+  }));
+})();
 
 export function NowPanel() {
-  const columns = { gridTemplateColumns: `repeat(${pathYears.length}, minmax(0, 1fr))` };
+  const columns = { gridTemplateColumns: `repeat(${stations.length}, minmax(0, 1fr))` } as CSSProperties;
 
   return (
     <section className="frame ruled grid12 now" id="now" aria-labelledby="now-title">
@@ -99,31 +78,43 @@ export function NowPanel() {
         Now
       </h2>
 
-      <div className="timeline">
-        {/* Year ticks, shared by both lanes. Decoration over the lists below,
-            which carry the same dates in their own text. */}
-        <ol className="years" style={columns} aria-hidden="true">
-          {pathYears.map((year) => (
-            <li key={year} className="year mono">
-              {year}
+      <div className="timeline" style={columns}>
+        {/* One spine for the whole list. The stops below carry the same years in
+            their own text, so the spine itself is decoration. */}
+        <span className="tl-spine" aria-hidden="true" />
+
+        <ol className="tl-stops">
+          {stations.map((stop, index) => (
+            <li
+              key={stop.key}
+              className={['stop', index % 2 === 0 ? 'is-up' : 'is-down', stop.current && 'is-current']
+                .filter(Boolean)
+                .join(' ')}
+              data-year={stop.year}
+              data-lane={stop.lane}
+              style={{ gridColumn: `${index + 1}` }}
+            >
+              <span className="stop-year mono">{stop.year}</span>
+              <span className="stop-body">
+                <span className="stop-lane mono">{stop.lane === 'study' ? 'Study' : 'Work'}</span>
+                <span className="stop-label">{stop.label}</span>
+                {stop.date && <span className="stop-date mono">{stop.date}</span>}
+                {stop.children.length > 0 && (
+                  <span className="stop-children">
+                    {stop.children.map((child) => (
+                      <span key={child} className="stop-child">
+                        {child}
+                      </span>
+                    ))}
+                  </span>
+                )}
+              </span>
+              <span className="stop-stem" aria-hidden="true" />
+              <span className="stop-outer" aria-hidden="true" />
+              <span className="stop-node" aria-hidden="true" />
             </li>
           ))}
         </ol>
-
-        {(['study', 'work'] as const).map((lane) => (
-          <div key={lane} className={`tl-lane tl-lane-${lane}`}>
-            <h3 className="tl-lane-title">{lane === 'study' ? 'Study' : 'Work'}</h3>
-            <ol
-              className="tl-stops"
-              style={columns}
-              aria-label={lane === 'study' ? 'Study, in order' : 'Work, in order'}
-            >
-              {placements(lane).map(({ stop, stack }) => (
-                <Stop key={stop.label} stop={stop} stack={stack} />
-              ))}
-            </ol>
-          </div>
-        ))}
       </div>
     </section>
   );
