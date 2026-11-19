@@ -80,7 +80,7 @@ const RELAY_EDGES: Edge[] = [
   /* The spine. */
   { id: 'submit', from: 'react', to: 'api', label: 'submit', route: 'right' },
   { id: 'enqueue', from: 'api', to: 'queue', label: 'enqueue', route: 'right' },
-  { id: 'consume', from: 'queue', to: 'worker', label: 'pick up', route: 'down' },
+  { id: 'consume', from: 'queue', to: 'worker', label: 'pick up', route: 'down-direct' },
   { id: 'call', from: 'worker', to: 'gateway', label: 'one call', route: 'right' },
   { id: 'toPrimary', from: 'gateway', to: 'primary', route: 'right' },
 
@@ -92,12 +92,24 @@ const RELAY_EDGES: Edge[] = [
   { id: 'toPage', from: 'eventLog', to: 'customerPage', label: 'push', route: 'right' },
   { id: 'toOps', from: 'customerPage', to: 'opsFeed', route: 'right' },
 
-  /* The failure path, entered from the worker, and the replay that loops back to
-     the queue around the bottom margin. */
-  { id: 'fails', from: 'worker', to: 'stageFails', label: 'stage fails', branch: true, route: 'loop-side-left' },
+  /* The failure path and the replay are named short arrows on desktop. Their only
+     other routes were a 226-unit loop down the left margin and an 849-unit return
+     around the whole graph, which the owner read as unnecessary U-loops. On the
+     vertical layout the failure edge stays the entry arrow under its heading and
+     the replay keeps its stub sentence. */
+  {
+    id: 'fails',
+    from: 'worker',
+    to: 'stageFails',
+    label: 'stage fails',
+    branch: true,
+    route: 'loop-side-left',
+    desktopStub: true,
+    desktopStubText: true,
+  },
   { id: 'retry', from: 'stageFails', to: 'retry', label: 'up to 3', route: 'right' },
   { id: 'again', from: 'retry', to: 'attention', route: 'right' },
-  { id: 'escalate', from: 'attention', to: 'replay', label: 'staff', route: 'down-left' },
+  { id: 'escalate', from: 'attention', to: 'replay', label: 'staff', route: 'down-direct' },
   {
     id: 'replayToQueue',
     from: 'replay',
@@ -106,12 +118,14 @@ const RELAY_EDGES: Edge[] = [
     branch: true,
     route: 'loop-side',
     stub: 'back to the SQS queue, at the stage that failed',
+    desktopStub: true,
+    desktopStubText: true,
   },
 
   /* The state rail. */
   { id: 'q2t', from: 'queued', to: 'triaging', route: 'right' },
   { id: 't2d', from: 'triaging', to: 'drafting', route: 'down-left' },
-  { id: 'd2c', from: 'drafting', to: 'completed', route: 'down-left' },
+  { id: 'd2c', from: 'drafting', to: 'completed', route: 'down-direct' },
 ];
 
 const relayRuns: Step[][] = [
@@ -228,7 +242,7 @@ const RG_NODES: Node[] = [
 const RG_EDGES: Edge[] = [
   { id: 'sec', from: 'security', to: 'session', label: 'pass', route: 'right' },
   { id: 'sess', from: 'session', to: 'role', route: 'right' },
-  { id: 'authorise', from: 'role', to: 'handler', label: 'allowed', route: 'down-left' },
+  { id: 'authorise', from: 'role', to: 'handler', label: 'allowed', route: 'down-direct' },
   { id: 'query', from: 'handler', to: 'postgres', route: 'right' },
   { id: 'commit', from: 'postgres', to: 'tx', label: 'an order', route: 'right' },
   /* `stockOut` is one straight drop: its target sits under the box that refuses it.
@@ -237,7 +251,7 @@ const RG_EDGES: Edge[] = [
      across the graph from columns 0 and 1, which put `refuse`'s run across
      `authorise`'s final approach at (104,114). With each target in its own column
      there is no corridor left to share. */
-  { id: 'refuse', from: 'role', to: 'refuseRole', label: 'vendor route', branch: true, route: 'down-right' },
+  { id: 'refuse', from: 'role', to: 'refuseRole', label: 'vendor route', branch: true, route: 'down-direct' },
   { id: 'stockOut', from: 'tx', to: 'refuseStock', label: 'stock gone', branch: true, route: 'down' },
 ];
 

@@ -439,16 +439,22 @@ for (const d of DIAGRAMS) {
               const pa = toPage(path.getPointAtLength(0));
               const pb = toPage(path.getPointAtLength(len));
               const id = path.getAttribute('data-edge') ?? '?';
+              /* A named short stub is a pointer, not a join: its far end is the
+                 arrowhead in the gap that names the destination, so only the source
+                 end has to meet a box. */
+              const isStub = path.hasAttribute('data-stub-edge');
               /* The budget for an end that lands on a state pill: the rail's ink stops
                  `RAIL_CLEAR` units (4 viewBox) clear of the capsule, P2b-9. */
               const railBudget = budget + 5 * scale;
               /* The target end: meets the border, or the rail's clearance of a pill. */
               const end = nearest(pb.x, pb.y);
               const endBudget = end.state ? railBudget : budget;
-              if (end.d < touch) {
-                detached.push(`${id} end crosses its box border by ${(-end.d).toFixed(1)}px`);
-              } else if (end.d > endBudget) {
-                detached.push(`${id} end stops ${end.d.toFixed(1)}px short of the nearest border`);
+              if (!isStub) {
+                if (end.d < touch) {
+                  detached.push(`${id} end crosses its box border by ${(-end.d).toFixed(1)}px`);
+                } else if (end.d > endBudget) {
+                  detached.push(`${id} end stops ${end.d.toFixed(1)}px short of the nearest border`);
+                }
               }
               /* The source end: on a node's border, or on the heading that stands in for
                  the entry point. */
@@ -1761,7 +1767,9 @@ const labelSpec = (slug: 'relay' | 'rannaghor') => {
     /* A stub edge is drawn as a line plus its longer stub sentence on the vertical
        layout, and with its own short label on the desktop one. Both say the same
        thing, so the sentence stands in for the label rather than replacing it. */
-    stubLabels: edges.filter((e) => e.stub && e.label).map((e) => e.label as string),
+    stubLabels: edges
+      .filter((e) => (e.stub || e.desktopStub) && e.label)
+      .map((e) => e.label as string),
   };
 };
 
@@ -1839,6 +1847,203 @@ for (const slug of ['relay', 'rannaghor'] as const) {
       expect(failures, `${slug} ${theme}: the drawn label set differs from the spec's`).toEqual([]);
     });
   }
+}
+
+/* ---------------------------------------------------------------- routing
+ *
+ * Owner, 2026-11-19: "unnecessary U-loops". A down edge used to leave its box,
+ * run out to the outer margin of both boxes, and come back: `consume` ran from
+ * x 958.75 to x 65 and back, and RannaGhor's `authorise` ran to x 6. The fixes
+ * are a direct mid-gap elbow for the ordinary down edges and a named short stub
+ * for the two long returns. Both are asserted on the painted paths, not on the
+ * route name.
+ */
+
+const DIRECT = {
+  relay: ['consume', 'escalate', 'd2c'],
+  rannaghor: ['authorise', 'refuse'],
+};
+
+const STUBBED = {
+  relay: ['fails', 'replayToQueue'],
+  rannaghor: [] as string[],
+};
+
+for (const d of DIAGRAMS) {
+  const slug = d.slug as 'relay' | 'rannaghor';
+  test.describe(`${d.slug}: routing`, () => {
+    for (const width of [1280, 1440]) {
+      test(`${width}px: no down edge runs out to an outer margin`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        await page.goto(d.path);
+        await panel(page, slug).scrollIntoViewIfNeeded();
+
+        const detours = await page.evaluate((ids) => {
+          const svg = [...document.querySelectorAll('.flow-svg')].find(
+            (s) => s.getBoundingClientRect().width > 0,
+          ) as SVGSVGElement;
+          const out: string[] = [];
+          for (const id of ids) {
+            const path = svg.querySelector<SVGPathElement>(`path[data-edge="${id}"]`);
+            if (!path) {
+              out.push(`${id}: not drawn`);
+              continue;
+            }
+            const d = path.getAttribute('d') ?? '';
+            /* A path's own endpoints are the two boxes' centres, so a legal elbow
+               stays inside their x-range. */
+            let x = 0;
+            let y = 0;
+            let first = true;
+            const xs: number[] = [];
+            const runs: { from: number; to: number }[] = [];
+            for (const token of d.match(/[MHV][^MHV]*/g) ?? []) {
+              const n = (token.slice(1).match(/-?[\d.]+/g) ?? []).map(Number);
+              if (token[0] === 'M') {
+                x = n[0];
+                y = n[1];
+                xs.push(x);
+                first = false;
+              } else if (token[0] === 'H') {
+                runs.push({ from: x, to: n[0] });
+                x = n[0];
+                xs.push(x);
+              } else {
+                y = n[0];
+                xs.push(x);
+              }
+            }
+            if (first) {
+              out.push(`${id}: empty path`);
+              continue;
+            }
+            const lo = Math.min(...xs) - 10;
+            const hi = Math.max(...xs) + 10;
+            for (const run of runs) {
+              if (run.from < lo || run.from > hi || run.to < lo || run.to > hi) {
+                out.push(`${id}: horizontal run ${run.from} to ${run.to}`);
+              }
+            }
+          }
+          return out;
+        }, DIRECT[slug]);
+
+        expect(detours, 'down edges taking an outer U detour').toEqual([]);
+      });
+
+      test(`${width}px: the long returns are named stubs, not graph loops`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        await page.goto(d.path);
+        await panel(page, slug).scrollIntoViewIfNeeded();
+
+        const stubs = await page.evaluate((ids) => {
+          const svg = [...document.querySelectorAll('.flow-svg')].find(
+            (s) => s.getBoundingClientRect().width > 0,
+          ) as SVGSVGElement;
+          return ids.map((id) => {
+            const path = svg.querySelector<SVGPathElement>(`path[data-edge="${id}"]`);
+            return {
+              id,
+              marked: path?.hasAttribute('data-stub-edge') ?? false,
+              length: path ? path.getTotalLength() : -1,
+            };
+          });
+        }, STUBBED[slug]);
+
+        for (const stub of stubs) {
+          expect(stub.marked, `${stub.id} is not marked as a stub`).toBe(true);
+          expect(stub.length, `${stub.id} still runs ${stub.length} units across the graph`).toBeLessThan(40);
+        }
+      });
+    }
+
+    test('every pill keeps 6 units of air from every box', async ({ page }) => {
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.goto(d.path);
+      await panel(page, slug).scrollIntoViewIfNeeded();
+
+      const tight = await page.evaluate(() => {
+        const svg = [...document.querySelectorAll('.flow-svg')].find(
+          (s) => s.getBoundingClientRect().width > 0,
+        ) as SVGSVGElement;
+        const scale = svg.getBoundingClientRect().width / svg.viewBox.baseVal.width;
+        const boxes = [...svg.querySelectorAll('.flow-node rect')].map((r) => r.getBoundingClientRect());
+        const out: string[] = [];
+        for (const pill of svg.querySelectorAll('.flow-edge-pill')) {
+          const p = pill.getBoundingClientRect();
+          let nearest = Infinity;
+          for (const b of boxes) {
+            const dx = Math.max(b.left - p.right, 0, p.left - b.right);
+            const dy = Math.max(b.top - p.bottom, 0, p.top - b.bottom);
+            nearest = Math.min(nearest, Math.hypot(dx, dy) / scale);
+          }
+          if (nearest < 6) {
+            const label = pill.parentElement?.querySelector('.flow-edge-label')?.textContent ?? '?';
+            out.push(`"${label}" ${nearest.toFixed(1)} units`);
+          }
+        }
+        return out;
+      });
+
+      expect(tight, 'labels closer than 6 units to a box').toEqual([]);
+    });
+  });
+}
+
+/* ---------------------------------------------------------------- grid fit
+ *
+ * Option 2: above 84rem the toolbar and the graph share the heading's inner
+ * edge; below it the band keeps the frame edge so the graph still draws at 1:1.
+ * The section rhythm is one token above and below the band, not 32px then 56px.
+ */
+
+for (const d of DIAGRAMS) {
+  const slug = d.slug;
+  test.describe(`${d.slug}: the band sits on the grid`, () => {
+    test('1440px: the toolbar starts at the heading’s edge', async ({ page }) => {
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.goto(d.path);
+      await panel(page, slug).scrollIntoViewIfNeeded();
+
+      const edges = await page.evaluate(() => {
+        const section = document.getElementById('architecture') as HTMLElement;
+        const heading = section.querySelector('.section-heading')!.getBoundingClientRect();
+        const head = section.querySelector('.flow-head') as HTMLElement;
+        const first = head.firstElementChild!.getBoundingClientRect();
+        return { heading: heading.left, toolbar: first.left };
+      });
+
+      /* At 1440 the frame is 48px from the viewport and the inner pad is about 42,
+         so the toolbar is at ~90, exactly where the heading starts. */
+      expect(Math.abs(edges.toolbar - edges.heading), `toolbar ${edges.toolbar} vs heading ${edges.heading}`).toBeLessThanOrEqual(1.5);
+      expect(edges.toolbar).toBeGreaterThan(60);
+    });
+
+    for (const width of [1440, 1280, 390]) {
+      test(`${width}px: one 32px rhythm above and below the band`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        await page.goto(d.path);
+        await panel(page, slug).scrollIntoViewIfNeeded();
+
+        const gaps = await page.evaluate(() => {
+          const section = document.getElementById('architecture') as HTMLElement;
+          const heading = section.querySelector('.section-heading')!.getBoundingClientRect();
+          const figure = section.querySelector('.flow-panel')!.getBoundingClientRect();
+          const body = section.querySelector('.section-body')!.getBoundingClientRect();
+          return { before: figure.top - heading.bottom, after: body.top - figure.bottom };
+        });
+
+        expect(gaps.before, 'gap above the band').toBeGreaterThan(0);
+        expect(gaps.after, 'gap below the band').toBeGreaterThan(0);
+        expect(Math.abs(gaps.before - gaps.after), `uneven band rhythm ${gaps.before}/${gaps.after}`).toBeLessThanOrEqual(1.5);
+      });
+    }
+  });
 }
 
 /* ---------------------------------------------------------------- case-polish

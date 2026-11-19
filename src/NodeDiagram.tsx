@@ -1,4 +1,3 @@
-import { Fragment } from 'react';
 import type { CaseStudy } from './content';
 
 /* A card's small node diagram: the study's main chain, drawn as labelled boxes
@@ -55,16 +54,20 @@ export function chainFor(study: CaseStudy): Node[] {
 export function NodeDiagram({ study }: { study: CaseStudy }) {
   const nodes = chainFor(study);
   if (!nodes.length) return null;
+  const branch = nodes.find((node) => node.branch);
+  const chain = nodes.filter((node) => !node.branch);
   return (
     <ol className="nodes" aria-label={`${study.title}: how the parts connect, in order`}>
-      {nodes.map((node) =>
-        node.branch ? (
-          <Fragment key={node.label}>
-            {/* The branch starts its own row, so it hangs under the chain
-                instead of trailing off the end of it. */}
-            <li className="node-break" aria-hidden="true" />
-            <li className="node is-branch">{node.label}</li>
-          </Fragment>
+      {chain.map((node, i) =>
+        branch && i === chain.length - 1 ? (
+          /* The branch is a nested stack under the box it fails over from, not a
+             full-width break in the row. The old `.node-break` spacer assumed a
+             flex row: on a phone's column it became full-height and pushed the
+             branch into a second column beside React app. */
+          <li key={node.label} className="node-stack">
+            <span className="node">{node.label}</span>
+            <span className="node is-branch">{branch.label}</span>
+          </li>
         ) : (
           <li key={node.label} className="node">
             {node.label}

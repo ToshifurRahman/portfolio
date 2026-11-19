@@ -45,6 +45,7 @@ export type Route =
   | 'right'
   | 'loop-side-left'
   | 'down'
+  | 'down-direct'
   | 'down-right'
   | 'down-left'
   | 'loop-bottom'
@@ -87,6 +88,13 @@ export type Edge = {
   /* On the vertical layout this edge is not drawn across the graph: a short arrow
      leaves the box and this text names the destination. Kept short to fit the panel. */
   stub?: string;
+  /* On the desktop layout this edge is a named short arrow at its source instead of
+     a line across the graph. Used for a return whose only other route is a U around
+     every box. */
+  desktopStub?: boolean;
+  /* A desktop stub drawn as a note, not a labelled arrow: used where a pill would
+     sit over another edge's run in the only gap available. */
+  desktopStubText?: boolean;
 };
 
 export type DiagramSpec = {
@@ -135,6 +143,10 @@ const RAIL_STOP = MARKER_TIP + RAIL_CLEAR;
 /* The marker's full length: the straight run an arrowhead needs behind it. */
 const MARKER_LEN = 6 * TRACK;
 const PAD = 13;
+/* Vertical padding is its own number so the ink is centred: the line box carries
+   3 units of leading above the ascender, and a single `PAD * 1.6` made the bottom
+   inset 1.4 units tighter than the top. */
+const PAD_Y = 12;
 const LINE = 17;
 
 const reduceMotion = () =>
@@ -185,13 +197,20 @@ function naturalWidth(node: Node, inner: number): number {
 const heightOf = (node: Node, inner: number) => {
   const nameLines = wrapToWidth(node.name, NAME, inner).length;
   const detailLines = node.detail ? wrapToWidth(node.detail, DETAIL, inner).length : 0;
-  /* Every line gets its own LINE of height, plus the padding. Two name lines and a
-     detail is four lines: a 44-unit box held only two. */
-  return Math.ceil((nameLines + detailLines) * LINE + PAD * 1.6);
+  /* Every line gets its own LINE of height, plus symmetric vertical padding. Two
+     name lines and a detail is four lines: a 44-unit box held only two. */
+  return Math.ceil((nameLines + detailLines) * LINE + PAD_Y * 2);
 };
 
 const GAP_X = 46;
-const GAP_Y = 30;
+/* 34, not 30: a 17-unit pill centred in the gap then has 8.5 units of air on
+   each side, which is the approved clearance. At 30 the maximum was 6.8. */
+const GAP_Y = 34;
+/* Text is centred on a horizontal run by its ink, not by its baseline. The ink
+   reaches 12 above the baseline and 2.64 below, so the baseline sits 4.68 below
+   the stroke's centre. This is also what made the pill's top clearance smaller
+   than its bottom. */
+const LABEL_SHIFT = (DETAIL - DETAIL * 0.22) / 2;
 
 /* The desktop layout. Boxes are sized from their text; a column is as wide as its
    widest box; a row is as tall as its tallest. The loop margin is reserved on both
@@ -438,6 +457,17 @@ function edgePath(
     const lane = Math.min(bounds.h - 10, Math.max(a.y + a.h, b.y + b.h) + 30);
     return `M${acx} ${a.y + a.h} V${lane} H${bcx} V${b.y + b.h + stop}`;
   }
+  if (route === 'down-direct') {
+    /* One elbow in the gap under the source, then straight down into the target.
+       The old `down`/`down-left`/`down-right` routes ran out to the outer edge of
+       both boxes before turning in, which drew a U even when the row gap was
+       empty (`consume` went to x 65 and back; `authorise` to x 6). The gap is 30
+       units and the final leg is at least 18, so the arrowhead still lands on a
+       straight run (P2b-8). A second departure from the same box is staggered, so
+       two edges cannot share the first leg. */
+    const sx = acx + Math.min(a.w / 2 - 6, sibling * 14);
+    return `M${sx} ${a.y + a.h} V${a.y + a.h + 10} H${bcx} V${b.y - stop}`;
+  }
 
   /* Below the source: down through the gap under it, then across to the target. */
   if (b.y >= a.y + a.h) {
@@ -481,6 +511,20 @@ function edgePath(
   return `M${a.x + a.w} ${acy} H${lane} V${bcy} H${b.x + b.w + stop}`;
 }
 
+/* A named short arrow for an edge whose only other route is a U around the whole
+   graph. Offset from the box centre so it cannot share a leg with an ordinary
+   edge: the worker's `log` leaves the centre, and `escalate` enters Replay's
+   centre. */
+function stubPath(a: Placed, b: Placed): string {
+  /* The side away from the target: the worker's `log` run and label are on the
+     left, so the failure arrow takes the right edge; the replay return goes up the
+     left, away from the edge that enters Replay from the right. */
+  const x = b.x > a.x ? a.x + 16 : a.x + a.w - 16;
+  return b.y < a.y ? `M${x} ${a.y} V${a.y - 26}` : `M${x} ${a.y + a.h} V${a.y + a.h + 26}`;
+}
+
+const stubX = (a: Placed) => a.x + a.w - 16;
+
 /* A label's anchor: the middle of the gap its edge crosses. */
 function labelPos(a: Placed, b: Placed, route: Route, bounds: Bounds, labelW: number): { x: number; y: number } {
   if (route === 'loop-side') {
@@ -512,7 +556,10 @@ function labelPos(a: Placed, b: Placed, route: Route, bounds: Bounds, labelW: nu
   const gapStart = a.x + a.w;
   const gapEnd = b.x;
   const mid = (gapStart + gapEnd) / 2;
-  return { x: labelW > gapEnd - gapStart ? gapStart + labelW / 2 : mid, y: a.y + a.h / 2 - 9 };
+  return {
+    x: labelW > gapEnd - gapStart ? gapStart + labelW / 2 : mid,
+    y: a.y + a.h / 2 + LABEL_SHIFT,
+  };
 }
 
 
@@ -540,14 +587,16 @@ function bestAnchor(
     return { x1: cx - p.w / 2, y1: p.y - 1, x2: cx + p.w / 2, y2: p.y - 1 + p.h };
   };
   const clears = (cx: number, cy: number, horiz: boolean) => {
-    const r = pillAt(cx, cy);
+    /* A horizontal label is centred by its ink, so test the pill where it will
+       actually be painted. */
+    const r = pillAt(cx, horiz ? cy + LABEL_SHIFT : cy);
     if (r.x1 < 1 || r.x2 > bounds.w - 1 || r.y1 < 1) return false;
     for (const b of boxes) {
       const dx = Math.max(b.x - r.x2, 0, r.x1 - (b.x + b.w));
       const dy = Math.max(b.y - r.y2, 0, r.y1 - (b.y + b.h));
-      /* Overlap or within 4 units on either axis: a box clipping a label's first letters
-         at a corner is hidden ink, and the pill reads as part of that box. */
-      if (Math.hypot(dx, dy) < 5) return false;
+      /* Overlap or within 8 units: a pill closer than that reads as part of the box
+         rather than a label on its own line. */
+      if (Math.hypot(dx, dy) < 8) return false;
       /* The reading test: inside a box's horizontal span one row gap away is a heading.
          It applies to a label lifted *above* a horizontal run, where the words could be
          mistaken for the heading of the box over them. A label centred *on* a vertical
@@ -604,7 +653,9 @@ function bestAnchor(
         for (const off of offsets) {
           const cx = bx + off;
           const cy = by;
-          if (clears(cx, cy, horiz)) return { x: cx, y: cy, horiz };
+          if (clears(cx, cy, horiz)) {
+            return { x: cx, y: horiz ? cy + LABEL_SHIFT : cy, horiz };
+          }
         }
         const cx = bx;
         const cy = by;
@@ -617,7 +668,9 @@ function bestAnchor(
           const dy = Math.max(b.y - r.y2, 0, r.y1 - (b.y + b.h));
           nearest = Math.min(nearest, Math.hypot(dx, dy));
         }
-        if (!fallback || nearest > fallback.score) fallback = { x: cx, y: cy, horiz, score: nearest };
+        if (!fallback || nearest > fallback.score) {
+          fallback = { x: cx, y: horiz ? cy + LABEL_SHIFT : cy, horiz, score: nearest };
+        }
       }
     }
     if (fallback) return { x: fallback.x, y: fallback.y, horiz: fallback.horiz };
@@ -1058,6 +1111,12 @@ function Graph({
           const b0 = nodes.get(e.to);
           if (!a0 || !b0) continue;
           if (vertical && e.stub) continue;
+          /* A desktop stub is a short arrow at its source: it has no long run to
+             share, so it is out of the departure accounting. */
+          if (!vertical && e.desktopStub) {
+            pathOf.set(e.id, stubPath(a0, b0));
+            continue;
+          }
           const from0 = sourceOf(e, a0, b0);
           const r0: Route = vertical
             ? from0.state || b0.state
@@ -1206,18 +1265,50 @@ function Graph({
             </g>
           );
         }
+        /* A note-only stub keeps its arrow for the run but writes its name beside
+           the box, where no pill can sit over another edge's run. */
+        if (!vertical && e.desktopStubText) {
+          /* A downward stub names the group above the box that starts it; an
+             upward return writes beside its source, in the empty row. */
+          const below = b.y > a.y;
+          const sx = below ? b.x + 8 : a.x + a.w + 16;
+          const sy = below ? b.y - 10 : a.y + a.h / 2;
+          return (
+            <g key={e.id}>
+              <path
+                className={`flow-edge${e.branch ? ' is-branch' : ''}`}
+                d={d}
+                data-edge={e.id}
+                data-stub-edge={e.id}
+                style={!animated && !spec.still.edges.includes(e.id) ? { opacity: 0.45 } : undefined}
+                markerEnd={`url(#${marker})`}
+              />
+              <path className="flow-edge-lit" d={d} data-edge-lit={e.id} />
+              <text className="flow-stub" data-stub={e.id} x={sx} y={sy} textAnchor="start">
+                {wrapToWidth(e.stub ?? label, DETAIL, bounds.w - sx - 8).map((line, i) => (
+                  <tspan key={i} x={sx} dy={i === 0 ? 0 : 14}>
+                    {line}
+                  </tspan>
+                ))}
+              </text>
+            </g>
+          );
+        }
         const labelW = label.length * adv(DETAIL);
+        const desktopStub = !vertical && e.desktopStub;
         /* The vertical layout's seating is closed and its gaps are ~24 units wide;
            this search is for the desktop graph, where the regression was. */
-        const anchor = vertical ? null : bestAnchor(d, labelW, placed, bounds);
-        const pos = anchor
-          ? /* On the run itself: the words sit on their own line and the pill hides the
-               stroke behind them. They used to be lifted 8 units clear, which left every
-               horizontal label 5.4 units off its edge — near enough to look attached and
-               far enough to miss it, which is the "labels not on their own lines" the
-               owner reported. */
-            { x: anchor.x, y: anchor.y }
-          : labelPos(sourceOf(e, a, b), b, route, bounds, labelW);
+        const anchor = vertical || desktopStub ? null : bestAnchor(d, labelW, placed, bounds);
+        const pos = desktopStub
+          ? { x: stubX(a), y: a.y + a.h + 22 }
+          : anchor
+            ? /* On the run itself: the words sit on their own line and the pill hides the
+                 stroke behind them. They used to be lifted 8 units clear, which left every
+                 horizontal label 5.4 units off its edge — near enough to look attached and
+                 far enough to miss it, which is the "labels not on their own lines" the
+                 owner reported. */
+              { x: anchor.x, y: anchor.y }
+            : labelPos(sourceOf(e, a, b), b, route, bounds, labelW);
         /* One resolver decides where the label ends up, and the pill and the words are
            both rendered from what it returns. The two used to be separate: a pill was
            measured, two nudges moved the text, and the pill was drawn from the stale
@@ -1245,7 +1336,7 @@ function Graph({
             (o) => r.x < o.x + o.w + 4 && o.x < r.x + r.w + 4 && r.y < o.y + o.h + 8 && o.y < r.y + r.h + 8,
           );
         };
-        if (!holds(pos.x, pos.y)) {
+        if (!desktopStub && !holds(pos.x, pos.y)) {
           /* Search outwards in both axes: a label that has to move should move as
              little as possible, and preferring the shortest displacement keeps it near
              its own line — which is what makes it read as that line's label. */
@@ -1310,6 +1401,7 @@ function Graph({
               className={`flow-edge${e.branch ? ' is-branch' : ''}`}
               d={d}
               data-edge={e.id}
+              data-stub-edge={desktopStub ? e.id : undefined}
               /* The still picture is the whole chart: every edge is drawn, so a
                  branch box never looks unattached. Edges the first run lights are
                  at full strength; the rest sit muted. */
@@ -1397,10 +1489,12 @@ function NodeBox({ node, still, vertical }: { node: Placed; still?: LampState; v
   const inner = node.w - PAD * 2;
   const name = wrapToWidth(node.name, NAME, inner);
   const detail = node.detail ? wrapToWidth(node.detail, DETAIL, inner) : [];
-  const block = name.length * LINE + detail.length * LINE;
-  /* The first baseline sits one LINE below the block's top edge, so the ascender
-     is inside the box and the detail lines stack under it without touching. */
-  const top = node.y + (node.h - block) / 2 + LINE - 3;
+  /* Centre the ink, not the line boxes: the ascent is 12 units and the descent
+     2.64, so centring `lines * LINE` left the bottom 1.4 units tighter than the
+     top. Every line after the first advances by LINE. */
+  const lines = name.length + detail.length;
+  const ink = Math.max(0, (lines - 1) * LINE + NAME + DETAIL * 0.22);
+  const top = node.y + (node.h - ink) / 2 + NAME;
   return (
     <g
       /* The still picture's state comes from the spec, at render time, so the

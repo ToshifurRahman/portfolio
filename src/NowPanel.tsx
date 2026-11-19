@@ -12,9 +12,10 @@ import { path, pathYears, type PathStop } from './content';
  *   - a lane is one continuous line: every stop's lamp sits on that line, and a
  *     stop that shares a year with a neighbour stacks its label below rather than
  *     dropping to a row of its own;
- *   - the B.Sc. is one bar from 2021 to 2025, its ends labelled with the start and
- *     the completion;
- *   - both M.Engg. stops sit at 2026, the current one lit.
+ *   - the B.Sc. is one bar from 2021 to 2025, its ends labelled and capped;
+ *   - both M.Engg. stops sit at 2026, the current one lit;
+ *   - same-year labels have their own rows, and the ruler marks every year,
+ *     including the empty ones.
  *
  * Nothing is invented: every label, date and year comes from the `path` list in
  * src/content.ts. It is static, and it is an ordered list of real text, so it
@@ -55,11 +56,18 @@ function Stop({ stop, stack }: { stop: PathStop; stack: number }) {
       className={['stop', span && 'is-span', stop.current && 'is-current'].filter(Boolean).join(' ')}
       data-year={stop.year ?? ''}
       data-year-end={stop.yearEnd ?? ''}
-      style={{ gridColumn, gridRow: 1, '--stack': stack } as CSSProperties}
+      style={{ gridColumn, gridRow: '1 / span 3', '--stack': stack } as CSSProperties}
     >
       {span && <span className="stop-span" aria-hidden="true" />}
       <span className={stop.current ? 'lamp is-lit' : 'lamp'} aria-hidden="true" />
-      <span className="stop-body">
+      {span && <span className="stop-end-cap" aria-hidden="true" />}
+      <span className="stop-body" style={{ gridRow: 2 + stack }}>
+        {/* The axis is hidden below 48rem, so the year has to survive here. */}
+        {stop.year !== undefined && (
+          <span className="stop-year mono">
+            {span && stop.yearEnd !== undefined ? `${stop.year} to ${stop.yearEnd}` : stop.year}
+          </span>
+        )}
         <span className="stop-label">{stop.label}</span>
         {stop.date && <span className="stop-date mono">{stop.date}</span>}
         {children.length > 0 && (

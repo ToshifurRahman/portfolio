@@ -63,6 +63,69 @@ test.describe('the Now timeline', () => {
     });
   }
 
+  test('fills the frame and marks every year on the lane line', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+
+    const frame = await page.evaluate(() => {
+      const panel = document.querySelector('#now') as HTMLElement;
+      const cs = getComputedStyle(panel);
+      const timeline = document.querySelector('#now .timeline')!.getBoundingClientRect();
+      const heading = document.querySelector('#now .now-title')!.getBoundingClientRect();
+      const ticks = getComputedStyle(document.querySelector('#now .tl-stops')!, '::after');
+      return {
+        innerLeft: timeline.left,
+        innerRight: timeline.right,
+        panelLeft: panel.getBoundingClientRect().left + parseFloat(cs.paddingLeft),
+        panelRight: panel.getBoundingClientRect().right - parseFloat(cs.paddingRight),
+        timelineTop: timeline.top,
+        headingBottom: heading.bottom,
+        tickContent: ticks.content,
+        tickWidth: ticks.width,
+      };
+    });
+
+    /* The ruler owns the full 12-column inner width: the title is its own row. */
+    expect(Math.abs(frame.innerLeft - frame.panelLeft)).toBeLessThanOrEqual(1);
+    expect(Math.abs(frame.innerRight - frame.panelRight)).toBeLessThanOrEqual(1);
+    expect(frame.timelineTop).toBeGreaterThanOrEqual(frame.headingBottom - 1);
+    /* Ticks on every year, including the empty ones. */
+    expect(frame.tickContent).not.toBe('none');
+    expect(parseFloat(frame.tickWidth)).toBeGreaterThan(0);
+  });
+
+  test('gives the two 2026 labels their own rows with a gap', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+
+    const bodies = await page.locator('#now .tl-lane-study .stop[data-year="2026"] .stop-body').evaluateAll((items) =>
+      items.map((el) => {
+        const r = el.getBoundingClientRect();
+        return { top: r.top, bottom: r.bottom };
+      }),
+    );
+    expect(bodies).toHaveLength(2);
+    expect(bodies[1].top - bodies[0].bottom, 'the stacked 2026 labels overlap or touch').toBeGreaterThanOrEqual(8);
+  });
+
+  test('caps the B.Sc. bar at both ends', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+
+    const ends = await page.locator('#now .stop.is-span').evaluate((li) => {
+      const bar = li.querySelector('.stop-span')!.getBoundingClientRect();
+      const cap = li.querySelector('.stop-end-cap')!.getBoundingClientRect();
+      return {
+        barRight: bar.right,
+        capCentre: cap.left + cap.width / 2,
+        capTop: cap.top,
+        capHeight: cap.height,
+      };
+    });
+    expect(ends.capHeight).toBeGreaterThan(0);
+    expect(Math.abs(ends.capCentre - ends.barRight)).toBeLessThanOrEqual(2);
+  });
+
   test('shows two lanes and no cells', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto('/');
@@ -281,5 +344,14 @@ test.describe('the Now timeline', () => {
     await expect(bsc).toContainText('Aug 2021');
     await expect(bsc).toContainText('B.Sc. completed');
     await expect(bsc).toContainText('Dec 2025');
+
+    /* The axis is hidden, so the year has to survive in the stop's own text. */
+    const years = page.locator('#now .stop-year');
+    await expect(years.first()).toBeVisible();
+    const first = await page.locator('#now .stop').first().evaluate((li) => ({
+      year: li.getAttribute('data-year'),
+      shown: (li.querySelector('.stop-year')?.textContent ?? '').trim(),
+    }));
+    expect(first.shown).toContain(first.year!);
   });
 });

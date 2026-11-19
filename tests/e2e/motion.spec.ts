@@ -6,7 +6,8 @@ import { expect, test } from '@playwright/test';
  * footer, charging each as it passes. On 2026-11-17 he removed the hero's gap
  * cells ("in hero, remove animations & colors on strip gaps") and kept the ray:
  *
- *   - one pulse on load, then at most one every 20 to 30 seconds;
+ *   - one pulse on load, then one every 10 seconds;
+ *   - scrolling neither pauses nor restarts it;
  *   - nothing moves on a hidden tab;
  *   - under `prefers-reduced-motion: reduce` there is no pulse;
  *   - the pre-render and the first client frame are the same picture;
@@ -22,14 +23,45 @@ const animation = (page: import('@playwright/test').Page, selector: string) =>
   });
 
 test.describe('signature motion', () => {
-  test('runs a slow pulse down the strips', async ({ page }) => {
+  test('runs a 10s pulse down the strips', async ({ page }) => {
     await page.goto('/');
     await page.waitForTimeout(400);
 
     const pulse = await animation(page, '.site-rail i');
     expect(pulse.name).toBe('rail-pulse');
-    /* At most one every 20 to 30 seconds: the period is the lower bound. */
-    expect(parseFloat(pulse.duration)).toBeGreaterThanOrEqual(20);
+    expect(parseFloat(pulse.duration)).toBe(10);
+  });
+
+  test('keeps running through a scroll, without resetting', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForTimeout(400);
+
+    const state = () =>
+      page.locator('.site-rail i').first().evaluate((el) => {
+        const anim = el.getAnimations()[0] as CSSAnimation | undefined;
+        const cs = getComputedStyle(el);
+        return {
+          motion: document.documentElement.dataset.motion ?? null,
+          name: cs.animationName,
+          play: cs.animationPlayState,
+          time: anim?.currentTime ?? null,
+        };
+      });
+
+    const before = await state();
+    expect(before.motion).toBe('on');
+    expect(before.name).toBe('rail-pulse');
+    expect(before.time).not.toBeNull();
+
+    await page.evaluate(() => window.scrollTo(0, 600));
+    await page.waitForTimeout(150);
+
+    const during = await state();
+    /* The scroll must not change the state, and it must not restart the clock. */
+    expect(during.motion).toBe('on');
+    expect(during.name).toBe('rail-pulse');
+    expect(during.play).toBe('running');
+    expect(Number(during.time)).toBeGreaterThan(Number(before.time));
   });
 
   test('staggers the strips, so the charge crosses the page', async ({ page }) => {

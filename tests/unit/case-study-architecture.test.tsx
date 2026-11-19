@@ -98,6 +98,18 @@ describe('the case studies’ header', () => {
     });
   }
 
+  it('renders the Live chip’s placeholder as Live Link on Relay', () => {
+    /* Owner, 2026-11-19: the Live chip reads "Live Link", not the raw host. The
+       destination is unchanged. */
+    const container = renderAt('/work/relay');
+    const live = [...container.querySelectorAll('.meta a.meta-link')].find(
+      (a) => a.getAttribute('href') === 'https://ticket-pipeline.onrender.com',
+    );
+    expect(live, 'Relay has no Live link').not.toBeNull();
+    expect(live!.textContent).toBe('Live Link');
+    expect(live!.getAttribute('rel')).toBe('noopener noreferrer');
+  });
+
   it('renders a Live chip next to Source Code and points the title at Live', () => {
     const base = caseStudies.find((s) => s.slug === 'rannaghor')!;
     /* A test-only study: RannaGhor has no Live URL in the source facts, so the
@@ -150,7 +162,7 @@ describe('the case studies’ header', () => {
     const relay = caseStudies.find((s) => s.slug === 'relay')!;
     expect(relay.meta.find((m) => m.label === 'Live')).toEqual({
       label: 'Live',
-      value: 'ticket-pipeline.onrender.com',
+      value: 'Live Link',
       href: 'https://ticket-pipeline.onrender.com',
     });
     const rannaghor = caseStudies.find((s) => s.slug === 'rannaghor')!;
