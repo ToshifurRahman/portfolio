@@ -110,86 +110,103 @@ describe('hero', () => {
 });
 
 /* The Now panel took the home slot where the track animation was (the owner
-   moved that into the case studies). It draws two lanes, Study and Work, on one
-   shared year axis from 2021 to 2026. It is still a real ordered list of text,
-   not a picture: readable with no CSS and no script. */
+   moved that into the case studies). It is one chronological timeline: six real
+   stops on a central spine, alternating above and below it. It is still a real
+   ordered list of text, not a picture: readable with no CSS and no script. */
 describe('now panel', () => {
-  it('is an ordered list of real text, not a picture', () => {
+  const LABELS = [
+    'B.Sc. in CSE, IIUC',
+    'Trainer & Mentor, IIUCCPS',
+    'B.Sc. completed',
+    'Admitted to M.Engg., CUET',
+    'Web Developer, Taibah Academy',
+    'M.Engg. in CSE, CUET',
+  ];
+  const LANES = ['Study', 'Work', 'Study', 'Study', 'Work', 'Study'];
+
+  it('is one ordered list of real text, not a picture', () => {
     renderHome();
     const panel = document.getElementById('now');
     expect(panel, 'the Now panel is missing').not.toBeNull();
-    expect(panel!.querySelectorAll('ol.tl-stops')).toHaveLength(2);
-    /* One label per placed stop, plus the B.Sc. span's end label: the completion
-       is the bar's other end, not a second disconnected stop. */
-    const expected = path
-      .filter((p) => !p.parent)
-      .flatMap((p) => (p.endLabel ? [p.label, p.endLabel] : [p.label]));
-    const labels = [...panel!.querySelectorAll('.stop-label')].map((el) => el.textContent);
-    expect(labels).toEqual(expected);
+    expect(panel!.querySelectorAll('ol.tl-stops')).toHaveLength(1);
+    expect(panel!.querySelectorAll('.stop')).toHaveLength(LABELS.length);
+    expect([...panel!.querySelectorAll('.stop-label')].map((el) => el.textContent)).toEqual(LABELS);
+    expect(panel!.querySelector('.tl-spine'), 'the spine is missing').not.toBeNull();
+    expect(
+      panel!.querySelectorAll('.years, .tl-lane-title, .stop-span, .stop-end, .stop-end-cap'),
+      'the old axis, lanes and span bar are still rendered',
+    ).toHaveLength(0);
   });
 
   it('shows a date only where the source states one', () => {
     renderHome();
-    const stops = [...document.querySelectorAll('#now .stop')];
-    for (const li of stops) {
-      const start = li.querySelector('.stop-body:not(.stop-end)')!;
-      const label = start.querySelector('.stop-label')?.textContent;
-      const p = path.find((entry) => entry.label === label)!;
-      const date = start.querySelector('.stop-date');
-      if (p.date) expect(date?.textContent, p.label).toBe(p.date);
-      else expect(date, `${p.label} should show no date`).toBeNull();
+    /* A completion is its own station, so its date is the source's `endDate`. */
+    const dateFor = (label: string) => {
+      const start = path.find((entry) => entry.label === label);
+      if (start) return start.date;
+      const end = path.find((entry) => entry.endLabel === label);
+      return end?.endDate ?? '';
+    };
+    for (const li of [...document.querySelectorAll<HTMLElement>('#now .stop')]) {
+      const label = li.querySelector('.stop-label')?.textContent ?? '';
+      const date = li.querySelector('.stop-date');
+      const expected = dateFor(label);
+      if (expected) expect(date?.textContent, label).toBe(expected);
+      else expect(date, `${label} should show no date`).toBeNull();
     }
   });
 
-  it('draws two lanes on one shared year axis, and no cells', () => {
-    /* Owner, 23:03: "In Now, timeline chart not looking good ... drop latest
-       system & problem solving", answered by two lanes, Study and Work. */
+  it('alternates six stops above and below one spine and keeps the lanes as captions', () => {
     renderHome();
-    expect(document.querySelectorAll('#now .now-cell')).toHaveLength(0);
-
-    const lanes = [...document.querySelectorAll('#now .tl-lane-title')].map((h) => h.textContent);
-    expect(lanes).toEqual(['Study', 'Work']);
-
-    /* Every stop is present as real text, in its own lane. */
-    for (const lane of ['study', 'work'] as const) {
-      const text = document.querySelector(`#now .tl-lane-${lane}`)?.textContent ?? '';
-      for (const stop of path.filter((p) => p.lane === lane)) {
-        expect(text, `${stop.label} is missing from the ${lane} lane`).toContain(stop.label);
-      }
-    }
+    const stops = [...document.querySelectorAll<HTMLElement>('#now .stop')];
+    expect(stops).toHaveLength(6);
+    expect(
+      stops.map((li) =>
+        li.classList.contains('is-up') ? 'up' : li.classList.contains('is-down') ? 'down' : '',
+      ),
+      'the tracks do not alternate up, down from the first stop',
+    ).toEqual(['up', 'down', 'up', 'down', 'up', 'down']);
+    expect(stops.map((li) => li.querySelector('.stop-lane')?.textContent)).toEqual(LANES);
+    expect(stops.map((li) => li.getAttribute('data-lane'))).toEqual([
+      'study',
+      'work',
+      'study',
+      'study',
+      'work',
+      'study',
+    ]);
   });
 
-  it('places a dated stop in its year column and leaves an undated role out of the axis', () => {
+  it('puts every station in chronological order with its real year', () => {
     renderHome();
-    const years = [...document.querySelectorAll('#now .years li')].map((li) => li.textContent);
-    expect(years).toEqual(['2021', '2022', '2023', '2024', '2025', '2026']);
+    const stops = [...document.querySelectorAll<HTMLElement>('#now .stop')];
+    const years = ['2021', '2023', '2025', '2026', '2026', '2026'];
+    expect(stops.map((li) => li.getAttribute('data-year'))).toEqual(years);
+    expect(stops.map((li) => li.querySelector('.stop-year')?.textContent)).toEqual(years);
+    const numbers = years.map(Number);
+    for (let i = 1; i < numbers.length; i++) expect(numbers[i]).toBeGreaterThanOrEqual(numbers[i - 1]);
+  });
 
-    /* A dated stop claims a column; an undated role claims none and is listed
-       under its parent instead. The B.Sc. bar runs 2021 to 2025. */
-    const bsc = [...document.querySelectorAll('#now .stop')].find((li) =>
-      li.textContent?.includes('B.Sc. in CSE'),
-    ) as HTMLElement | undefined;
-    expect(bsc?.style.gridColumn).toBe('1 / 6');
-
-    const mengg = [...document.querySelectorAll<HTMLElement>('#now .stop')].filter(
-      (li) => li.getAttribute('data-year') === '2026',
+  it('lists the undated IIUCCPS roles under the dated role, not as stops', () => {
+    renderHome();
+    const stops = [...document.querySelectorAll<HTMLElement>('#now .stop')];
+    const trainer = stops.find(
+      (li) => li.querySelector('.stop-label')?.textContent === 'Trainer & Mentor, IIUCCPS',
     );
-    expect(mengg.filter((li) => li.closest('.tl-lane-study'))).toHaveLength(2);
-
-    const coordinator = [...document.querySelectorAll('#now .stop-child')].find((el) =>
-      el.textContent?.includes('Bootcamp Coordinator'),
-    );
-    expect(coordinator, 'the undated role is not listed under its parent').toBeTruthy();
-    const asStop = [...document.querySelectorAll('#now .stop')].find(
-      (li) => li.querySelector('.stop-label')?.textContent === 'Bootcamp Coordinator, IIUCCPS',
-    );
-    expect(asStop, 'an undated role must not claim a year of its own').toBeUndefined();
+    expect(trainer, 'the dated Trainer stop is missing').toBeTruthy();
+    const children = [...trainer!.querySelectorAll('.stop-child')].map((el) => el.textContent);
+    expect(children).toEqual(['Bootcamp Coordinator, IIUCCPS', 'Finance Secretary, IIUCCPS']);
+    for (const child of children) {
+      const asStop = stops.find((li) => li.querySelector('.stop-label')?.textContent === child);
+      expect(asStop, `${child} must not claim a year of its own`).toBeUndefined();
+    }
   });
 
   it('lights the two current stops', () => {
     renderHome();
     const lit = [...document.querySelectorAll('#now .stop.is-current .stop-label')].map((el) => el.textContent);
-    expect(lit).toEqual(['M.Engg. in CSE, CUET', 'Web Developer, Taibah Academy']);
+    expect(lit).toEqual(['Web Developer, Taibah Academy', 'M.Engg. in CSE, CUET']);
+    expect(document.querySelectorAll('#now .stop.is-current')).toHaveLength(2);
   });
 });
 

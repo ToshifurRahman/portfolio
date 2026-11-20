@@ -415,20 +415,14 @@ for (const d of DIAGRAMS) {
     }
   });
 
-  /* Owner, 2026-11-17: in the Architecture section the "sub heading containing
-     pause, speed button, diagram" is "breaking design pattern by not maintaining
-     gaps". The toolbar is one row of controls, so it takes one gap. Measured on
-     the children of `.flow-head`: the toolbar's boxes are not adjacent (title
-     pushes status away with `margin-right: auto`, Pause sits `--space-4` from
-     status while the speed options sit `--space-1` from each other), so the row
-     shows three rhythms — 460px, 16px and 4px on one line at 1440.
-
-     The gap is read from the row itself rather than restated as a literal, so
-     this asserts "one gap" rather than "this many pixels": it takes the toolbar's
-     own `column-gap` and requires every neighbour pair to be that. */
-  test.describe(`${d.slug}: the toolbar keeps one gap`, () => {
+  /* Owner, 2026-11-19: keep the title and status on the left and put Pause,
+     Reset and the speed group on the right, flush with the toolbar's inner
+     frame. The controls group takes one `--space-3` rhythm inside it and inside
+     the speed group; the status is separated from the group by the auto margin,
+     so that large space is intentional and is not counted as a control gap. */
+  test.describe(`${d.slug}: the toolbar splits left and right`, () => {
     for (const width of [1440, 1280, 1024, 834, 390]) {
-      test(`${width}px: every gap in the toolbar is the same, inside the frame`, async ({ page }) => {
+      test(`${width}px: title and status left, one controls gap, no overflow`, async ({ page }) => {
         await page.setViewportSize({ width, height: 900 });
         await page.goto(d.path);
         await panel(page, d.slug).scrollIntoViewIfNeeded();
@@ -442,58 +436,98 @@ for (const d of DIAGRAMS) {
             left: hr.left + parseFloat(cs.paddingLeft),
             right: hr.right - parseFloat(cs.paddingRight),
           };
-          /* The row's own items: the title block, the status line, the Pause
-             button, the Reset button (while paused) and the speed group. The speed
-             options are one group, so the group's own gap is checked separately. */
-          const items = [...head.children].map((c) => {
-            const r = c.getBoundingClientRect();
-            return { cls: c.className.toString(), left: r.left, right: r.right, top: r.top, bottom: r.bottom };
-          });
-          /* Group by row. Items on one line share vertical space even when their
-             boxes differ in height (the title block is taller than the speed group),
-             so a row is a set of items whose vertical spans overlap. A wrapped
-             toolbar is more than one line, and the gap applies within a line, so
-             pairs are only compared against a neighbour on their own row. */
-          const rows: (typeof items)[] = [];
-          for (const it of items) {
-            const row = rows.find((r) => r.some((o) => Math.min(o.bottom, it.bottom) - Math.max(o.top, it.top) > 1));
-            if (row) row.push(it);
-            else rows.push([it]);
-          }
-          const gaps: number[] = [];
-          const labels: string[] = [];
-          for (const row of rows) {
-            const sorted = [...row].sort((a, b) => a.left - b.left);
-            for (let i = 1; i < sorted.length; i++) {
-              gaps.push(sorted[i].left - sorted[i - 1].right);
-              labels.push(`${sorted[i - 1].cls}→${sorted[i].cls}`);
-            }
-          }
-          const speed = el.querySelector('.flow-speed') as HTMLElement;
-          const options = speed ? [...speed.children].map((c) => c.getBoundingClientRect()) : [];
-          const optionGaps = options.slice(1).map((r, i) => r.left - options[i].right);
-          const outside = items.filter((it) => it.left < inner.left - 0.5 || it.right > inner.right + 0.5);
-          return { gaps, labels, optionGaps, outside: outside.map((o) => o.cls), inner, rows: rows.length };
+          const gap = parseFloat(cs.columnGap) || 0;
+          const box = (node: Element) => {
+            const r = node.getBoundingClientRect();
+            return {
+              cls: (node as HTMLElement).className?.toString?.() ?? '',
+              left: r.left,
+              right: r.right,
+              top: r.top,
+              bottom: r.bottom,
+              width: r.width,
+              height: r.height,
+            };
+          };
+          const title = head.querySelector('.flow-title') as HTMLElement;
+          const status = head.querySelector('.flow-status') as HTMLElement;
+          const controls = head.querySelector('.flow-controls') as HTMLElement;
+          const speed = head.querySelector('.flow-speed') as HTMLElement;
+          const items = [...head.children].map(box);
+          const group = controls ? [...controls.children].map(box) : [];
+          const options = speed ? [...speed.children].map(box) : [];
+          const gaps = (list: { left: number; right: number }[]) =>
+            list.slice(1).map((item, i) => item.left - list[i].right);
+          const buttons = [
+            ...el.querySelectorAll<HTMLElement>('.flow-pause, .flow-reset, .flow-speed-option'),
+          ].map((button) => box(button));
+          const overlaps = (a: ReturnType<typeof box>, b: ReturnType<typeof box>) =>
+            Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1;
+          const oneRow =
+            !!title && !!status && !!controls && overlaps(box(title), box(status)) && overlaps(box(status), box(controls));
+          return {
+            gap,
+            inner,
+            items,
+            group,
+            options,
+            groupGaps: gaps(group),
+            optionGaps: gaps(options),
+            buttons: buttons.map((button) => ({ width: button.width, height: button.height })),
+            outside: items.filter((item) => item.left < inner.left - 0.5 || item.right > inner.right + 0.5).map((item) => item.cls),
+            oneRow,
+            title: box(title),
+            status: box(status),
+            controls: box(controls),
+            overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+          };
         });
 
-        /* One rhythm: every neighbour pair on the row is the same distance apart.
-           The value is whatever the design tokens give it; what is asserted is that
-           there is exactly one. Before this, three sat on one line: 460px, 16px
-           and 4px. */
-        const all = [...report.gaps.map((g) => Math.round(g * 10) / 10), ...report.optionGaps.map((g) => Math.round(g * 10) / 10)];
-        if (all.length > 1) {
-          const spread = Math.max(...all) - Math.min(...all);
-          expect(
-            spread,
-            `toolbar gaps are not one rhythm: ${report.gaps
-              .map((g, i) => `${g.toFixed(1)} (${report.labels[i]})`)
-              .join(', ')}; speed options ${report.optionGaps.map((g) => g.toFixed(1)).join(', ')}`,
-          ).toBeLessThanOrEqual(0.5);
+        expect(report.items, 'the toolbar is not title, status, controls').toHaveLength(3);
+        expect(report.controls, 'the controls group is missing').toBeTruthy();
+        /* Pause plus three speed options; Reset only while paused. */
+        expect(report.buttons).toHaveLength(4);
+        for (const button of report.buttons) {
+          expect(button.width, 'a control is under 44px wide').toBeGreaterThanOrEqual(43.5);
+          expect(button.height, 'a control is under 44px tall').toBeGreaterThanOrEqual(43.5);
         }
-        /* And it is a real gap, not zero. */
-        if (all.length) expect(Math.min(...all), 'the toolbar has no gap').toBeGreaterThan(0);
-        /* The row stays inside the section frame's inner edge at every width. */
         expect(report.outside, 'toolbar items past the frame').toEqual([]);
+        expect(report.overflow).toBeLessThanOrEqual(0);
+
+        /* One rhythm inside the controls group and inside the speed group: the
+           toolbar's own gap, not a literal. */
+        for (const value of [...report.groupGaps, ...report.optionGaps]) {
+          expect(Math.abs(value - report.gap), 'a controls gap is not the toolbar gap').toBeLessThanOrEqual(0.5);
+        }
+        if (report.groupGaps.length > 0) {
+          expect(report.groupGaps.every((value) => value > 0), 'the controls touch').toBe(true);
+        }
+
+        if (report.oneRow) {
+          expect(
+            Math.abs(report.status.left - report.title.right - report.gap),
+            'title and status are not one left cluster',
+          ).toBeLessThanOrEqual(0.5);
+          expect(report.controls.right, 'the controls are not flush with the right inner edge').toBeLessThanOrEqual(
+            report.inner.right + 0.5,
+          );
+          expect(report.controls.right, 'the controls are not flush with the right inner edge').toBeGreaterThanOrEqual(
+            report.inner.right - 0.5,
+          );
+          expect(report.controls.left - report.status.right, 'the auto gap is gone').toBeGreaterThan(report.gap + 1);
+        } else {
+          expect(report.controls.top, 'the controls did not wrap below the status').toBeGreaterThan(report.status.top);
+          expect(report.title.left, 'the title is not on the left edge').toBeLessThanOrEqual(report.inner.left + 0.5);
+          expect(report.controls.right, 'the wrapped controls sit past the frame').toBeLessThanOrEqual(
+            report.inner.right + 0.5,
+          );
+        }
+
+        if (width <= 768) {
+          expect(report.controls.left, 'the mobile controls are not on the inner left edge').toBeLessThanOrEqual(
+            report.inner.left + 0.5,
+          );
+        }
       });
     }
   });

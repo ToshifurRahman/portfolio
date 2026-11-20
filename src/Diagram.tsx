@@ -956,7 +956,7 @@ export function Diagram({ spec }: { spec: DiagramSpec }) {
           <span ref={statusText}>{[...spec.runs[0]].reverse().find((s) => s.status)?.status ?? ''}</span>
         </span>
         {animated && (
-          <>
+          <div className="flow-controls">
             <button type="button" className="flow-pause" onClick={() => setPlaying(!playing)}>
               <PlayPauseIcon playing={playing} />
               {playing ? 'Pause' : 'Play'}
@@ -989,7 +989,7 @@ export function Diagram({ spec }: { spec: DiagramSpec }) {
                 </button>
               ))}
             </div>
-          </>
+          </div>
         )}
       </div>
       <div className="flow-window">

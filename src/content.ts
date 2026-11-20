@@ -280,34 +280,36 @@ export type PathStop = {
   date: string;
   /* The two current stations: their lamps are lit. */
   current?: boolean;
-  /* Which of the Now panel's two lanes this stop belongs to. An undated role
-     belongs to `parent`, the dated stop it was held alongside. */
+  /* Which kind of station this is. The Now panel prints it as the lane caption.
+     An undated role belongs to `parent`, the dated station it was held
+     alongside. */
   lane: "study" | "work";
   parent?: string;
-  /* The year the stop sits at on the shared axis. Absent for a role with no
-     date in the source: it takes no position of its own and is listed under its
-     parent. */
+  /* The year the station stands at on the chronological spine. Absent for a role
+     with no date in the source: it takes no station of its own and is listed
+     under its parent. */
   year?: number;
-  /* A span the source dates at both ends (B.Sc. Aug 2021 to Dec 2025) is drawn
-     as a bar from `year` to `yearEnd`. Its end carries the completion, so the
-     bar has two labelled ends rather than a second stop floating beside it. */
+  /* A stop the source dates at both ends (B.Sc. Aug 2021 to Dec 2025) carries
+     its completion here. The Now panel splits it into two consecutive stations,
+     the start at `year` and the completion at `yearEnd`; the content list stays
+     one entry. */
   yearEnd?: number;
   endLabel?: string;
   endDate?: string;
 };
 
 /*
- * The Now panel's two lanes, on one shared year axis. Owner, 2026-11-15:
- * "In Now, timeline chart not looking good, research to make it look good. drop
- * latest system & problem solving", and the answer: "the Now timeline becomes
- * two lanes, Study and Work". Owner, 2026-11-17: the graph was "disconnected &
- * misguided", so the axis is every year from the first to the last and the
- * M.Engg. sits at 2026 (owner's ruling).
+ * The Now panel's stations. Owner, 2026-11-15: "In Now, timeline chart not
+ * looking good, research to make it look good. drop latest system & problem
+ * solving", and the answer: "the Now timeline becomes two lanes, Study and
+ * Work". Owner, 2026-11-17: the graph was "disconnected & misguided". Owner,
+ * 2026-11-19: one chronological spine with alternating stations replaces the
+ * two lanes, and the M.Engg. sits at 2026 (owner's ruling).
  *
  * Years are read off the dates the stops already carry; no new fact is stated.
- * B.Sc. runs Aug 2021 to Dec 2025, so it is one bar whose ends read "Aug 2021"
- * and "B.Sc. completed / Dec 2025". The admission's text stays undated; the
- * owner placed it at 2026 alongside the master's.
+ * B.Sc. runs Aug 2021 to Dec 2025, so the panel splits it into a start at 2021
+ * and a completion at 2025 from the fields below. The admission's text stays
+ * undated; the owner placed it at 2026 alongside the master's.
  */
 export const path: PathStop[] = [
   {
@@ -354,9 +356,11 @@ export const path: PathStop[] = [
   },
 ];
 
-/* The axis is every year between the first and the last year the stops state:
-   some years are real positions even when no stop sits on them, so distance on
-   the axis never lies. Derived from the data, never a hand-written list. */
+/* The continuous span between the first and the last year the stops state. The
+   panel no longer draws a proportional year axis; it draws alternating stations
+   on a chronological spine. This span stays the derived measure of the years,
+   and its unit test checks that a new stated year extends it. Derived from the
+   data, never a hand-written list. */
 const statedYears = path
   .flatMap((stop) => [stop.year, stop.yearEnd])
   .filter((year): year is number => typeof year === "number");

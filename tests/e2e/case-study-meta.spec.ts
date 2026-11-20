@@ -19,31 +19,86 @@ const STUDIES = [
 
 /* The chip's own computed style, read from the Skills section. */
 const chipStyle = (page: Page) =>
-  page.goto('/').then(() =>
-    page.locator('.skill-list li').first().evaluate((el) => {
+  page.locator('.skill-list li').first().evaluate((el) => {
+    const s = getComputedStyle(el);
+    return {
+      fontFamily: s.fontFamily,
+      fontSize: s.fontSize,
+      lineHeight: s.lineHeight,
+      borderTopWidth: s.borderTopWidth,
+      borderTopStyle: s.borderTopStyle,
+      borderTopColor: s.borderTopColor,
+      borderRadius: s.borderRadius,
+      backgroundColor: s.backgroundColor,
+      paddingTop: s.paddingTop,
+      paddingRight: s.paddingRight,
+      paddingBottom: s.paddingBottom,
+      paddingLeft: s.paddingLeft,
+    };
+  });
+
+/* The hero's GitHub ghost is the reference for the exits' ink: primary `--ink`,
+   the same `--rule-strong` hairline, amber text and border on hover. Read it off
+   the real button rather than restating the token. */
+const ghostStyle = (page: Page) =>
+  page
+    .locator('.intro-actions .ghost')
+    .filter({ hasText: 'GitHub' })
+    .evaluate((el) => {
       const s = getComputedStyle(el);
-      return {
-        fontFamily: s.fontFamily,
-        fontSize: s.fontSize,
-        lineHeight: s.lineHeight,
-        borderTopWidth: s.borderTopWidth,
-        borderTopStyle: s.borderTopStyle,
-        borderTopColor: s.borderTopColor,
-        borderRadius: s.borderRadius,
-        backgroundColor: s.backgroundColor,
-        paddingTop: s.paddingTop,
-        paddingRight: s.paddingRight,
-        paddingBottom: s.paddingBottom,
-        paddingLeft: s.paddingLeft,
-        color: s.color,
-      };
-    }),
-  );
+      return { color: s.color, borderTopColor: s.borderTopColor };
+    });
+
+const readTokens = (page: Page) =>
+  page.evaluate(() => {
+    const probe = document.createElement('span');
+    probe.style.borderStyle = 'solid';
+    probe.style.borderWidth = '1px';
+    document.body.append(probe);
+    const color = (value: string) => {
+      probe.style.color = value;
+      return getComputedStyle(probe).color;
+    };
+    const border = (value: string) => {
+      probe.style.borderColor = value;
+      return getComputedStyle(probe).borderTopColor;
+    };
+    const background = (value: string) => {
+      probe.style.backgroundColor = value;
+      return getComputedStyle(probe).backgroundColor;
+    };
+    const tokens = {
+      ink: color('var(--ink)'),
+      accentText: color('var(--accent-text)'),
+      accent: border('var(--accent)'),
+      ruleStrong: border('var(--rule-strong)'),
+      bg: background('var(--bg)'),
+      target: parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--target')) * 16,
+    };
+    probe.remove();
+    return tokens;
+  });
+
+const luminance = (css: string) => {
+  const channels = (css.match(/\d+(\.\d+)?/g) ?? []).slice(0, 3).map(Number);
+  const [r, g, b] = channels.map((value) => {
+    const s = value / 255;
+    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
+
+const contrast = (a: string, b: string) => {
+  const [high, low] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (high + 0.05) / (low + 0.05);
+};
 
 for (const { slug, repo } of STUDIES) {
   test(`${slug}: the Source cell reads Source Code and links GitHub as a Skills chip`, async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
     const chip = await chipStyle(page);
+    const ghost = await ghostStyle(page);
 
     await page.goto(`/work/${slug}`);
     /* Relay also has a Live chip, so the Source cell is found by its label. */
@@ -83,8 +138,9 @@ for (const { slug, repo } of STUDIES) {
     expect(own.borderTopWidth).toBe(chip.borderTopWidth);
     expect(own.borderTopStyle).toBe(chip.borderTopStyle);
     expect(own.borderTopColor, 'the link border is not the chip rule').toBe(chip.borderTopColor);
+    expect(own.borderTopColor, 'the link border is not the hero ghost rule').toBe(ghost.borderTopColor);
     expect(own.borderRadius).toBe(chip.borderRadius);
-    expect(own.color, 'the link ink is not the chip ink').toBe(chip.color);
+    expect(own.color, 'the link ink is not the hero ghost ink').toBe(ghost.color);
   });
 
   test(`${slug}: the chip keeps its target height and a visible focus ring`, async ({ page }) => {
@@ -110,6 +166,47 @@ for (const { slug, repo } of STUDIES) {
     expect(ring.outlineStyle, 'no focus ring on the chip').not.toBe('none');
     expect(ring.outlineWidth, 'the focus ring has no width').toBeGreaterThan(0);
   });
+}
+
+const EXITS = [
+  { slug: 'relay', text: 'GitHub' },
+  { slug: 'rannaghor', text: 'GitHub' },
+  { slug: 'relay', text: 'Live Link' },
+];
+
+for (const { slug, text } of EXITS) {
+  for (const theme of ['dark', 'light'] as const) {
+    test(`${slug}: ${text} matches the hero ghost in the ${theme} theme`, async ({ page }) => {
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await page.addInitScript((value) => localStorage.setItem('theme', value), theme);
+      await page.goto('/');
+      const ghost = await ghostStyle(page);
+      const tokens = await readTokens(page);
+
+      await page.goto(`/work/${slug}`);
+      const link = page.locator('.meta a.meta-link').filter({ hasText: text });
+      await expect(link).toHaveCount(1);
+
+      const rest = await link.evaluate((el) => {
+        const s = getComputedStyle(el);
+        return { color: s.color, border: s.borderTopColor, height: el.getBoundingClientRect().height };
+      });
+      expect(rest.color, 'the exit is not the hero ghost ink').toBe(ghost.color);
+      expect(rest.color, 'the exit is not primary ink').toBe(tokens.ink);
+      expect(rest.border, 'the exit is not on the action rule').toBe(tokens.ruleStrong);
+      expect(rest.height, 'the exit is under the tap target').toBeGreaterThanOrEqual(tokens.target - 0.5);
+      expect(contrast(rest.color, tokens.bg), 'the exit ink fails AA on the page').toBeGreaterThanOrEqual(4.5);
+
+      await link.hover();
+      await page.waitForTimeout(250);
+      const hovered = await link.evaluate((el) => {
+        const s = getComputedStyle(el);
+        return { color: s.color, border: s.borderTopColor };
+      });
+      expect(hovered.color, 'the exit does not turn amber on hover').toBe(tokens.accentText);
+      expect(hovered.border, 'the exit border does not turn amber on hover').toBe(tokens.accent);
+    });
+  }
 }
 
 test('relay: the Live chip reads Live Link, not the host', async ({ page }) => {

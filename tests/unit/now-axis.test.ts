@@ -1,15 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { path, pathYears } from '../../src/content';
 
-/* The axis is every year from the first to the last year in the data, not only
-   the years a label happens to name. Owner, 2026-11-17: the graph was
+/* `pathYears` is the continuous span from the first to the last year in the
+   data, not only the years a label happens to name. The panel draws alternating
+   stations on a chronological spine rather than a proportional year axis; this
+   keeps the span itself under test. Owner, 2026-11-17: the graph was
    "disconnected & misguided", and the M.Engg. is 2026 by the owner's ruling. */
-describe('the Now axis', () => {
+describe('the Now year span', () => {
   it('runs 2021 to 2026 with no gap', () => {
     expect(pathYears).toEqual([2021, 2022, 2023, 2024, 2025, 2026]);
   });
 
-  it('derives the axis from the stops, so a new year extends it', () => {
+  it('derives the span from the stops, so a new year extends it', () => {
     const stated = path.flatMap((stop) => [stop.year, stop.yearEnd]).filter((y): y is number => typeof y === 'number');
     expect(Math.min(...stated)).toBe(pathYears[0]);
     expect(Math.max(...stated)).toBe(pathYears[pathYears.length - 1]);
@@ -32,7 +34,8 @@ describe('the Now axis', () => {
     expect(bsc.date).toBe('Aug 2021');
     expect(bsc.endLabel).toBe('B.Sc. completed');
     expect(bsc.endDate).toBe('Dec 2025');
-    /* Folded into the span: the completion is not a second disconnected stop. */
+    /* Stored on one entry: the panel splits it into a start and a completion
+       station, and the content list carries no separate completion stop. */
     expect(path.some((stop) => stop.label === 'B.Sc. completed')).toBe(false);
   });
 });
